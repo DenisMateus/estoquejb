@@ -102,36 +102,8 @@ export function addMovement(mov: Omit<Movement, 'id' | 'createdAt'>): Movement {
   return newMov;
 }
 
-const USERS_KEY = 'jhonrob_users';
-
-interface StoredUser {
-  username: string;
-  password: string;
-}
-
-function getUsers(): StoredUser[] {
-  const data = localStorage.getItem(USERS_KEY);
-  if (!data) {
-    // Cria usuário padrão na primeira vez
-    const defaultUsers: StoredUser[] = [{ username: 'planejamentopcp', password: '123456' }];
-    localStorage.setItem(USERS_KEY, JSON.stringify(defaultUsers));
-    return defaultUsers;
-  }
-  return JSON.parse(data);
-}
-
-export function registerUser(username: string, password: string): boolean {
-  const users = getUsers();
-  if (users.find(u => u.username === username)) return false;
-  users.push({ username, password });
-  localStorage.setItem(USERS_KEY, JSON.stringify(users));
-  return true;
-}
-
 export function login(user: string, pass: string): boolean {
-  const users = getUsers();
-  const found = users.find(u => u.username === user && u.password === pass);
-  if (found) {
+  if (user === 'planejamentopcp' && pass === '123456') {
     localStorage.setItem(AUTH_KEY, 'true');
     return true;
   }
