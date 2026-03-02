@@ -103,7 +103,7 @@ export function addMovement(mov: Omit<Movement, 'id' | 'createdAt'>): Movement {
 }
 
 export function login(user: string, pass: string): boolean {
-  if (user === 'PCP4' && pass === 'Jhorob@1') {
+  if (user === 'planejamentopcp' && pass === '123456') {
     localStorage.setItem(AUTH_KEY, 'true');
     return true;
   }
