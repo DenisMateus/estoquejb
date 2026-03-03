@@ -13,22 +13,27 @@ const Movements = () => {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [filterType, setFilterType] = useState<'todos' | 'entrada' | 'saida'>('todos');
 
-  const reload = () => {
-    setProducts(getProducts());
-    setMovements(getMovements());
+  const reload = async () => {
+    try {
+      const [p, m] = await Promise.all([getProducts(), getMovements()]);
+      setProducts(p);
+      setMovements(m);
+    } catch (err: any) {
+      toast.error('Erro ao carregar dados');
+    }
   };
   useEffect(() => { reload(); }, []);
 
   const selectedProduct = products.find(p => p.id === productId);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedProduct) { toast.error('Selecione um produto'); return; }
     const qty = parseFloat(quantity);
     if (isNaN(qty) || qty <= 0) { toast.error('Quantidade inválida'); return; }
 
     try {
-      addMovement({
+      await addMovement({
         productId: selectedProduct.id,
         productCode: selectedProduct.code,
         productDescription: selectedProduct.description,
@@ -55,23 +60,16 @@ const Movements = () => {
       <div className="space-y-6">
         <h2 className="text-xl font-bold text-foreground">Movimentações de Estoque</h2>
 
-        {/* Movement form */}
         <form onSubmit={handleSubmit} className="bg-card border rounded-lg p-5 space-y-4">
           <div className="flex gap-2 mb-2">
-            <button
-              type="button"
-              onClick={() => setType('entrada')}
+            <button type="button" onClick={() => setType('entrada')}
               className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-semibold transition-colors
-                ${type === 'entrada' ? 'btn-entry' : 'bg-muted text-muted-foreground'}`}
-            >
+                ${type === 'entrada' ? 'btn-entry' : 'bg-muted text-muted-foreground'}`}>
               <ArrowDownCircle className="w-4 h-4" /> Entrada
             </button>
-            <button
-              type="button"
-              onClick={() => setType('saida')}
+            <button type="button" onClick={() => setType('saida')}
               className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-semibold transition-colors
-                ${type === 'saida' ? 'btn-exit' : 'bg-muted text-muted-foreground'}`}
-            >
+                ${type === 'saida' ? 'btn-exit' : 'bg-muted text-muted-foreground'}`}>
               <ArrowUpCircle className="w-4 h-4" /> Saída
             </button>
           </div>
@@ -92,26 +90,12 @@ const Movements = () => {
               <label className="text-sm font-medium text-foreground block mb-1">
                 Quantidade ({selectedProduct?.unit || 'un'})
               </label>
-              <input
-                type="number"
-                step="0.01"
-                min="0.01"
-                value={quantity}
-                onChange={e => setQuantity(e.target.value)}
-                className="input-steel w-full font-mono"
-                placeholder="0.00"
-                required
-              />
+              <input type="number" step="0.01" min="0.01" value={quantity}
+                onChange={e => setQuantity(e.target.value)} className="input-steel w-full font-mono" placeholder="0.00" required />
             </div>
             <div>
               <label className="text-sm font-medium text-foreground block mb-1">Data</label>
-              <input
-                type="date"
-                value={date}
-                onChange={e => setDate(e.target.value)}
-                className="input-steel w-full font-mono"
-                required
-              />
+              <input type="date" value={date} onChange={e => setDate(e.target.value)} className="input-steel w-full font-mono" required />
             </div>
           </div>
 
@@ -121,18 +105,14 @@ const Movements = () => {
           </button>
         </form>
 
-        {/* Movements list */}
         <div className="bg-card rounded-lg border">
           <div className="px-5 py-4 border-b flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <h3 className="font-semibold text-foreground">Histórico de Movimentações</h3>
             <div className="flex gap-1">
               {(['todos', 'entrada', 'saida'] as const).map(f => (
-                <button
-                  key={f}
-                  onClick={() => setFilterType(f)}
+                <button key={f} onClick={() => setFilterType(f)}
                   className={`px-3 py-1 rounded text-xs font-medium transition-colors
-                    ${filterType === f ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
-                >
+                    ${filterType === f ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
                   {f === 'todos' ? 'Todos' : f === 'entrada' ? 'Entradas' : 'Saídas'}
                 </button>
               ))}

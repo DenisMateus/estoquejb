@@ -14,7 +14,80 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      movements: {
+        Row: {
+          created_at: string
+          date: string
+          id: string
+          product_code: string
+          product_description: string
+          product_id: string
+          quantity: number
+          type: string
+          unit: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          id?: string
+          product_code: string
+          product_description: string
+          product_id: string
+          quantity: number
+          type: string
+          unit: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          id?: string
+          product_code?: string
+          product_description?: string
+          product_id?: string
+          quantity?: number
+          type?: string
+          unit?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "movements_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          category: string
+          code: string
+          created_at: string
+          description: string
+          id: string
+          quantity: number
+          unit: string
+        }
+        Insert: {
+          category: string
+          code: string
+          created_at?: string
+          description: string
+          id?: string
+          quantity?: number
+          unit: string
+        }
+        Update: {
+          category?: string
+          code?: string
+          created_at?: string
+          description?: string
+          id?: string
+          quantity?: number
+          unit?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
