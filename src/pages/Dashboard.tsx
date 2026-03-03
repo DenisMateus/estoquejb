@@ -8,8 +8,12 @@ const Dashboard = () => {
   const [movements, setMovements] = useState<Movement[]>([]);
 
   useEffect(() => {
-    setProducts(getProducts());
-    setMovements(getMovements());
+    const load = async () => {
+      const [p, m] = await Promise.all([getProducts(), getMovements()]);
+      setProducts(p);
+      setMovements(m);
+    };
+    load();
   }, []);
 
   const totalProducts = products.length;
@@ -79,7 +83,6 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Recent movements */}
         <div className="bg-card rounded-lg border">
           <div className="px-5 py-4 border-b">
             <h3 className="font-semibold text-foreground">Últimas Movimentações</h3>

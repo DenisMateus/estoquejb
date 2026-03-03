@@ -8,7 +8,9 @@ const Reports = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [filterCategory, setFilterCategory] = useState<'todos' | 'ferro_redondo' | 'tubo_aco'>('todos');
 
-  useEffect(() => { setProducts(getProducts()); }, []);
+  useEffect(() => {
+    getProducts().then(setProducts);
+  }, []);
 
   const filtered = filterCategory === 'todos'
     ? products
@@ -33,7 +35,6 @@ const Reports = () => {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Contagem Estoque');
 
-    // Auto column widths
     const colWidths = Object.keys(data[0] || {}).map(key => ({
       wch: Math.max(key.length, ...data.map(r => String(r[key]).length)) + 2
     }));
@@ -44,9 +45,7 @@ const Reports = () => {
     XLSX.writeFile(wb, `Contagem_Estoque_${categoryLabel}_${new Date().toISOString().split('T')[0]}.xlsx`);
   };
 
-  const handlePrint = () => {
-    window.print();
-  };
+  const handlePrint = () => { window.print(); };
 
   return (
     <AppLayout>
@@ -54,51 +53,33 @@ const Reports = () => {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <h2 className="text-xl font-bold text-foreground">Relatórios de Estoque</h2>
           <div className="flex gap-2">
-            <button
-              onClick={exportToExcel}
-              disabled={filtered.length === 0}
-              className="inline-flex items-center gap-2 bg-success text-success-foreground font-semibold px-4 py-2 rounded-md hover:bg-success/90 transition-colors text-sm disabled:opacity-50"
-            >
-              <FileSpreadsheet className="w-4 h-4" />
-              Exportar Excel
+            <button onClick={exportToExcel} disabled={filtered.length === 0}
+              className="inline-flex items-center gap-2 bg-success text-success-foreground font-semibold px-4 py-2 rounded-md hover:bg-success/90 transition-colors text-sm disabled:opacity-50">
+              <FileSpreadsheet className="w-4 h-4" /> Exportar Excel
             </button>
-            <button
-              onClick={handlePrint}
-              className="inline-flex items-center gap-2 border font-semibold px-4 py-2 rounded-md hover:bg-muted transition-colors text-sm"
-            >
-              <Printer className="w-4 h-4" />
-              Imprimir
+            <button onClick={handlePrint}
+              className="inline-flex items-center gap-2 border font-semibold px-4 py-2 rounded-md hover:bg-muted transition-colors text-sm">
+              <Printer className="w-4 h-4" /> Imprimir
             </button>
           </div>
         </div>
 
-        {/* Filter */}
         <div className="flex gap-1">
-          {([
-            ['todos', 'Todos'],
-            ['ferro_redondo', 'Ferro Redondo'],
-            ['tubo_aco', 'Tubo de Aço'],
-          ] as const).map(([val, label]) => (
-            <button
-              key={val}
-              onClick={() => setFilterCategory(val)}
+          {([['todos', 'Todos'], ['ferro_redondo', 'Ferro Redondo'], ['tubo_aco', 'Tubo de Aço']] as const).map(([val, label]) => (
+            <button key={val} onClick={() => setFilterCategory(val)}
               className={`px-3 py-1.5 rounded text-sm font-medium transition-colors
-                ${filterCategory === val ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}
-            >
+                ${filterCategory === val ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
               {label}
             </button>
           ))}
         </div>
 
-        {/* Report table */}
         <div className="bg-card rounded-lg border overflow-x-auto print:shadow-none" id="report-table">
           <div className="px-5 py-3 border-b print:hidden">
             <p className="text-sm text-muted-foreground">
               Relatório para contagem física — {filtered.length} produtos
             </p>
           </div>
-
-          {/* Print header */}
           <div className="hidden print:block px-5 py-4">
             <h1 className="text-lg font-bold">Estoque Jhonrob — Relatório de Contagem</h1>
             <p className="text-sm">Data: {new Date().toLocaleDateString('pt-BR')} | Categoria: {
@@ -114,9 +95,7 @@ const Reports = () => {
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Descrição</th>
                 <th className="text-right px-4 py-3 font-medium text-muted-foreground">Estoque Sistema</th>
                 {daysOfWeek.map(day => (
-                  <th key={day} className="text-center px-3 py-3 font-medium text-muted-foreground text-xs">
-                    {day}
-                  </th>
+                  <th key={day} className="text-center px-3 py-3 font-medium text-muted-foreground text-xs">{day}</th>
                 ))}
               </tr>
             </thead>

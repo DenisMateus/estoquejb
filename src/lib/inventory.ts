@@ -1,3 +1,5 @@
+import { supabase } from '@/integrations/supabase/client';
+
 export type UnitType = 'kg' | 'barra';
 export type MovementType = 'entrada' | 'saida';
 
@@ -23,84 +25,102 @@ export interface Movement {
   createdAt: string;
 }
 
-const PRODUCTS_KEY = 'jhonrob_products';
-const MOVEMENTS_KEY = 'jhonrob_movements';
-const AUTH_KEY = 'jhonrob_auth';
-
-export function getProducts(): Product[] {
-  const data = localStorage.getItem(PRODUCTS_KEY);
-  return data ? JSON.parse(data) : [];
-}
-
-export function saveProducts(products: Product[]) {
-  localStorage.setItem(PRODUCTS_KEY, JSON.stringify(products));
-}
-
-export function addProduct(product: Omit<Product, 'id' | 'createdAt' | 'quantity'>): Product {
-  const products = getProducts();
-  const exists = products.find(p => p.code === product.code);
-  if (exists) throw new Error('Código já cadastrado');
-  
-  const newProduct: Product = {
-    ...product,
-    id: crypto.randomUUID(),
-    quantity: 0,
-    createdAt: new Date().toISOString(),
+function mapProduct(row: any): Product {
+  return {
+    id: row.id,
+    code: row.code,
+    description: row.description,
+    unit: row.unit as UnitType,
+    category: row.category as Product['category'],
+    quantity: Number(row.quantity),
+    createdAt: row.created_at,
   };
-  products.push(newProduct);
-  saveProducts(products);
-  return newProduct;
 }
 
-export function updateProduct(id: string, updates: Partial<Pick<Product, 'description' | 'unit' | 'category'>>) {
-  const products = getProducts();
-  const idx = products.findIndex(p => p.id === id);
-  if (idx === -1) throw new Error('Produto não encontrado');
-  products[idx] = { ...products[idx], ...updates };
-  saveProducts(products);
-  return products[idx];
+function mapMovement(row: any): Movement {
+  return {
+    id: row.id,
+    productId: row.product_id,
+    productCode: row.product_code,
+    productDescription: row.product_description,
+    type: row.type as MovementType,
+    quantity: Number(row.quantity),
+    unit: row.unit as UnitType,
+    date: row.date,
+    createdAt: row.created_at,
+  };
 }
 
-export function deleteProduct(id: string) {
-  const products = getProducts().filter(p => p.id !== id);
-  saveProducts(products);
+export async function getProducts(): Promise<Product[]> {
+  const { data, error } = await supabase.from('products').select('*').order('code');
+  if (error) throw error;
+  return (data || []).map(mapProduct);
 }
 
-export function getMovements(): Movement[] {
-  const data = localStorage.getItem(MOVEMENTS_KEY);
-  return data ? JSON.parse(data) : [];
+export async function addProduct(product: Omit<Product, 'id' | 'createdAt' | 'quantity'>): Promise<Product> {
+  const { data, error } = await supabase.from('products').insert({
+    code: product.code,
+    description: product.description,
+    unit: product.unit,
+    category: product.category,
+    quantity: 0,
+  }).select().single();
+  if (error) {
+    if (error.code === '23505') throw new Error('Código já cadastrado');
+    throw error;
+  }
+  return mapProduct(data);
 }
 
-export function saveMovements(movements: Movement[]) {
-  localStorage.setItem(MOVEMENTS_KEY, JSON.stringify(movements));
+export async function updateProduct(id: string, updates: Partial<Pick<Product, 'description' | 'unit' | 'category'>>) {
+  const { data, error } = await supabase.from('products').update(updates).eq('id', id).select().single();
+  if (error) throw error;
+  return mapProduct(data);
 }
 
-export function addMovement(mov: Omit<Movement, 'id' | 'createdAt'>): Movement {
-  const products = getProducts();
-  const idx = products.findIndex(p => p.id === mov.productId);
-  if (idx === -1) throw new Error('Produto não encontrado');
+export async function deleteProduct(id: string) {
+  const { error } = await supabase.from('products').delete().eq('id', id);
+  if (error) throw error;
+}
 
-  if (mov.type === 'saida' && products[idx].quantity < mov.quantity) {
+export async function getMovements(): Promise<Movement[]> {
+  const { data, error } = await supabase.from('movements').select('*').order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data || []).map(mapMovement);
+}
+
+export async function addMovement(mov: Omit<Movement, 'id' | 'createdAt'>): Promise<Movement> {
+  // Get current product
+  const { data: product, error: pErr } = await supabase.from('products').select('*').eq('id', mov.productId).single();
+  if (pErr || !product) throw new Error('Produto não encontrado');
+
+  const currentQty = Number(product.quantity);
+  if (mov.type === 'saida' && currentQty < mov.quantity) {
     throw new Error('Estoque insuficiente');
   }
 
-  if (mov.type === 'entrada') {
-    products[idx].quantity += mov.quantity;
-  } else {
-    products[idx].quantity -= mov.quantity;
-  }
-  saveProducts(products);
+  const newQty = mov.type === 'entrada' ? currentQty + mov.quantity : currentQty - mov.quantity;
 
-  const newMov: Movement = {
-    ...mov,
-    id: crypto.randomUUID(),
-    createdAt: new Date().toISOString(),
-  };
-  const movements = getMovements();
-  movements.unshift(newMov);
-  saveMovements(movements);
-  return newMov;
+  // Update product quantity
+  const { error: uErr } = await supabase.from('products').update({ quantity: newQty }).eq('id', mov.productId);
+  if (uErr) throw uErr;
+
+  // Insert movement
+  const { data, error } = await supabase.from('movements').insert({
+    product_id: mov.productId,
+    product_code: mov.productCode,
+    product_description: mov.productDescription,
+    type: mov.type,
+    quantity: mov.quantity,
+    unit: mov.unit,
+    date: mov.date,
+  }).select().single();
+  if (error) throw error;
+  return mapMovement(data);
 }
+
+// Auth kept as localStorage (simple shared login)
+const AUTH_KEY = 'jhonrob_auth';
 
 export function login(user: string, pass: string): boolean {
   if (user === 'planejamentopcp' && pass === '123456') {

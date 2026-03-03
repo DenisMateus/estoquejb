@@ -13,13 +13,19 @@ const Products = () => {
   const [unit, setUnit] = useState<'kg' | 'barra'>('kg');
   const [category, setCategory] = useState<'ferro_redondo' | 'tubo_aco'>('ferro_redondo');
 
-  const reload = () => setProducts(getProducts());
+  const reload = async () => {
+    try {
+      setProducts(await getProducts());
+    } catch (err: any) {
+      toast.error('Erro ao carregar produtos');
+    }
+  };
   useEffect(() => { reload(); }, []);
 
-  const handleAdd = (e: React.FormEvent) => {
+  const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      addProduct({ code: code.trim(), description: description.trim(), unit, category });
+      await addProduct({ code: code.trim(), description: description.trim(), unit, category });
       toast.success('Produto cadastrado com sucesso!');
       setCode(''); setDescription(''); setShowForm(false);
       reload();
@@ -28,11 +34,15 @@ const Products = () => {
     }
   };
 
-  const handleDelete = (id: string, desc: string) => {
+  const handleDelete = async (id: string, desc: string) => {
     if (!confirm(`Excluir produto "${desc}"?`)) return;
-    deleteProduct(id);
-    toast.success('Produto excluído');
-    reload();
+    try {
+      await deleteProduct(id);
+      toast.success('Produto excluído');
+      reload();
+    } catch (err: any) {
+      toast.error(err.message);
+    }
   };
 
   const filtered = products.filter(p =>
@@ -92,18 +102,11 @@ const Products = () => {
           </form>
         )}
 
-        {/* Search */}
         <div className="relative max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <input
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="input-steel w-full pl-10"
-            placeholder="Buscar por código ou descrição..."
-          />
+          <input value={search} onChange={e => setSearch(e.target.value)} className="input-steel w-full pl-10" placeholder="Buscar por código ou descrição..." />
         </div>
 
-        {/* Table */}
         <div className="bg-card rounded-lg border overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
