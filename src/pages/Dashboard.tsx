@@ -1,7 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { getProducts, getMovements, Product, Movement } from '@/lib/inventory';
 import { Package, ArrowDownCircle, ArrowUpCircle, Activity } from 'lucide-react';
 import AppLayout from '@/components/AppLayout';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 
 const Dashboard = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -26,6 +28,36 @@ const Dashboard = () => {
   const todayExits = todayMovements.filter(m => m.type === 'saida').length;
 
   const recentMovements = movements.slice(0, 10);
+
+  // Monthly usage chart data
+  const monthlyUsageData = useMemo(() => {
+    const now = new Date();
+    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    
+    const monthExits = movements.filter(
+      m => m.type === 'saida' && m.date.startsWith(currentMonth)
+    );
+
+    const grouped: Record<string, number> = {};
+    monthExits.forEach(m => {
+      const key = m.productDescription || m.productCode;
+      grouped[key] = (grouped[key] || 0) + m.quantity;
+    });
+
+    return Object.entries(grouped)
+      .map(([name, quantity]) => ({ name, quantity }))
+      .sort((a, b) => b.quantity - a.quantity)
+      .slice(0, 10);
+  }, [movements]);
+
+  const chartConfig = {
+    quantity: {
+      label: 'Quantidade',
+      color: 'hsl(var(--chart-1))',
+    },
+  };
+
+  const currentMonthLabel = new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
 
   return (
     <AppLayout>
@@ -80,6 +112,37 @@ const Dashboard = () => {
                 <p className="text-2xl font-bold font-mono text-foreground">{todayExits}</p>
               </div>
             </div>
+          </div>
+        </div>
+
+        <div className="bg-card rounded-lg border">
+          <div className="px-5 py-4 border-b">
+            <h3 className="font-semibold text-foreground">Consumo de Materiais — {currentMonthLabel}</h3>
+            <p className="text-xs text-muted-foreground mt-1">Saídas agrupadas por produto no mês atual</p>
+          </div>
+          <div className="p-5">
+            {monthlyUsageData.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8">Nenhuma saída registrada neste mês</p>
+            ) : (
+              <ChartContainer config={chartConfig} className="h-[300px] w-full">
+                <BarChart data={monthlyUsageData} layout="vertical" margin={{ left: 20, right: 20 }}>
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                  <XAxis type="number" />
+                  <YAxis
+                    dataKey="name"
+                    type="category"
+                    width={150}
+                    tick={{ fontSize: 12 }}
+                  />
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <Bar
+                    dataKey="quantity"
+                    fill="hsl(var(--chart-1))"
+                    radius={[0, 4, 4, 0]}
+                  />
+                </BarChart>
+              </ChartContainer>
+            )}
           </div>
         </div>
 
