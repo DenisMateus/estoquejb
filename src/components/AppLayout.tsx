@@ -1,6 +1,7 @@
-import { ReactNode } from 'react';
+import { ReactNode, useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { logout } from '@/lib/inventory';
+import { useTheme } from 'next-themes';
 import {
   LayoutDashboard,
   Package,
@@ -9,8 +10,9 @@ import {
   LogOut,
   Menu,
   X,
+  Sun,
+  Moon,
 } from 'lucide-react';
-import { useState } from 'react';
 
 const navItems = [
   { path: '/dashboard', label: 'Painel', icon: LayoutDashboard },
@@ -27,6 +29,7 @@ const AppLayout = ({ children }: Props) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
+  const { theme, setTheme } = useTheme();
 
   const handleLogout = () => {
     logout();
@@ -70,7 +73,14 @@ const AppLayout = ({ children }: Props) => {
             })}
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              className="p-1.5 rounded-md text-white/70 hover:text-white hover:bg-white/10 transition-colors"
+              title={theme === 'dark' ? 'Modo claro' : 'Modo escuro'}
+            >
+              {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </button>
             <span className="text-sm text-white/70 font-mono hidden sm:block">PCP4</span>
             <button
               onClick={handleLogout}
