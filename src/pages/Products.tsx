@@ -1,13 +1,16 @@
 import { useEffect, useState } from 'react';
 import { getProducts, addProduct, deleteProduct, Product } from '@/lib/inventory';
 import AppLayout from '@/components/AppLayout';
-import { Plus, Trash2, Search } from 'lucide-react';
+import { Plus, Trash2, Search, Filter } from 'lucide-react';
 import { toast } from 'sonner';
 
 const Products = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [search, setSearch] = useState('');
+  const [filterCategory, setFilterCategory] = useState<'todos' | 'ferro_redondo' | 'tubo_aco'>('todos');
+  const [filterDateFrom, setFilterDateFrom] = useState('');
+  const [filterDateTo, setFilterDateTo] = useState('');
   const [code, setCode] = useState('');
   const [description, setDescription] = useState('');
   const [unit, setUnit] = useState<'kg' | 'barra'>('kg');
@@ -45,10 +48,28 @@ const Products = () => {
     }
   };
 
-  const filtered = products.filter(p =>
-    p.code.toLowerCase().includes(search.toLowerCase()) ||
-    p.description.toLowerCase().includes(search.toLowerCase())
-  );
+  const clearFilters = () => {
+    setSearch('');
+    setFilterCategory('todos');
+    setFilterDateFrom('');
+    setFilterDateTo('');
+  };
+
+  const filtered = products.filter(p => {
+    const matchesSearch = search === '' ||
+      p.code.toLowerCase().includes(search.toLowerCase()) ||
+      p.description.toLowerCase().includes(search.toLowerCase());
+
+    const matchesCategory = filterCategory === 'todos' || p.category === filterCategory;
+
+    const createdDate = p.createdAt.split('T')[0];
+    const matchesDateFrom = !filterDateFrom || createdDate >= filterDateFrom;
+    const matchesDateTo = !filterDateTo || createdDate <= filterDateTo;
+
+    return matchesSearch && matchesCategory && matchesDateFrom && matchesDateTo;
+  });
+
+  const hasActiveFilters = filterCategory !== 'todos' || filterDateFrom || filterDateTo;
 
   return (
     <AppLayout>
@@ -102,9 +123,42 @@ const Products = () => {
           </form>
         )}
 
-        <div className="relative max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <input value={search} onChange={e => setSearch(e.target.value)} className="input-steel w-full pl-10" placeholder="Buscar por código ou descrição..." />
+        {/* Filtros */}
+        <div className="bg-card border rounded-lg p-4 space-y-3">
+          <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+            <Filter className="w-4 h-4" />
+            Filtros
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div>
+              <label className="text-xs font-medium text-muted-foreground block mb-1">Código / Descrição</label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <input value={search} onChange={e => setSearch(e.target.value)} className="input-steel w-full pl-10" placeholder="Buscar..." />
+              </div>
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground block mb-1">Categoria</label>
+              <select value={filterCategory} onChange={e => setFilterCategory(e.target.value as any)} className="input-steel w-full">
+                <option value="todos">Todas</option>
+                <option value="ferro_redondo">Ferro Redondo</option>
+                <option value="tubo_aco">Tubo de Aço</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground block mb-1">Cadastro de</label>
+              <input type="date" value={filterDateFrom} onChange={e => setFilterDateFrom(e.target.value)} className="input-steel w-full font-mono" />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground block mb-1">Cadastro até</label>
+              <input type="date" value={filterDateTo} onChange={e => setFilterDateTo(e.target.value)} className="input-steel w-full font-mono" />
+            </div>
+          </div>
+          {hasActiveFilters && (
+            <button onClick={clearFilters} className="text-xs text-primary hover:underline">
+              Limpar filtros
+            </button>
+          )}
         </div>
 
         <div className="bg-card rounded-lg border overflow-x-auto">

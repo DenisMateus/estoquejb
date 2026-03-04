@@ -3,7 +3,18 @@ import { getProducts, getMovements, Product, Movement } from '@/lib/inventory';
 import { Package, ArrowDownCircle, ArrowUpCircle, Activity } from 'lucide-react';
 import AppLayout from '@/components/AppLayout';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
+import { PieChart, Pie, Cell } from 'recharts';
+
+const COLORS = [
+  'hsl(var(--chart-1))',
+  'hsl(var(--chart-2))',
+  'hsl(var(--chart-3))',
+  'hsl(var(--chart-4))',
+  'hsl(var(--chart-5))',
+  'hsl(var(--primary))',
+  'hsl(var(--accent))',
+  'hsl(var(--destructive))',
+];
 
 const Dashboard = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -29,11 +40,10 @@ const Dashboard = () => {
 
   const recentMovements = movements.slice(0, 10);
 
-  // Monthly usage chart data
   const monthlyUsageData = useMemo(() => {
     const now = new Date();
     const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-    
+
     const monthExits = movements.filter(
       m => m.type === 'saida' && m.date.startsWith(currentMonth)
     );
@@ -45,19 +55,32 @@ const Dashboard = () => {
     });
 
     return Object.entries(grouped)
-      .map(([name, quantity]) => ({ name, quantity }))
-      .sort((a, b) => b.quantity - a.quantity)
-      .slice(0, 10);
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 8);
   }, [movements]);
 
-  const chartConfig = {
-    quantity: {
-      label: 'Quantidade',
-      color: 'hsl(var(--chart-1))',
-    },
-  };
+  const chartConfig = useMemo(() => {
+    const config: Record<string, { label: string; color: string }> = {};
+    monthlyUsageData.forEach((item, i) => {
+      config[item.name] = {
+        label: item.name,
+        color: COLORS[i % COLORS.length],
+      };
+    });
+    return config;
+  }, [monthlyUsageData]);
 
+  const totalUsage = monthlyUsageData.reduce((sum, d) => sum + d.value, 0);
   const currentMonthLabel = new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+
+  const formatDateTime = (createdAt: string) => {
+    const d = new Date(createdAt);
+    return d.toLocaleString('pt-BR', {
+      day: '2-digit', month: '2-digit', year: 'numeric',
+      hour: '2-digit', minute: '2-digit',
+    });
+  };
 
   return (
     <AppLayout>
@@ -115,6 +138,7 @@ const Dashboard = () => {
           </div>
         </div>
 
+        {/* Pie Chart */}
         <div className="bg-card rounded-lg border">
           <div className="px-5 py-4 border-b">
             <h3 className="font-semibold text-foreground">Consumo de Materiais — {currentMonthLabel}</h3>
@@ -124,28 +148,43 @@ const Dashboard = () => {
             {monthlyUsageData.length === 0 ? (
               <p className="text-center text-muted-foreground py-8">Nenhuma saída registrada neste mês</p>
             ) : (
-              <ChartContainer config={chartConfig} className="h-[300px] w-full">
-                <BarChart data={monthlyUsageData} layout="vertical" margin={{ left: 20, right: 20 }}>
-                  <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-                  <XAxis type="number" />
-                  <YAxis
-                    dataKey="name"
-                    type="category"
-                    width={150}
-                    tick={{ fontSize: 12 }}
-                  />
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  <Bar
-                    dataKey="quantity"
-                    fill="hsl(var(--chart-1))"
-                    radius={[0, 4, 4, 0]}
-                  />
-                </BarChart>
-              </ChartContainer>
+              <div className="flex flex-col lg:flex-row items-center gap-6">
+                <ChartContainer config={chartConfig} className="h-[300px] w-[300px]">
+                  <PieChart>
+                    <Pie
+                      data={monthlyUsageData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={120}
+                      paddingAngle={2}
+                      dataKey="value"
+                    >
+                      {monthlyUsageData.map((_, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                  </PieChart>
+                </ChartContainer>
+                <div className="flex flex-col gap-2 text-sm">
+                  {monthlyUsageData.map((item, i) => {
+                    const pct = totalUsage > 0 ? ((item.value / totalUsage) * 100).toFixed(1) : '0';
+                    return (
+                      <div key={item.name} className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
+                        <span className="text-foreground">{item.name}</span>
+                        <span className="text-muted-foreground ml-auto font-mono">{item.value} ({pct}%)</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             )}
           </div>
         </div>
 
+        {/* Recent Movements */}
         <div className="bg-card rounded-lg border">
           <div className="px-5 py-4 border-b">
             <h3 className="font-semibold text-foreground">Últimas Movimentações</h3>
@@ -154,7 +193,7 @@ const Dashboard = () => {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b bg-muted/50">
-                  <th className="text-left px-5 py-3 font-medium text-muted-foreground">Data</th>
+                  <th className="text-left px-5 py-3 font-medium text-muted-foreground">Data / Hora</th>
                   <th className="text-left px-5 py-3 font-medium text-muted-foreground">Código</th>
                   <th className="text-left px-5 py-3 font-medium text-muted-foreground">Descrição</th>
                   <th className="text-left px-5 py-3 font-medium text-muted-foreground">Tipo</th>
@@ -171,7 +210,7 @@ const Dashboard = () => {
                 ) : (
                   recentMovements.map(m => (
                     <tr key={m.id} className="border-b last:border-0 table-row-alt">
-                      <td className="px-5 py-3 font-mono text-xs">{m.date}</td>
+                      <td className="px-5 py-3 font-mono text-xs">{formatDateTime(m.createdAt)}</td>
                       <td className="px-5 py-3 font-mono font-medium">{m.productCode}</td>
                       <td className="px-5 py-3">{m.productDescription}</td>
                       <td className="px-5 py-3">
