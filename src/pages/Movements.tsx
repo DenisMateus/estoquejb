@@ -55,6 +55,14 @@ const Movements = () => {
     ? movements
     : movements.filter(m => m.type === filterType);
 
+  const formatDateTime = (createdAt: string) => {
+    const d = new Date(createdAt);
+    return d.toLocaleString('pt-BR', {
+      day: '2-digit', month: '2-digit', year: 'numeric',
+      hour: '2-digit', minute: '2-digit',
+    });
+  };
+
   return (
     <AppLayout>
       <div className="space-y-6">
@@ -122,7 +130,7 @@ const Movements = () => {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b bg-muted/50">
-                  <th className="text-left px-5 py-3 font-medium text-muted-foreground">Data</th>
+                  <th className="text-left px-5 py-3 font-medium text-muted-foreground">Data / Hora</th>
                   <th className="text-left px-5 py-3 font-medium text-muted-foreground">Código</th>
                   <th className="text-left px-5 py-3 font-medium text-muted-foreground">Descrição</th>
                   <th className="text-left px-5 py-3 font-medium text-muted-foreground">Tipo</th>
@@ -140,7 +148,7 @@ const Movements = () => {
                 ) : (
                   filteredMovements.map(m => (
                     <tr key={m.id} className="border-b last:border-0 table-row-alt">
-                      <td className="px-5 py-3 font-mono text-xs">{m.date}</td>
+                      <td className="px-5 py-3 font-mono text-xs">{formatDateTime(m.createdAt)}</td>
                       <td className="px-5 py-3 font-mono font-medium">{m.productCode}</td>
                       <td className="px-5 py-3">{m.productDescription}</td>
                       <td className="px-5 py-3">
