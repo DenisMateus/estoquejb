@@ -27,7 +27,7 @@ const Products = () => {
 
   const reload = async () => {
     try {
-      setProducts(await getProducts());
+      setProducts(await getProducts('usinagem'));
     } catch (err: any) {
       toast.error('Erro ao carregar produtos');
     }
