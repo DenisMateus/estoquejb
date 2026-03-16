@@ -7,6 +7,7 @@ import {
   Package,
   ArrowLeftRight,
   FileSpreadsheet,
+  Scissors,
   LogOut,
   Menu,
   X,
