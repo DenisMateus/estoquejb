@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getProducts, Product } from '@/lib/inventory';
+import { getProducts, Product, CategoryType, CATEGORY_LABELS } from '@/lib/inventory';
 import AppLayout from '@/components/AppLayout';
 import { FileSpreadsheet, Printer } from 'lucide-react';
 import * as XLSX from 'xlsx';
