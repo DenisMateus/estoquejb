@@ -57,8 +57,10 @@ function mapMovement(row: any): Movement {
   };
 }
 
-export async function getProducts(): Promise<Product[]> {
-  const { data, error } = await supabase.from('products').select('*').order('code');
+export async function getProducts(sector?: SectorType): Promise<Product[]> {
+  let query = supabase.from('products').select('*').order('code');
+  if (sector) query = query.eq('sector', sector);
+  const { data, error } = await query;
   if (error) throw error;
   return (data || []).map(mapProduct);
 }
