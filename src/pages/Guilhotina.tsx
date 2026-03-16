@@ -4,7 +4,7 @@ import AppLayout from '@/components/AppLayout';
 import { Plus, Trash2, Search, Filter, Pencil, X } from 'lucide-react';
 import { toast } from 'sonner';
 
-const Products = () => {
+const Guilhotina = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [search, setSearch] = useState('');
@@ -17,7 +17,6 @@ const Products = () => {
   const [category, setCategory] = useState<'ferro_redondo' | 'tubo_aco'>('ferro_redondo');
   const [weightPerUnit, setWeightPerUnit] = useState('');
 
-  // Edit state
   const [editProduct, setEditProduct] = useState<Product | null>(null);
   const [editCode, setEditCode] = useState('');
   const [editDescription, setEditDescription] = useState('');
@@ -27,7 +26,7 @@ const Products = () => {
 
   const reload = async () => {
     try {
-      setProducts(await getProducts('usinagem'));
+      setProducts(await getProducts('guilhotina'));
     } catch (err: any) {
       toast.error('Erro ao carregar produtos');
     }
@@ -43,7 +42,7 @@ const Products = () => {
         unit,
         category,
         weightPerUnit: parseFloat(weightPerUnit) || 0,
-        sector: 'usinagem',
+        sector: 'guilhotina',
       });
       toast.success('Produto cadastrado com sucesso!');
       setCode(''); setDescription(''); setWeightPerUnit(''); setShowForm(false);
@@ -116,7 +115,7 @@ const Products = () => {
     <AppLayout>
       <div className="space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <h2 className="text-xl font-bold text-foreground">Usinagem — Produtos</h2>
+          <h2 className="text-xl font-bold text-foreground">Guilhotina — Produtos</h2>
           <button
             onClick={() => setShowForm(!showForm)}
             className="inline-flex items-center gap-2 bg-primary text-primary-foreground font-semibold px-4 py-2 rounded-md hover:bg-primary/90 transition-colors text-sm"
@@ -128,11 +127,11 @@ const Products = () => {
 
         {showForm && (
           <form onSubmit={handleAdd} className="bg-card border rounded-lg p-5 space-y-4">
-            <h3 className="font-semibold text-foreground">Cadastrar Novo Produto — Usinagem</h3>
+            <h3 className="font-semibold text-foreground">Cadastrar Novo Produto — Guilhotina</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
               <div>
                 <label className="text-sm font-medium text-foreground block mb-1">Código</label>
-                <input value={code} onChange={e => setCode(e.target.value)} className="input-steel w-full font-mono" required placeholder="Ex: FR-001" />
+                <input value={code} onChange={e => setCode(e.target.value)} className="input-steel w-full font-mono" required placeholder="Ex: GH-001" />
               </div>
               <div>
                 <label className="text-sm font-medium text-foreground block mb-1">Descrição</label>
@@ -327,4 +326,4 @@ const Products = () => {
   );
 };
 
-export default Products;
+export default Guilhotina;

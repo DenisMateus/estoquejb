@@ -7,6 +7,7 @@ import {
   Package,
   ArrowLeftRight,
   FileSpreadsheet,
+  Scissors,
   LogOut,
   Menu,
   X,
@@ -16,7 +17,8 @@ import {
 
 const navItems = [
   { path: '/dashboard', label: 'Painel', icon: LayoutDashboard },
-  { path: '/products', label: 'Produtos', icon: Package },
+  { path: '/products', label: 'Usinagem', icon: Package },
+  { path: '/guilhotina', label: 'Guilhotina', icon: Scissors },
   { path: '/movements', label: 'Movimentações', icon: ArrowLeftRight },
   { path: '/reports', label: 'Relatórios', icon: FileSpreadsheet },
 ];

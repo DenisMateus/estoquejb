@@ -3,6 +3,8 @@ import { supabase } from '@/integrations/supabase/client';
 export type UnitType = 'kg' | 'barra';
 export type MovementType = 'entrada' | 'saida';
 
+export type SectorType = 'usinagem' | 'guilhotina';
+
 export interface Product {
   id: string;
   code: string;
@@ -11,6 +13,7 @@ export interface Product {
   category: 'ferro_redondo' | 'tubo_aco';
   quantity: number;
   weightPerUnit: number;
+  sector: SectorType;
   createdAt: string;
 }
 
@@ -35,6 +38,7 @@ function mapProduct(row: any): Product {
     category: row.category as Product['category'],
     quantity: Number(row.quantity),
     weightPerUnit: Number(row.weight_per_unit || 0),
+    sector: (row.sector || 'usinagem') as SectorType,
     createdAt: row.created_at,
   };
 }
@@ -53,8 +57,10 @@ function mapMovement(row: any): Movement {
   };
 }
 
-export async function getProducts(): Promise<Product[]> {
-  const { data, error } = await supabase.from('products').select('*').order('code');
+export async function getProducts(sector?: SectorType): Promise<Product[]> {
+  let query = supabase.from('products').select('*').order('code');
+  if (sector) query = query.eq('sector', sector);
+  const { data, error } = await query;
   if (error) throw error;
   return (data || []).map(mapProduct);
 }
@@ -67,6 +73,7 @@ export async function addProduct(product: Omit<Product, 'id' | 'createdAt' | 'qu
     category: product.category,
     quantity: 0,
     weight_per_unit: product.weightPerUnit,
+    sector: product.sector || 'usinagem',
   }).select().single();
   if (error) {
     if (error.code === '23505') throw new Error('Código já cadastrado');
