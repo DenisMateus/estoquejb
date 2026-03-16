@@ -84,7 +84,7 @@ const Reports = () => {
             <h1 className="text-lg font-bold">Estoque Jhonrob — Relatório de Contagem</h1>
             <p className="text-sm">Data: {new Date().toLocaleDateString('pt-BR')} | Categoria: {
               filterCategory === 'todos' ? 'Todos' :
-              filterCategory === 'ferro_redondo' ? 'Ferro Redondo' : 'Tubo de Aço'
+              CATEGORY_LABELS[filterCategory as CategoryType] || filterCategory
             }</p>
           </div>
 
