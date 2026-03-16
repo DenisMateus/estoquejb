@@ -8,7 +8,7 @@ const Guilhotina = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [search, setSearch] = useState('');
-  const [filterCategory, setFilterCategory] = useState<'todos' | 'ferro_redondo' | 'tubo_aco'>('todos');
+  const [filterCategory, setFilterCategory] = useState<'todos' | CategoryType>('todos');
   const [filterDateFrom, setFilterDateFrom] = useState('');
   const [filterDateTo, setFilterDateTo] = useState('');
   const [code, setCode] = useState('');
