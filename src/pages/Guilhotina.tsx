@@ -21,7 +21,7 @@ const Guilhotina = () => {
   const [editCode, setEditCode] = useState('');
   const [editDescription, setEditDescription] = useState('');
   const [editUnit, setEditUnit] = useState<'kg' | 'barra'>('kg');
-  const [editCategory, setEditCategory] = useState<'ferro_redondo' | 'tubo_aco'>('ferro_redondo');
+  const [editCategory, setEditCategory] = useState<CategoryType>('ferro_redondo');
   const [editWeight, setEditWeight] = useState('');
 
   const reload = async () => {
