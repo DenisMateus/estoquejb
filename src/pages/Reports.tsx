@@ -6,7 +6,7 @@ import * as XLSX from 'xlsx';
 
 const Reports = () => {
   const [products, setProducts] = useState<Product[]>([]);
-  const [filterCategory, setFilterCategory] = useState<'todos' | 'ferro_redondo' | 'tubo_aco'>('todos');
+  const [filterCategory, setFilterCategory] = useState<'todos' | CategoryType>('todos');
 
   useEffect(() => {
     getProducts().then(setProducts);
