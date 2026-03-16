@@ -64,8 +64,8 @@ const Reports = () => {
           </div>
         </div>
 
-        <div className="flex gap-1">
-          {([['todos', 'Todos'], ['ferro_redondo', 'Ferro Redondo'], ['tubo_aco', 'Tubo de Aço']] as const).map(([val, label]) => (
+        <div className="flex flex-wrap gap-1">
+          {([['todos', 'Todos'], ...Object.entries(CATEGORY_LABELS)] as const).map(([val, label]) => (
             <button key={val} onClick={() => setFilterCategory(val)}
               className={`px-3 py-1.5 rounded text-sm font-medium transition-colors
                 ${filterCategory === val ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
