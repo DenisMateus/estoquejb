@@ -38,6 +38,7 @@ function mapProduct(row: any): Product {
     category: row.category as Product['category'],
     quantity: Number(row.quantity),
     weightPerUnit: Number(row.weight_per_unit || 0),
+    sector: (row.sector || 'usinagem') as SectorType,
     createdAt: row.created_at,
   };
 }
