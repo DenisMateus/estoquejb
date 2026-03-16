@@ -116,7 +116,7 @@ const Products = () => {
     <AppLayout>
       <div className="space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <h2 className="text-xl font-bold text-foreground">Produtos Cadastrados</h2>
+          <h2 className="text-xl font-bold text-foreground">Usinagem — Produtos</h2>
           <button
             onClick={() => setShowForm(!showForm)}
             className="inline-flex items-center gap-2 bg-primary text-primary-foreground font-semibold px-4 py-2 rounded-md hover:bg-primary/90 transition-colors text-sm"
