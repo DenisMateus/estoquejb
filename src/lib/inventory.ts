@@ -10,7 +10,7 @@ export interface Product {
   code: string;
   description: string;
   unit: UnitType;
-  category: 'ferro_redondo' | 'tubo_aco';
+  category: 'ferro_redondo' | 'tubo_aco' | 'cantoneira' | 'ferro_chato';
   quantity: number;
   weightPerUnit: number;
   sector: SectorType;
