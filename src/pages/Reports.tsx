@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
-import { getProducts, Product } from '@/lib/inventory';
+import { getProducts, Product, CategoryType, CATEGORY_LABELS } from '@/lib/inventory';
 import AppLayout from '@/components/AppLayout';
 import { FileSpreadsheet, Printer } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
 const Reports = () => {
   const [products, setProducts] = useState<Product[]>([]);
-  const [filterCategory, setFilterCategory] = useState<'todos' | 'ferro_redondo' | 'tubo_aco'>('todos');
+  const [filterCategory, setFilterCategory] = useState<'todos' | CategoryType>('todos');
 
   useEffect(() => {
     getProducts().then(setProducts);
@@ -23,7 +23,7 @@ const Reports = () => {
       const row: Record<string, any> = {
         'Código': p.code,
         'Descrição': p.description,
-        'Categoria': p.category === 'ferro_redondo' ? 'Ferro Redondo' : 'Tubo de Aço',
+        'Categoria': CATEGORY_LABELS[p.category as CategoryType] || p.category,
         'Unidade': p.unit,
         'Estoque Sistema': p.quantity,
       };
@@ -41,7 +41,7 @@ const Reports = () => {
     ws['!cols'] = colWidths;
 
     const categoryLabel = filterCategory === 'todos' ? 'Todos' :
-      filterCategory === 'ferro_redondo' ? 'FerroRedondo' : 'TuboAco';
+      (CATEGORY_LABELS[filterCategory as CategoryType] || filterCategory).replace(/\s/g, '');
     XLSX.writeFile(wb, `Contagem_Estoque_${categoryLabel}_${new Date().toISOString().split('T')[0]}.xlsx`);
   };
 
@@ -64,9 +64,9 @@ const Reports = () => {
           </div>
         </div>
 
-        <div className="flex gap-1">
-          {([['todos', 'Todos'], ['ferro_redondo', 'Ferro Redondo'], ['tubo_aco', 'Tubo de Aço']] as const).map(([val, label]) => (
-            <button key={val} onClick={() => setFilterCategory(val)}
+        <div className="flex flex-wrap gap-1">
+          {([['todos', 'Todos'], ...Object.entries(CATEGORY_LABELS)] as const).map(([val, label]) => (
+            <button key={val} onClick={() => setFilterCategory(val as 'todos' | CategoryType)}
               className={`px-3 py-1.5 rounded text-sm font-medium transition-colors
                 ${filterCategory === val ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
               {label}
@@ -84,7 +84,7 @@ const Reports = () => {
             <h1 className="text-lg font-bold">Estoque Jhonrob — Relatório de Contagem</h1>
             <p className="text-sm">Data: {new Date().toLocaleDateString('pt-BR')} | Categoria: {
               filterCategory === 'todos' ? 'Todos' :
-              filterCategory === 'ferro_redondo' ? 'Ferro Redondo' : 'Tubo de Aço'
+              CATEGORY_LABELS[filterCategory as CategoryType] || filterCategory
             }</p>
           </div>
 

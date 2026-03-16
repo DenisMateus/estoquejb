@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getProducts, addProduct, updateProduct, deleteProduct, Product } from '@/lib/inventory';
+import { getProducts, addProduct, updateProduct, deleteProduct, Product, CategoryType, CATEGORY_LABELS } from '@/lib/inventory';
 import AppLayout from '@/components/AppLayout';
 import { Plus, Trash2, Search, Filter, Pencil, X } from 'lucide-react';
 import { toast } from 'sonner';
@@ -8,13 +8,13 @@ const Products = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [search, setSearch] = useState('');
-  const [filterCategory, setFilterCategory] = useState<'todos' | 'ferro_redondo' | 'tubo_aco'>('todos');
+  const [filterCategory, setFilterCategory] = useState<'todos' | CategoryType>('todos');
   const [filterDateFrom, setFilterDateFrom] = useState('');
   const [filterDateTo, setFilterDateTo] = useState('');
   const [code, setCode] = useState('');
   const [description, setDescription] = useState('');
   const [unit, setUnit] = useState<'kg' | 'barra'>('kg');
-  const [category, setCategory] = useState<'ferro_redondo' | 'tubo_aco'>('ferro_redondo');
+  const [category, setCategory] = useState<CategoryType>('ferro_redondo');
   const [weightPerUnit, setWeightPerUnit] = useState('');
 
   // Edit state
@@ -22,7 +22,7 @@ const Products = () => {
   const [editCode, setEditCode] = useState('');
   const [editDescription, setEditDescription] = useState('');
   const [editUnit, setEditUnit] = useState<'kg' | 'barra'>('kg');
-  const [editCategory, setEditCategory] = useState<'ferro_redondo' | 'tubo_aco'>('ferro_redondo');
+  const [editCategory, setEditCategory] = useState<CategoryType>('ferro_redondo');
   const [editWeight, setEditWeight] = useState('');
 
   const reload = async () => {
@@ -148,8 +148,9 @@ const Products = () => {
               <div>
                 <label className="text-sm font-medium text-foreground block mb-1">Categoria</label>
                 <select value={category} onChange={e => setCategory(e.target.value as any)} className="input-steel w-full">
-                  <option value="ferro_redondo">Ferro Redondo</option>
-                  <option value="tubo_aco">Tubo de Aço</option>
+                  {Object.entries(CATEGORY_LABELS).map(([val, label]) => (
+                    <option key={val} value={val}>{label}</option>
+                  ))}
                 </select>
               </div>
               <div>
@@ -186,8 +187,9 @@ const Products = () => {
               <label className="text-xs font-medium text-muted-foreground block mb-1">Categoria</label>
               <select value={filterCategory} onChange={e => setFilterCategory(e.target.value as any)} className="input-steel w-full">
                 <option value="todos">Todas</option>
-                <option value="ferro_redondo">Ferro Redondo</option>
-                <option value="tubo_aco">Tubo de Aço</option>
+                {Object.entries(CATEGORY_LABELS).map(([val, label]) => (
+                  <option key={val} value={val}>{label}</option>
+                ))}
               </select>
             </div>
             <div>
@@ -237,9 +239,8 @@ const Products = () => {
                       <td className="px-5 py-3 font-mono font-semibold text-primary">{p.code}</td>
                       <td className="px-5 py-3">{p.description}</td>
                       <td className="px-5 py-3">
-                        <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium
-                          ${p.category === 'ferro_redondo' ? 'bg-accent/10 text-accent' : 'bg-primary/10 text-primary'}`}>
-                          {p.category === 'ferro_redondo' ? 'Ferro Redondo' : 'Tubo de Aço'}
+                        <span className="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-primary/10 text-primary">
+                          {CATEGORY_LABELS[p.category as CategoryType] || p.category}
                         </span>
                       </td>
                       <td className="px-5 py-3 uppercase font-mono text-xs">{p.unit}</td>
@@ -302,8 +303,9 @@ const Products = () => {
                 <div>
                   <label className="text-sm font-medium text-foreground block mb-1">Categoria</label>
                   <select value={editCategory} onChange={e => setEditCategory(e.target.value as any)} className="input-steel w-full">
-                    <option value="ferro_redondo">Ferro Redondo</option>
-                    <option value="tubo_aco">Tubo de Aço</option>
+                    {Object.entries(CATEGORY_LABELS).map(([val, label]) => (
+                      <option key={val} value={val}>{label}</option>
+                    ))}
                   </select>
                 </div>
                 <div className="col-span-2">

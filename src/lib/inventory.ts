@@ -4,13 +4,21 @@ export type UnitType = 'kg' | 'barra';
 export type MovementType = 'entrada' | 'saida';
 
 export type SectorType = 'usinagem' | 'guilhotina';
+export type CategoryType = 'ferro_redondo' | 'tubo_aco' | 'cantoneira' | 'ferro_chato';
+
+export const CATEGORY_LABELS: Record<CategoryType, string> = {
+  ferro_redondo: 'Ferro Redondo',
+  tubo_aco: 'Tubo de Aço',
+  cantoneira: 'Cantoneira',
+  ferro_chato: 'Ferro Chato',
+};
 
 export interface Product {
   id: string;
   code: string;
   description: string;
   unit: UnitType;
-  category: 'ferro_redondo' | 'tubo_aco';
+  category: 'ferro_redondo' | 'tubo_aco' | 'cantoneira' | 'ferro_chato';
   quantity: number;
   weightPerUnit: number;
   sector: SectorType;
