@@ -73,6 +73,7 @@ export async function addProduct(product: Omit<Product, 'id' | 'createdAt' | 'qu
     category: product.category,
     quantity: 0,
     weight_per_unit: product.weightPerUnit,
+    sector: product.sector || 'usinagem',
   }).select().single();
   if (error) {
     if (error.code === '23505') throw new Error('Código já cadastrado');
