@@ -213,8 +213,19 @@ const Movements = () => {
               </button>
             </div>
 
+            <div className={`rounded-lg p-4 text-center space-y-2 ${type === 'entrada' ? 'bg-success/10 border border-success/20' : 'bg-destructive/10 border border-destructive/20'}`}>
+              <p className={`text-sm font-semibold ${type === 'entrada' ? 'text-success' : 'text-destructive'}`}>
+                {type === 'entrada' ? '▼ ENTRADA' : '▲ SAÍDA'} DE MATERIAL
+              </p>
+              <p className="text-foreground font-medium">
+                Deseja registrar a {type === 'entrada' ? 'entrada' : 'saída'} de{' '}
+                <span className="font-bold font-mono">{quantity} {selectedProduct?.unit}</span> do produto{' '}
+                <span className="font-bold">{selectedProduct?.code} — {selectedProduct?.description}</span>?
+              </p>
+            </div>
+
             <div className="bg-muted/50 rounded-lg p-4 text-center space-y-1">
-              <p className="text-sm text-muted-foreground">Resolva para confirmar a movimentação:</p>
+              <p className="text-sm text-muted-foreground">Resolva para confirmar:</p>
               <p className="text-2xl font-bold font-mono text-foreground">{captcha.question}</p>
             </div>
 
