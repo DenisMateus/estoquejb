@@ -23,7 +23,7 @@ const Reports = () => {
       const row: Record<string, any> = {
         'Código': p.code,
         'Descrição': p.description,
-        'Categoria': p.category === 'ferro_redondo' ? 'Ferro Redondo' : 'Tubo de Aço',
+        'Categoria': CATEGORY_LABELS[p.category as CategoryType] || p.category,
         'Unidade': p.unit,
         'Estoque Sistema': p.quantity,
       };
