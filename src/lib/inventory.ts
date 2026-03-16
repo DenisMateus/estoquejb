@@ -10,6 +10,7 @@ export interface Product {
   unit: UnitType;
   category: 'ferro_redondo' | 'tubo_aco';
   quantity: number;
+  weightPerUnit: number;
   createdAt: string;
 }
 
