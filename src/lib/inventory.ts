@@ -75,8 +75,14 @@ export async function addProduct(product: Omit<Product, 'id' | 'createdAt' | 'qu
   return mapProduct(data);
 }
 
-export async function updateProduct(id: string, updates: Partial<Pick<Product, 'description' | 'unit' | 'category'>>) {
-  const { data, error } = await supabase.from('products').update(updates).eq('id', id).select().single();
+export async function updateProduct(id: string, updates: Partial<Pick<Product, 'code' | 'description' | 'unit' | 'category' | 'weightPerUnit'>>) {
+  const dbUpdates: Record<string, any> = {};
+  if (updates.code !== undefined) dbUpdates.code = updates.code;
+  if (updates.description !== undefined) dbUpdates.description = updates.description;
+  if (updates.unit !== undefined) dbUpdates.unit = updates.unit;
+  if (updates.category !== undefined) dbUpdates.category = updates.category;
+  if (updates.weightPerUnit !== undefined) dbUpdates.weight_per_unit = updates.weightPerUnit;
+  const { data, error } = await supabase.from('products').update(dbUpdates).eq('id', id).select().single();
   if (error) throw error;
   return mapProduct(data);
 }
