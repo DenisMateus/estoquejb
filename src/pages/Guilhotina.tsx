@@ -238,9 +238,8 @@ const Guilhotina = () => {
                       <td className="px-5 py-3 font-mono font-semibold text-primary">{p.code}</td>
                       <td className="px-5 py-3">{p.description}</td>
                       <td className="px-5 py-3">
-                        <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium
-                          ${p.category === 'ferro_redondo' ? 'bg-accent/10 text-accent' : 'bg-primary/10 text-primary'}`}>
-                          {p.category === 'ferro_redondo' ? 'Ferro Redondo' : 'Tubo de Aço'}
+                        <span className="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-primary/10 text-primary">
+                          {CATEGORY_LABELS[p.category as CategoryType] || p.category}
                         </span>
                       </td>
                       <td className="px-5 py-3 uppercase font-mono text-xs">{p.unit}</td>
