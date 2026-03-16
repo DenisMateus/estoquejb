@@ -14,7 +14,7 @@ const Products = () => {
   const [code, setCode] = useState('');
   const [description, setDescription] = useState('');
   const [unit, setUnit] = useState<'kg' | 'barra'>('kg');
-  const [category, setCategory] = useState<'ferro_redondo' | 'tubo_aco'>('ferro_redondo');
+  const [category, setCategory] = useState<CategoryType>('ferro_redondo');
   const [weightPerUnit, setWeightPerUnit] = useState('');
 
   // Edit state
