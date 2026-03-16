@@ -1,8 +1,14 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { getProducts, addMovement, getMovements, Product, Movement } from '@/lib/inventory';
 import AppLayout from '@/components/AppLayout';
-import { ArrowDownCircle, ArrowUpCircle } from 'lucide-react';
+import { ArrowDownCircle, ArrowUpCircle, ShieldCheck, X } from 'lucide-react';
 import { toast } from 'sonner';
+
+function generateCaptcha() {
+  const a = Math.floor(Math.random() * 20) + 1;
+  const b = Math.floor(Math.random() * 20) + 1;
+  return { question: `${a} + ${b} = ?`, answer: a + b };
+}
 
 const Movements = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -12,6 +18,12 @@ const Movements = () => {
   const [quantity, setQuantity] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [filterType, setFilterType] = useState<'todos' | 'entrada' | 'saida'>('todos');
+
+  // CAPTCHA state
+  const [showCaptcha, setShowCaptcha] = useState(false);
+  const [captcha, setCaptcha] = useState(generateCaptcha());
+  const [captchaInput, setCaptchaInput] = useState('');
+  const [captchaError, setCaptchaError] = useState(false);
 
   const reload = async () => {
     try {
@@ -26,11 +38,30 @@ const Movements = () => {
 
   const selectedProduct = products.find(p => p.id === productId);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedProduct) { toast.error('Selecione um produto'); return; }
     const qty = parseFloat(quantity);
     if (isNaN(qty) || qty <= 0) { toast.error('Quantidade inválida'); return; }
+
+    // Show CAPTCHA instead of submitting directly
+    setCaptcha(generateCaptcha());
+    setCaptchaInput('');
+    setCaptchaError(false);
+    setShowCaptcha(true);
+  };
+
+  const confirmMovement = async () => {
+    if (parseInt(captchaInput) !== captcha.answer) {
+      setCaptchaError(true);
+      setCaptcha(generateCaptcha());
+      setCaptchaInput('');
+      return;
+    }
+
+    setShowCaptcha(false);
+    if (!selectedProduct) return;
+    const qty = parseFloat(quantity);
 
     try {
       await addMovement({
