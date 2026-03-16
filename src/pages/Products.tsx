@@ -128,7 +128,7 @@ const Products = () => {
 
         {showForm && (
           <form onSubmit={handleAdd} className="bg-card border rounded-lg p-5 space-y-4">
-            <h3 className="font-semibold text-foreground">Cadastrar Novo Produto</h3>
+            <h3 className="font-semibold text-foreground">Cadastrar Novo Produto — Usinagem</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
               <div>
                 <label className="text-sm font-medium text-foreground block mb-1">Código</label>
