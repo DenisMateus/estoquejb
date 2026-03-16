@@ -10,6 +10,7 @@ export interface Product {
   unit: UnitType;
   category: 'ferro_redondo' | 'tubo_aco';
   quantity: number;
+  weightPerUnit: number;
   createdAt: string;
 }
 
@@ -33,6 +34,7 @@ function mapProduct(row: any): Product {
     unit: row.unit as UnitType,
     category: row.category as Product['category'],
     quantity: Number(row.quantity),
+    weightPerUnit: Number(row.weight_per_unit || 0),
     createdAt: row.created_at,
   };
 }
@@ -64,6 +66,7 @@ export async function addProduct(product: Omit<Product, 'id' | 'createdAt' | 'qu
     unit: product.unit,
     category: product.category,
     quantity: 0,
+    weight_per_unit: product.weightPerUnit,
   }).select().single();
   if (error) {
     if (error.code === '23505') throw new Error('Código já cadastrado');
@@ -72,8 +75,14 @@ export async function addProduct(product: Omit<Product, 'id' | 'createdAt' | 'qu
   return mapProduct(data);
 }
 
-export async function updateProduct(id: string, updates: Partial<Pick<Product, 'description' | 'unit' | 'category'>>) {
-  const { data, error } = await supabase.from('products').update(updates).eq('id', id).select().single();
+export async function updateProduct(id: string, updates: Partial<Pick<Product, 'code' | 'description' | 'unit' | 'category' | 'weightPerUnit'>>) {
+  const dbUpdates: Record<string, any> = {};
+  if (updates.code !== undefined) dbUpdates.code = updates.code;
+  if (updates.description !== undefined) dbUpdates.description = updates.description;
+  if (updates.unit !== undefined) dbUpdates.unit = updates.unit;
+  if (updates.category !== undefined) dbUpdates.category = updates.category;
+  if (updates.weightPerUnit !== undefined) dbUpdates.weight_per_unit = updates.weightPerUnit;
+  const { data, error } = await supabase.from('products').update(dbUpdates).eq('id', id).select().single();
   if (error) throw error;
   return mapProduct(data);
 }
