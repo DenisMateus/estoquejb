@@ -67,6 +67,7 @@ export type Database = {
           id: string
           quantity: number
           unit: string
+          weight_per_unit: number
         }
         Insert: {
           category: string
@@ -76,6 +77,7 @@ export type Database = {
           id?: string
           quantity?: number
           unit: string
+          weight_per_unit?: number
         }
         Update: {
           category?: string
@@ -85,6 +87,7 @@ export type Database = {
           id?: string
           quantity?: number
           unit?: string
+          weight_per_unit?: number
         }
         Relationships: []
       }
