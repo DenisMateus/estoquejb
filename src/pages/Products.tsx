@@ -148,8 +148,9 @@ const Products = () => {
               <div>
                 <label className="text-sm font-medium text-foreground block mb-1">Categoria</label>
                 <select value={category} onChange={e => setCategory(e.target.value as any)} className="input-steel w-full">
-                  <option value="ferro_redondo">Ferro Redondo</option>
-                  <option value="tubo_aco">Tubo de Aço</option>
+                  {Object.entries(CATEGORY_LABELS).map(([val, label]) => (
+                    <option key={val} value={val}>{label}</option>
+                  ))}
                 </select>
               </div>
               <div>
