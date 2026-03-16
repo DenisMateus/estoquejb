@@ -198,6 +198,53 @@ const Movements = () => {
           </div>
         </div>
       </div>
+
+      {/* CAPTCHA Modal */}
+      {showCaptcha && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowCaptcha(false)}>
+          <div className="bg-card border rounded-lg p-6 w-full max-w-sm space-y-4" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="w-5 h-5 text-primary" />
+                <h3 className="font-semibold text-foreground text-lg">Confirmação</h3>
+              </div>
+              <button onClick={() => setShowCaptcha(false)} className="text-muted-foreground hover:text-foreground">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="bg-muted/50 rounded-lg p-4 text-center space-y-1">
+              <p className="text-sm text-muted-foreground">Resolva para confirmar a movimentação:</p>
+              <p className="text-2xl font-bold font-mono text-foreground">{captcha.question}</p>
+            </div>
+
+            {captchaError && (
+              <p className="text-sm text-destructive font-medium text-center">Resposta incorreta. Tente novamente.</p>
+            )}
+
+            <div>
+              <input
+                type="number"
+                value={captchaInput}
+                onChange={e => { setCaptchaInput(e.target.value); setCaptchaError(false); }}
+                onKeyDown={e => { if (e.key === 'Enter') confirmMovement(); }}
+                className="input-steel w-full text-center font-mono text-lg"
+                placeholder="Sua resposta"
+                autoFocus
+              />
+            </div>
+
+            <div className="flex gap-2 justify-end">
+              <button onClick={() => setShowCaptcha(false)} className="px-4 py-2 rounded-md border text-sm font-medium text-muted-foreground hover:bg-muted transition-colors">
+                Cancelar
+              </button>
+              <button onClick={confirmMovement} className={`font-semibold px-4 py-2 rounded-md text-sm transition-colors ${type === 'entrada' ? 'btn-entry' : 'btn-exit'}`}>
+                Confirmar {type === 'entrada' ? 'Entrada' : 'Saída'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </AppLayout>
   );
 };
