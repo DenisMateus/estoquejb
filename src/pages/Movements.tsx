@@ -199,7 +199,7 @@ const Movements = () => {
         </div>
       </div>
 
-      {/* CAPTCHA Modal */}
+      {/* Confirmation Modal */}
       {showCaptcha && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowCaptcha(false)}>
           <div className="bg-card border rounded-lg p-6 w-full max-w-sm space-y-4" onClick={e => e.stopPropagation()}>
@@ -213,44 +213,24 @@ const Movements = () => {
               </button>
             </div>
 
-            <div className={`rounded-lg p-4 text-center space-y-2 ${type === 'entrada' ? 'bg-success/10 border border-success/20' : 'bg-destructive/10 border border-destructive/20'}`}>
-              <p className={`text-sm font-semibold ${type === 'entrada' ? 'text-success' : 'text-destructive'}`}>
-                {type === 'entrada' ? '▼ ENTRADA' : '▲ SAÍDA'} DE MATERIAL
-              </p>
+            <div className="bg-muted/50 rounded-lg p-4 text-center space-y-2">
               <p className="text-foreground font-medium">
-                Deseja registrar a {type === 'entrada' ? 'entrada' : 'saída'} de{' '}
-                <span className="font-bold font-mono">{quantity} {selectedProduct?.unit}</span> do produto{' '}
-                <span className="font-bold">{selectedProduct?.code} — {selectedProduct?.description}</span>?
+                <span className="font-bold">{selectedProduct?.code} — {selectedProduct?.description}</span>
               </p>
-            </div>
-
-            <div className="bg-muted/50 rounded-lg p-4 text-center space-y-1">
-              <p className="text-sm text-muted-foreground">Resolva para confirmar:</p>
-              <p className="text-2xl font-bold font-mono text-foreground">{captcha.question}</p>
-            </div>
-
-            {captchaError && (
-              <p className="text-sm text-destructive font-medium text-center">Resposta incorreta. Tente novamente.</p>
-            )}
-
-            <div>
-              <input
-                type="number"
-                value={captchaInput}
-                onChange={e => { setCaptchaInput(e.target.value); setCaptchaError(false); }}
-                onKeyDown={e => { if (e.key === 'Enter') confirmMovement(); }}
-                className="input-steel w-full text-center font-mono text-lg"
-                placeholder="Sua resposta"
-                autoFocus
-              />
+              <p className="text-2xl font-bold font-mono text-foreground">
+                {quantity} {selectedProduct?.unit}
+              </p>
+              <p className={`text-xs font-semibold uppercase ${type === 'entrada' ? 'text-success' : 'text-destructive'}`}>
+                {type === 'entrada' ? '▼ Entrada' : '▲ Saída'}
+              </p>
             </div>
 
             <div className="flex gap-2 justify-end">
-              <button onClick={() => setShowCaptcha(false)} className="px-4 py-2 rounded-md border text-sm font-medium text-muted-foreground hover:bg-muted transition-colors">
+              <button onClick={() => setShowCaptcha(false)} className="px-4 py-2 rounded-md text-sm font-semibold bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors">
                 Cancelar
               </button>
-              <button onClick={confirmMovement} className={`font-semibold px-4 py-2 rounded-md text-sm transition-colors ${type === 'entrada' ? 'btn-entry' : 'btn-exit'}`}>
-                Confirmar {type === 'entrada' ? 'Entrada' : 'Saída'}
+              <button onClick={confirmMovement} className="px-4 py-2 rounded-md text-sm font-semibold bg-success text-success-foreground hover:bg-success/90 transition-colors">
+                Confirmar
               </button>
             </div>
           </div>
