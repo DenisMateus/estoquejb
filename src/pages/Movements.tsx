@@ -1,8 +1,14 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { getProducts, addMovement, getMovements, Product, Movement } from '@/lib/inventory';
 import AppLayout from '@/components/AppLayout';
-import { ArrowDownCircle, ArrowUpCircle } from 'lucide-react';
+import { ArrowDownCircle, ArrowUpCircle, ShieldCheck, X } from 'lucide-react';
 import { toast } from 'sonner';
+
+function generateCaptcha() {
+  const a = Math.floor(Math.random() * 20) + 1;
+  const b = Math.floor(Math.random() * 20) + 1;
+  return { question: `${a} + ${b} = ?`, answer: a + b };
+}
 
 const Movements = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -12,6 +18,12 @@ const Movements = () => {
   const [quantity, setQuantity] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [filterType, setFilterType] = useState<'todos' | 'entrada' | 'saida'>('todos');
+
+  // CAPTCHA state
+  const [showCaptcha, setShowCaptcha] = useState(false);
+  const [captcha, setCaptcha] = useState(generateCaptcha());
+  const [captchaInput, setCaptchaInput] = useState('');
+  const [captchaError, setCaptchaError] = useState(false);
 
   const reload = async () => {
     try {
@@ -26,11 +38,30 @@ const Movements = () => {
 
   const selectedProduct = products.find(p => p.id === productId);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedProduct) { toast.error('Selecione um produto'); return; }
     const qty = parseFloat(quantity);
     if (isNaN(qty) || qty <= 0) { toast.error('Quantidade inválida'); return; }
+
+    // Show CAPTCHA instead of submitting directly
+    setCaptcha(generateCaptcha());
+    setCaptchaInput('');
+    setCaptchaError(false);
+    setShowCaptcha(true);
+  };
+
+  const confirmMovement = async () => {
+    if (parseInt(captchaInput) !== captcha.answer) {
+      setCaptchaError(true);
+      setCaptcha(generateCaptcha());
+      setCaptchaInput('');
+      return;
+    }
+
+    setShowCaptcha(false);
+    if (!selectedProduct) return;
+    const qty = parseFloat(quantity);
 
     try {
       await addMovement({
@@ -167,6 +198,53 @@ const Movements = () => {
           </div>
         </div>
       </div>
+
+      {/* CAPTCHA Modal */}
+      {showCaptcha && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowCaptcha(false)}>
+          <div className="bg-card border rounded-lg p-6 w-full max-w-sm space-y-4" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="w-5 h-5 text-primary" />
+                <h3 className="font-semibold text-foreground text-lg">Confirmação</h3>
+              </div>
+              <button onClick={() => setShowCaptcha(false)} className="text-muted-foreground hover:text-foreground">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="bg-muted/50 rounded-lg p-4 text-center space-y-1">
+              <p className="text-sm text-muted-foreground">Resolva para confirmar a movimentação:</p>
+              <p className="text-2xl font-bold font-mono text-foreground">{captcha.question}</p>
+            </div>
+
+            {captchaError && (
+              <p className="text-sm text-destructive font-medium text-center">Resposta incorreta. Tente novamente.</p>
+            )}
+
+            <div>
+              <input
+                type="number"
+                value={captchaInput}
+                onChange={e => { setCaptchaInput(e.target.value); setCaptchaError(false); }}
+                onKeyDown={e => { if (e.key === 'Enter') confirmMovement(); }}
+                className="input-steel w-full text-center font-mono text-lg"
+                placeholder="Sua resposta"
+                autoFocus
+              />
+            </div>
+
+            <div className="flex gap-2 justify-end">
+              <button onClick={() => setShowCaptcha(false)} className="px-4 py-2 rounded-md border text-sm font-medium text-muted-foreground hover:bg-muted transition-colors">
+                Cancelar
+              </button>
+              <button onClick={confirmMovement} className={`font-semibold px-4 py-2 rounded-md text-sm transition-colors ${type === 'entrada' ? 'btn-entry' : 'btn-exit'}`}>
+                Confirmar {type === 'entrada' ? 'Entrada' : 'Saída'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </AppLayout>
   );
 };
