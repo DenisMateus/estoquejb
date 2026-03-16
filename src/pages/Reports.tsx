@@ -41,7 +41,7 @@ const Reports = () => {
     ws['!cols'] = colWidths;
 
     const categoryLabel = filterCategory === 'todos' ? 'Todos' :
-      filterCategory === 'ferro_redondo' ? 'FerroRedondo' : 'TuboAco';
+      (CATEGORY_LABELS[filterCategory as CategoryType] || filterCategory).replace(/\s/g, '');
     XLSX.writeFile(wb, `Contagem_Estoque_${categoryLabel}_${new Date().toISOString().split('T')[0]}.xlsx`);
   };
 
