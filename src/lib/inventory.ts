@@ -3,6 +3,8 @@ import { supabase } from '@/integrations/supabase/client';
 export type UnitType = 'kg' | 'barra';
 export type MovementType = 'entrada' | 'saida';
 
+export type SectorType = 'usinagem' | 'guilhotina';
+
 export interface Product {
   id: string;
   code: string;
@@ -11,6 +13,7 @@ export interface Product {
   category: 'ferro_redondo' | 'tubo_aco';
   quantity: number;
   weightPerUnit: number;
+  sector: SectorType;
   createdAt: string;
 }
 
