@@ -66,6 +66,7 @@ export type Database = {
           description: string
           id: string
           quantity: number
+          sector: string
           unit: string
           weight_per_unit: number
         }
@@ -76,6 +77,7 @@ export type Database = {
           description: string
           id?: string
           quantity?: number
+          sector?: string
           unit: string
           weight_per_unit?: number
         }
@@ -86,6 +88,7 @@ export type Database = {
           description?: string
           id?: string
           quantity?: number
+          sector?: string
           unit?: string
           weight_per_unit?: number
         }
