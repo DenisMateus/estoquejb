@@ -52,12 +52,6 @@ const Movements = () => {
   };
 
   const confirmMovement = async () => {
-    if (parseInt(captchaInput) !== captcha.answer) {
-      setCaptchaError(true);
-      setCaptcha(generateCaptcha());
-      setCaptchaInput('');
-      return;
-    }
 
     setShowCaptcha(false);
     if (!selectedProduct) return;
