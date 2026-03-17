@@ -1,4 +1,5 @@
 import { ReactNode, useState } from 'react';
+import logoHeader from '@/assets/logo_header.png';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { logout } from '@/lib/inventory';
 import { useTheme } from 'next-themes';
