@@ -27,7 +27,6 @@ const Movements = () => {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [filterType, setFilterType] = useState<'todos' | 'entrada' | 'saida'>('todos');
   const [selectedMonth, setSelectedMonth] = useState(new Date());
-  const [filterType, setFilterType] = useState<'todos' | 'entrada' | 'saida'>('todos');
 
   // CAPTCHA state
   const [showCaptcha, setShowCaptcha] = useState(false);
