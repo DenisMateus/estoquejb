@@ -1,13 +1,21 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { getProducts, addMovement, getMovements, Product, Movement } from '@/lib/inventory';
 import AppLayout from '@/components/AppLayout';
-import { ArrowDownCircle, ArrowUpCircle, ShieldCheck, X } from 'lucide-react';
+import { ArrowDownCircle, ArrowUpCircle, ShieldCheck, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 
 function generateCaptcha() {
   const a = Math.floor(Math.random() * 20) + 1;
   const b = Math.floor(Math.random() * 20) + 1;
   return { question: `${a} + ${b} = ?`, answer: a + b };
+}
+
+function getMonthKey(date: Date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+}
+
+function getMonthLabel(date: Date) {
+  return date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
 }
 
 const Movements = () => {
@@ -18,6 +26,7 @@ const Movements = () => {
   const [quantity, setQuantity] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [filterType, setFilterType] = useState<'todos' | 'entrada' | 'saida'>('todos');
+  const [selectedMonth, setSelectedMonth] = useState(new Date());
 
   // CAPTCHA state
   const [showCaptcha, setShowCaptcha] = useState(false);
@@ -76,9 +85,22 @@ const Movements = () => {
     }
   };
 
-  const filteredMovements = filterType === 'todos'
-    ? movements
-    : movements.filter(m => m.type === filterType);
+  const monthKey = getMonthKey(selectedMonth);
+  const filteredMovements = useMemo(() => {
+    return movements
+      .filter(m => m.date.startsWith(monthKey))
+      .filter(m => filterType === 'todos' || m.type === filterType);
+  }, [movements, monthKey, filterType]);
+
+  const monthEntries = filteredMovements.filter(m => m.type === 'entrada').reduce((s, m) => s + m.quantity, 0);
+  const monthExits = filteredMovements.filter(m => m.type === 'saida').reduce((s, m) => s + m.quantity, 0);
+
+  const prevMonth = () => setSelectedMonth(d => new Date(d.getFullYear(), d.getMonth() - 1, 1));
+  const nextMonth = () => {
+    const next = new Date(selectedMonth.getFullYear(), selectedMonth.getMonth() + 1, 1);
+    if (next <= new Date()) setSelectedMonth(next);
+  };
+  const isCurrentMonth = getMonthKey(selectedMonth) === getMonthKey(new Date());
 
   const formatDateTime = (createdAt: string) => {
     const d = new Date(createdAt);
@@ -139,16 +161,37 @@ const Movements = () => {
         </form>
 
         <div className="bg-card rounded-lg border">
-          <div className="px-5 py-4 border-b flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <h3 className="font-semibold text-foreground">Histórico de Movimentações</h3>
-            <div className="flex gap-1">
-              {(['todos', 'entrada', 'saida'] as const).map(f => (
-                <button key={f} onClick={() => setFilterType(f)}
-                  className={`px-3 py-1 rounded text-xs font-medium transition-colors
-                    ${filterType === f ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
-                  {f === 'todos' ? 'Todos' : f === 'entrada' ? 'Entradas' : 'Saídas'}
+          <div className="px-5 py-4 border-b space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <h3 className="font-semibold text-foreground">Histórico de Movimentações</h3>
+              <div className="flex gap-1">
+                {(['todos', 'entrada', 'saida'] as const).map(f => (
+                  <button key={f} onClick={() => setFilterType(f)}
+                    className={`px-3 py-1 rounded text-xs font-medium transition-colors
+                      ${filterType === f ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
+                    {f === 'todos' ? 'Todos' : f === 'entrada' ? 'Entradas' : 'Saídas'}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {/* Month navigator */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <button onClick={prevMonth} className="p-1 rounded hover:bg-muted transition-colors">
+                  <ChevronLeft className="w-5 h-5 text-muted-foreground" />
                 </button>
-              ))}
+                <span className="text-sm font-semibold text-foreground capitalize min-w-[160px] text-center">
+                  {getMonthLabel(selectedMonth)}
+                </span>
+                <button onClick={nextMonth} disabled={isCurrentMonth}
+                  className="p-1 rounded hover:bg-muted transition-colors disabled:opacity-30">
+                  <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                </button>
+              </div>
+              <div className="flex gap-3 text-xs font-mono">
+                <span className="text-success">▼ Entradas: {monthEntries.toFixed(2)}</span>
+                <span className="text-destructive">▲ Saídas: {monthExits.toFixed(2)}</span>
+              </div>
             </div>
           </div>
           <div className="overflow-x-auto">
