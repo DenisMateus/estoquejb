@@ -161,16 +161,37 @@ const Movements = () => {
         </form>
 
         <div className="bg-card rounded-lg border">
-          <div className="px-5 py-4 border-b flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <h3 className="font-semibold text-foreground">Histórico de Movimentações</h3>
-            <div className="flex gap-1">
-              {(['todos', 'entrada', 'saida'] as const).map(f => (
-                <button key={f} onClick={() => setFilterType(f)}
-                  className={`px-3 py-1 rounded text-xs font-medium transition-colors
-                    ${filterType === f ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
-                  {f === 'todos' ? 'Todos' : f === 'entrada' ? 'Entradas' : 'Saídas'}
+          <div className="px-5 py-4 border-b space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <h3 className="font-semibold text-foreground">Histórico de Movimentações</h3>
+              <div className="flex gap-1">
+                {(['todos', 'entrada', 'saida'] as const).map(f => (
+                  <button key={f} onClick={() => setFilterType(f)}
+                    className={`px-3 py-1 rounded text-xs font-medium transition-colors
+                      ${filterType === f ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
+                    {f === 'todos' ? 'Todos' : f === 'entrada' ? 'Entradas' : 'Saídas'}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {/* Month navigator */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <button onClick={prevMonth} className="p-1 rounded hover:bg-muted transition-colors">
+                  <ChevronLeft className="w-5 h-5 text-muted-foreground" />
                 </button>
-              ))}
+                <span className="text-sm font-semibold text-foreground capitalize min-w-[160px] text-center">
+                  {getMonthLabel(selectedMonth)}
+                </span>
+                <button onClick={nextMonth} disabled={isCurrentMonth}
+                  className="p-1 rounded hover:bg-muted transition-colors disabled:opacity-30">
+                  <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                </button>
+              </div>
+              <div className="flex gap-3 text-xs font-mono">
+                <span className="text-success">▼ Entradas: {monthEntries.toFixed(2)}</span>
+                <span className="text-destructive">▲ Saídas: {monthExits.toFixed(2)}</span>
+              </div>
             </div>
           </div>
           <div className="overflow-x-auto">
