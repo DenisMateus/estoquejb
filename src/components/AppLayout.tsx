@@ -1,4 +1,5 @@
 import { ReactNode, useState } from 'react';
+import logoHeader from '@/assets/logo_header.png';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { logout } from '@/lib/inventory';
 import { useTheme } from 'next-themes';
@@ -50,9 +51,7 @@ const AppLayout = ({ children }: Props) => {
             >
               {menuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
-            <h1 className="text-lg font-bold tracking-tight">
-              Estoque <span className="text-accent">Jhonrob</span>
-            </h1>
+            <img src={logoHeader} alt="Jhonrob" className="h-8" />
           </div>
 
           <div className="hidden md:flex items-center gap-1">
