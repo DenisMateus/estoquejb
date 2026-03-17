@@ -1,13 +1,21 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { getProducts, addMovement, getMovements, Product, Movement } from '@/lib/inventory';
 import AppLayout from '@/components/AppLayout';
-import { ArrowDownCircle, ArrowUpCircle, ShieldCheck, X } from 'lucide-react';
+import { ArrowDownCircle, ArrowUpCircle, ShieldCheck, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 
 function generateCaptcha() {
   const a = Math.floor(Math.random() * 20) + 1;
   const b = Math.floor(Math.random() * 20) + 1;
   return { question: `${a} + ${b} = ?`, answer: a + b };
+}
+
+function getMonthKey(date: Date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+}
+
+function getMonthLabel(date: Date) {
+  return date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
 }
 
 const Movements = () => {
@@ -17,6 +25,8 @@ const Movements = () => {
   const [productId, setProductId] = useState('');
   const [quantity, setQuantity] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [filterType, setFilterType] = useState<'todos' | 'entrada' | 'saida'>('todos');
+  const [selectedMonth, setSelectedMonth] = useState(new Date());
   const [filterType, setFilterType] = useState<'todos' | 'entrada' | 'saida'>('todos');
 
   // CAPTCHA state
