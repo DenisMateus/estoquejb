@@ -42,7 +42,7 @@ const AppLayout = ({ children }: Props) => {
   return (
     <div className="min-h-screen flex flex-col">
       {/* Header */}
-      <header className="steel-gradient text-white shadow-lg">
+      <header className="steel-gradient text-white shadow-lg sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
