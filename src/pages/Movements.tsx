@@ -85,9 +85,22 @@ const Movements = () => {
     }
   };
 
-  const filteredMovements = filterType === 'todos'
-    ? movements
-    : movements.filter(m => m.type === filterType);
+  const monthKey = getMonthKey(selectedMonth);
+  const filteredMovements = useMemo(() => {
+    return movements
+      .filter(m => m.date.startsWith(monthKey))
+      .filter(m => filterType === 'todos' || m.type === filterType);
+  }, [movements, monthKey, filterType]);
+
+  const monthEntries = filteredMovements.filter(m => m.type === 'entrada').reduce((s, m) => s + m.quantity, 0);
+  const monthExits = filteredMovements.filter(m => m.type === 'saida').reduce((s, m) => s + m.quantity, 0);
+
+  const prevMonth = () => setSelectedMonth(d => new Date(d.getFullYear(), d.getMonth() - 1, 1));
+  const nextMonth = () => {
+    const next = new Date(selectedMonth.getFullYear(), selectedMonth.getMonth() + 1, 1);
+    if (next <= new Date()) setSelectedMonth(next);
+  };
+  const isCurrentMonth = getMonthKey(selectedMonth) === getMonthKey(new Date());
 
   const formatDateTime = (createdAt: string) => {
     const d = new Date(createdAt);
