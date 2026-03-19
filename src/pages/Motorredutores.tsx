@@ -44,6 +44,7 @@ const Motorredutores = () => {
   const [movType, setMovType] = useState<'entrada' | 'saida'>('saida');
   const [movQty, setMovQty] = useState('1');
   const [movClienteDestino, setMovClienteDestino] = useState('');
+  const [movNotaFiscal, setMovNotaFiscal] = useState('');
   const [movDate, setMovDate] = useState(new Date().toISOString().split('T')[0]);
   const [movObs, setMovObs] = useState('');
 
