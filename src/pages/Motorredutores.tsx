@@ -133,10 +133,11 @@ const Motorredutores = () => {
         mtdProductId: product.id, mtdProductCode: product.code,
         mtdProductDescription: product.description, type: movType,
         quantity: parseInt(movQty) || 1, clienteDestino: movClienteDestino.trim(),
+        notaFiscal: movNotaFiscal.trim(),
         date: movDate, observacao: movObs.trim(),
       });
       toast.success('Movimentação registrada!');
-      setMovProductId(''); setMovQty('1'); setMovClienteDestino(''); setMovObs(''); setShowMovForm(false);
+      setMovProductId(''); setMovQty('1'); setMovClienteDestino(''); setMovNotaFiscal(''); setMovObs(''); setShowMovForm(false);
       reload();
     } catch (err: any) { toast.error(err.message); }
   };
