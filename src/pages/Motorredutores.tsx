@@ -362,9 +362,17 @@ const Motorredutores = () => {
                     <input type="number" min="1" value={movQty} onChange={e => setMovQty(e.target.value)} className="input-steel w-full font-mono" required />
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-foreground block mb-1">Cliente Destino</label>
-                    <input value={movClienteDestino} onChange={e => setMovClienteDestino(e.target.value)} className="input-steel w-full" placeholder="Para qual cliente" required />
+                    <label className="text-sm font-medium text-foreground block mb-1">
+                      {movType === 'entrada' ? 'Cliente (de onde veio)' : 'Cliente Destino'}
+                    </label>
+                    <input value={movClienteDestino} onChange={e => setMovClienteDestino(e.target.value)} className="input-steel w-full" placeholder={movType === 'entrada' ? 'De qual cliente veio' : 'Para qual cliente'} required />
                   </div>
+                  {movType === 'entrada' && (
+                    <div>
+                      <label className="text-sm font-medium text-foreground block mb-1">Nota Fiscal</label>
+                      <input value={movNotaFiscal} onChange={e => setMovNotaFiscal(e.target.value)} className="input-steel w-full" placeholder="Nº da NF" />
+                    </div>
+                  )}
                   <div>
                     <label className="text-sm font-medium text-foreground block mb-1">Data</label>
                     <input type="date" value={movDate} onChange={e => setMovDate(e.target.value)} className="input-steel w-full font-mono" required />
