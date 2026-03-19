@@ -150,6 +150,7 @@ export async function addMtdMovement(mov: Omit<MtdMovement, 'id' | 'createdAt'>)
     type: mov.type,
     quantity: mov.quantity,
     cliente_destino: mov.clienteDestino,
+    nota_fiscal: mov.notaFiscal,
     date: mov.date,
     observacao: mov.observacao,
   }).select().single();
