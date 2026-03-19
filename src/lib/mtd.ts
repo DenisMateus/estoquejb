@@ -71,6 +71,7 @@ function mapMtdMovement(row: any): MtdMovement {
     type: row.type as 'entrada' | 'saida',
     quantity: Number(row.quantity),
     clienteDestino: row.cliente_destino || '',
+    notaFiscal: row.nota_fiscal || '',
     date: row.date,
     observacao: row.observacao || '',
     createdAt: row.created_at,
