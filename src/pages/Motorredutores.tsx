@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo } from 'react';
 import {
   getMtdProducts, addMtdProduct, updateMtdProduct, deleteMtdProduct,
   getMtdMovements, addMtdMovement,
-  MtdProduct, MtdMovement, MtdType, MTD_TYPE_LABELS,
+  MtdProduct, MtdMovement, MtdType, MTD_TYPE_LABELS, CONDICAO_OPTIONS,
 } from '@/lib/mtd';
 import AppLayout from '@/components/AppLayout';
 import { Plus, Trash2, Search, Pencil, X, ArrowLeftRight, Printer, ChevronLeft, ChevronRight } from 'lucide-react';
