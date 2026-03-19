@@ -58,6 +58,95 @@ export type Database = {
           },
         ]
       }
+      mtd_movements: {
+        Row: {
+          cliente_destino: string
+          created_at: string
+          date: string
+          id: string
+          mtd_product_code: string
+          mtd_product_description: string
+          mtd_product_id: string
+          observacao: string | null
+          quantity: number
+          type: string
+        }
+        Insert: {
+          cliente_destino?: string
+          created_at?: string
+          date: string
+          id?: string
+          mtd_product_code: string
+          mtd_product_description: string
+          mtd_product_id: string
+          observacao?: string | null
+          quantity?: number
+          type?: string
+        }
+        Update: {
+          cliente_destino?: string
+          created_at?: string
+          date?: string
+          id?: string
+          mtd_product_code?: string
+          mtd_product_description?: string
+          mtd_product_id?: string
+          observacao?: string | null
+          quantity?: number
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mtd_movements_mtd_product_id_fkey"
+            columns: ["mtd_product_id"]
+            isOneToOne: false
+            referencedRelation: "mtd_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mtd_products: {
+        Row: {
+          cliente: string | null
+          code: string
+          condicao: string | null
+          created_at: string
+          description: string
+          id: string
+          mtd_type: string
+          nota_fiscal: string | null
+          of_number: string | null
+          portaria: string | null
+          quantity: number
+        }
+        Insert: {
+          cliente?: string | null
+          code: string
+          condicao?: string | null
+          created_at?: string
+          description: string
+          id?: string
+          mtd_type: string
+          nota_fiscal?: string | null
+          of_number?: string | null
+          portaria?: string | null
+          quantity?: number
+        }
+        Update: {
+          cliente?: string | null
+          code?: string
+          condicao?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          mtd_type?: string
+          nota_fiscal?: string | null
+          of_number?: string | null
+          portaria?: string | null
+          quantity?: number
+        }
+        Relationships: []
+      }
       products: {
         Row: {
           category: string
