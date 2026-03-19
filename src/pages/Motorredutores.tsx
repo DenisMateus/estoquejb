@@ -202,7 +202,12 @@ const Motorredutores = () => {
                   </div>
                   <div>
                     <label className="text-sm font-medium text-foreground block mb-1">Condição</label>
-                    <input value={condicao} onChange={e => setCondicao(e.target.value)} className="input-steel w-full" placeholder="Ex: Novo, Usado" />
+                    <select value={condicao} onChange={e => setCondicao(e.target.value)} className="input-steel w-full" required>
+                      <option value="">Selecione...</option>
+                      {CONDICAO_OPTIONS.map(opt => (
+                        <option key={opt} value={opt}>{opt}</option>
+                      ))}
+                    </select>
                   </div>
                   <div>
                     <label className="text-sm font-medium text-foreground block mb-1">Portaria</label>
