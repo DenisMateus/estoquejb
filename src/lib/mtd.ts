@@ -32,10 +32,19 @@ export interface MtdMovement {
   type: 'entrada' | 'saida';
   quantity: number;
   clienteDestino: string;
+  notaFiscal: string;
   date: string;
   observacao: string;
   createdAt: string;
 }
+
+export const CONDICAO_OPTIONS = [
+  'Novo',
+  'Usado',
+  'Recondicionado',
+  'Revisado',
+  'Danificado',
+] as const;
 
 function mapMtdProduct(row: any): MtdProduct {
   return {
