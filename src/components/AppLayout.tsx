@@ -14,6 +14,7 @@ import {
   X,
   Sun,
   Moon,
+  Cog,
 } from 'lucide-react';
 
 const navItems = [
