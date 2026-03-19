@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo } from 'react';
 import {
   getMtdProducts, addMtdProduct, updateMtdProduct, deleteMtdProduct,
   getMtdMovements, addMtdMovement,
-  MtdProduct, MtdMovement, MtdType, MTD_TYPE_LABELS,
+  MtdProduct, MtdMovement, MtdType, MTD_TYPE_LABELS, CONDICAO_OPTIONS,
 } from '@/lib/mtd';
 import AppLayout from '@/components/AppLayout';
 import { Plus, Trash2, Search, Pencil, X, ArrowLeftRight, Printer, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -44,6 +44,7 @@ const Motorredutores = () => {
   const [movType, setMovType] = useState<'entrada' | 'saida'>('saida');
   const [movQty, setMovQty] = useState('1');
   const [movClienteDestino, setMovClienteDestino] = useState('');
+  const [movNotaFiscal, setMovNotaFiscal] = useState('');
   const [movDate, setMovDate] = useState(new Date().toISOString().split('T')[0]);
   const [movObs, setMovObs] = useState('');
 
@@ -132,10 +133,11 @@ const Motorredutores = () => {
         mtdProductId: product.id, mtdProductCode: product.code,
         mtdProductDescription: product.description, type: movType,
         quantity: parseInt(movQty) || 1, clienteDestino: movClienteDestino.trim(),
+        notaFiscal: movNotaFiscal.trim(),
         date: movDate, observacao: movObs.trim(),
       });
       toast.success('Movimentação registrada!');
-      setMovProductId(''); setMovQty('1'); setMovClienteDestino(''); setMovObs(''); setShowMovForm(false);
+      setMovProductId(''); setMovQty('1'); setMovClienteDestino(''); setMovNotaFiscal(''); setMovObs(''); setShowMovForm(false);
       reload();
     } catch (err: any) { toast.error(err.message); }
   };
@@ -200,7 +202,12 @@ const Motorredutores = () => {
                   </div>
                   <div>
                     <label className="text-sm font-medium text-foreground block mb-1">Condição</label>
-                    <input value={condicao} onChange={e => setCondicao(e.target.value)} className="input-steel w-full" placeholder="Ex: Novo, Usado" />
+                    <select value={condicao} onChange={e => setCondicao(e.target.value)} className="input-steel w-full" required>
+                      <option value="">Selecione...</option>
+                      {CONDICAO_OPTIONS.map(opt => (
+                        <option key={opt} value={opt}>{opt}</option>
+                      ))}
+                    </select>
                   </div>
                   <div>
                     <label className="text-sm font-medium text-foreground block mb-1">Portaria</label>
@@ -355,9 +362,17 @@ const Motorredutores = () => {
                     <input type="number" min="1" value={movQty} onChange={e => setMovQty(e.target.value)} className="input-steel w-full font-mono" required />
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-foreground block mb-1">Cliente Destino</label>
-                    <input value={movClienteDestino} onChange={e => setMovClienteDestino(e.target.value)} className="input-steel w-full" placeholder="Para qual cliente" required />
+                    <label className="text-sm font-medium text-foreground block mb-1">
+                      {movType === 'entrada' ? 'Cliente (de onde veio)' : 'Cliente Destino'}
+                    </label>
+                    <input value={movClienteDestino} onChange={e => setMovClienteDestino(e.target.value)} className="input-steel w-full" placeholder={movType === 'entrada' ? 'De qual cliente veio' : 'Para qual cliente'} required />
                   </div>
+                  {movType === 'entrada' && (
+                    <div>
+                      <label className="text-sm font-medium text-foreground block mb-1">Nota Fiscal</label>
+                      <input value={movNotaFiscal} onChange={e => setMovNotaFiscal(e.target.value)} className="input-steel w-full" placeholder="Nº da NF" />
+                    </div>
+                  )}
                   <div>
                     <label className="text-sm font-medium text-foreground block mb-1">Data</label>
                     <input type="date" value={movDate} onChange={e => setMovDate(e.target.value)} className="input-steel w-full font-mono" required />
@@ -384,13 +399,14 @@ const Motorredutores = () => {
                     <th className="text-left px-4 py-3 font-medium text-muted-foreground">Código</th>
                     <th className="text-left px-4 py-3 font-medium text-muted-foreground">Descrição</th>
                     <th className="text-right px-4 py-3 font-medium text-muted-foreground">Qtd</th>
-                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">Cliente Destino</th>
+                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">Cliente</th>
+                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">NF</th>
                     <th className="text-left px-4 py-3 font-medium text-muted-foreground">Observação</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredMovements.length === 0 ? (
-                    <tr><td colSpan={7} className="px-5 py-8 text-center text-muted-foreground">Nenhuma movimentação neste mês</td></tr>
+                    <tr><td colSpan={8} className="px-5 py-8 text-center text-muted-foreground">Nenhuma movimentação neste mês</td></tr>
                   ) : (
                     filteredMovements.map(m => (
                       <tr key={m.id} className="border-b last:border-0 table-row-alt hover:bg-muted/30 transition-colors">
@@ -404,6 +420,7 @@ const Motorredutores = () => {
                         <td className="px-4 py-2.5">{m.mtdProductDescription}</td>
                         <td className="px-4 py-2.5 text-right font-mono font-bold">{m.quantity}</td>
                         <td className="px-4 py-2.5 text-xs">{m.clienteDestino || '—'}</td>
+                        <td className="px-4 py-2.5 text-xs font-mono">{m.notaFiscal || '—'}</td>
                         <td className="px-4 py-2.5 text-xs text-muted-foreground">{m.observacao || '—'}</td>
                       </tr>
                     ))
@@ -443,7 +460,12 @@ const Motorredutores = () => {
                 </div>
                 <div>
                   <label className="text-sm font-medium text-foreground block mb-1">Condição</label>
-                  <input value={editCondicao} onChange={e => setEditCondicao(e.target.value)} className="input-steel w-full" />
+                  <select value={editCondicao} onChange={e => setEditCondicao(e.target.value)} className="input-steel w-full">
+                    <option value="">Selecione...</option>
+                    {CONDICAO_OPTIONS.map(opt => (
+                      <option key={opt} value={opt}>{opt}</option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-foreground block mb-1">Portaria</label>

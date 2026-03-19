@@ -32,10 +32,19 @@ export interface MtdMovement {
   type: 'entrada' | 'saida';
   quantity: number;
   clienteDestino: string;
+  notaFiscal: string;
   date: string;
   observacao: string;
   createdAt: string;
 }
+
+export const CONDICAO_OPTIONS = [
+  'Novo',
+  'Usado',
+  'Recondicionado',
+  'Revisado',
+  'Danificado',
+] as const;
 
 function mapMtdProduct(row: any): MtdProduct {
   return {
@@ -62,6 +71,7 @@ function mapMtdMovement(row: any): MtdMovement {
     type: row.type as 'entrada' | 'saida',
     quantity: Number(row.quantity),
     clienteDestino: row.cliente_destino || '',
+    notaFiscal: row.nota_fiscal || '',
     date: row.date,
     observacao: row.observacao || '',
     createdAt: row.created_at,
@@ -140,6 +150,7 @@ export async function addMtdMovement(mov: Omit<MtdMovement, 'id' | 'createdAt'>)
     type: mov.type,
     quantity: mov.quantity,
     cliente_destino: mov.clienteDestino,
+    nota_fiscal: mov.notaFiscal,
     date: mov.date,
     observacao: mov.observacao,
   }).select().single();

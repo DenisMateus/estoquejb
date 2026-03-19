@@ -67,6 +67,7 @@ export type Database = {
           mtd_product_code: string
           mtd_product_description: string
           mtd_product_id: string
+          nota_fiscal: string | null
           observacao: string | null
           quantity: number
           type: string
@@ -79,6 +80,7 @@ export type Database = {
           mtd_product_code: string
           mtd_product_description: string
           mtd_product_id: string
+          nota_fiscal?: string | null
           observacao?: string | null
           quantity?: number
           type?: string
@@ -91,6 +93,7 @@ export type Database = {
           mtd_product_code?: string
           mtd_product_description?: string
           mtd_product_id?: string
+          nota_fiscal?: string | null
           observacao?: string | null
           quantity?: number
           type?: string

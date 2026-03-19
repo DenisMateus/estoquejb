@@ -1,0 +1,1 @@
+ALTER TABLE public.mtd_movements ADD COLUMN nota_fiscal text DEFAULT ''::text;
