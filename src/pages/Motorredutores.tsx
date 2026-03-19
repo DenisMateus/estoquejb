@@ -420,6 +420,7 @@ const Motorredutores = () => {
                         <td className="px-4 py-2.5">{m.mtdProductDescription}</td>
                         <td className="px-4 py-2.5 text-right font-mono font-bold">{m.quantity}</td>
                         <td className="px-4 py-2.5 text-xs">{m.clienteDestino || '—'}</td>
+                        <td className="px-4 py-2.5 text-xs font-mono">{m.notaFiscal || '—'}</td>
                         <td className="px-4 py-2.5 text-xs text-muted-foreground">{m.observacao || '—'}</td>
                       </tr>
                     ))
