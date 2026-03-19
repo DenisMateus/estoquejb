@@ -406,7 +406,7 @@ const Motorredutores = () => {
                 </thead>
                 <tbody>
                   {filteredMovements.length === 0 ? (
-                    <tr><td colSpan={7} className="px-5 py-8 text-center text-muted-foreground">Nenhuma movimentação neste mês</td></tr>
+                    <tr><td colSpan={8} className="px-5 py-8 text-center text-muted-foreground">Nenhuma movimentação neste mês</td></tr>
                   ) : (
                     filteredMovements.map(m => (
                       <tr key={m.id} className="border-b last:border-0 table-row-alt hover:bg-muted/30 transition-colors">
