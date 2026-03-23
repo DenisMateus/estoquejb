@@ -129,19 +129,21 @@ export async function getMtdMovements(): Promise<MtdMovement[]> {
   return (data || []).map(mapMtdMovement);
 }
 
-export async function addMtdMovement(mov: Omit<MtdMovement, 'id' | 'createdAt'>): Promise<MtdMovement> {
-  const { data: product, error: pErr } = await supabase.from('mtd_products').select('*').eq('id', mov.mtdProductId).single();
-  if (pErr || !product) throw new Error('Motorredutor não encontrado');
+export async function addMtdMovement(mov: Omit<MtdMovement, 'id' | 'createdAt'>, skipQtyUpdate = false): Promise<MtdMovement> {
+  if (!skipQtyUpdate) {
+    const { data: product, error: pErr } = await supabase.from('mtd_products').select('*').eq('id', mov.mtdProductId).single();
+    if (pErr || !product) throw new Error('Motorredutor não encontrado');
 
-  const currentQty = Number(product.quantity);
-  if (mov.type === 'saida' && currentQty < mov.quantity) {
-    throw new Error('Estoque insuficiente');
+    const currentQty = Number(product.quantity);
+    if (mov.type === 'saida' && currentQty < mov.quantity) {
+      throw new Error('Estoque insuficiente');
+    }
+
+    const newQty = mov.type === 'entrada' ? currentQty + mov.quantity : currentQty - mov.quantity;
+
+    const { error: uErr } = await supabase.from('mtd_products').update({ quantity: newQty }).eq('id', mov.mtdProductId);
+    if (uErr) throw uErr;
   }
-
-  const newQty = mov.type === 'entrada' ? currentQty + mov.quantity : currentQty - mov.quantity;
-
-  const { error: uErr } = await supabase.from('mtd_products').update({ quantity: newQty }).eq('id', mov.mtdProductId);
-  if (uErr) throw uErr;
 
   const { data, error } = await supabase.from('mtd_movements').insert({
     mtd_product_id: mov.mtdProductId,
