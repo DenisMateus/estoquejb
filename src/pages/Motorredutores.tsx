@@ -5,27 +5,40 @@ import {
   MtdProduct, MtdMovement, MtdType, MTD_TYPE_LABELS, CONDICAO_OPTIONS,
 } from '@/lib/mtd';
 import AppLayout from '@/components/AppLayout';
-import { Plus, Trash2, Search, Pencil, X, ArrowLeftRight, Printer, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, Trash2, Search, Pencil, X, ArrowLeftRight, Printer, ChevronLeft, ChevronRight, ArrowDown, ArrowUp } from 'lucide-react';
 import { toast } from 'sonner';
 import logoHeader from '@/assets/logo_header.png';
 
 const Motorredutores = () => {
   const [products, setProducts] = useState<MtdProduct[]>([]);
   const [movements, setMovements] = useState<MtdMovement[]>([]);
-  const [tab, setTab] = useState<'estoque' | 'movimentacoes'>('estoque');
-  const [showForm, setShowForm] = useState(false);
+  const [tab, setTab] = useState<'estoque' | 'movimentacoes' | 'imprimir'>('estoque');
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState<'todos' | MtdType>('todos');
+  const [stockFilter, setStockFilter] = useState<'com_estoque' | 'sem_estoque' | 'todos'>('com_estoque');
 
-  // Form fields
-  const [code, setCode] = useState('');
-  const [description, setDescription] = useState('');
-  const [mtdType, setMtdType] = useState<MtdType>('REDLER');
-  const [portaria, setPortaria] = useState('');
-  const [notaFiscal, setNotaFiscal] = useState('');
-  const [ofNumber, setOfNumber] = useState('');
-  const [cliente, setCliente] = useState('');
-  const [condicao, setCondicao] = useState('');
+  // Movement form
+  const [showMovForm, setShowMovForm] = useState(false);
+  const [movFormType, setMovFormType] = useState<'entrada' | 'saida'>('entrada');
+
+  // Entrada fields
+  const [entCode, setEntCode] = useState('');
+  const [entDescription, setEntDescription] = useState('');
+  const [entMtdType, setEntMtdType] = useState<MtdType>('REDLER');
+  const [entCondicao, setEntCondicao] = useState('');
+  const [entPortaria, setEntPortaria] = useState('');
+  const [entNotaFiscal, setEntNotaFiscal] = useState('');
+  const [entOfNumber, setEntOfNumber] = useState('');
+  const [entCliente, setEntCliente] = useState('');
+
+  // Saida fields
+  const [saidaProductId, setSaidaProductId] = useState('');
+  const [saidaCliente, setSaidaCliente] = useState('');
+  const [saidaDate, setSaidaDate] = useState(new Date().toISOString().split('T')[0]);
+  const [saidaObs, setSaidaObs] = useState('');
+
+  // Entrada date
+  const [entDate, setEntDate] = useState(new Date().toISOString().split('T')[0]);
 
   // Edit
   const [editProduct, setEditProduct] = useState<MtdProduct | null>(null);
@@ -37,16 +50,6 @@ const Motorredutores = () => {
   const [editOfNumber, setEditOfNumber] = useState('');
   const [editCliente, setEditCliente] = useState('');
   const [editCondicao, setEditCondicao] = useState('');
-
-  // Movement form
-  const [showMovForm, setShowMovForm] = useState(false);
-  const [movProductId, setMovProductId] = useState('');
-  const [movType, setMovType] = useState<'entrada' | 'saida'>('saida');
-  const [movQty, setMovQty] = useState('1');
-  const [movClienteDestino, setMovClienteDestino] = useState('');
-  const [movNotaFiscal, setMovNotaFiscal] = useState('');
-  const [movDate, setMovDate] = useState(new Date().toISOString().split('T')[0]);
-  const [movObs, setMovObs] = useState('');
 
   // Month filter for movements
   const [selectedMonth, setSelectedMonth] = useState(new Date());
@@ -76,25 +79,74 @@ const Motorredutores = () => {
         p.description.toLowerCase().includes(search.toLowerCase()) ||
         p.cliente.toLowerCase().includes(search.toLowerCase());
       const matchesType = filterType === 'todos' || p.mtdType === filterType;
-      return matchesSearch && matchesType;
+      const matchesStock = stockFilter === 'todos' ||
+        (stockFilter === 'com_estoque' && p.quantity > 0) ||
+        (stockFilter === 'sem_estoque' && p.quantity === 0);
+      return matchesSearch && matchesType && matchesStock;
     });
-  }, [products, search, filterType]);
+  }, [products, search, filterType, stockFilter]);
 
   const filteredMovements = useMemo(() => {
     return movements.filter(m => m.date.startsWith(monthKey));
   }, [movements, monthKey]);
 
-  const handleAdd = async (e: React.FormEvent) => {
+  // Print only motors with stock
+  const printProducts = useMemo(() => {
+    return products.filter(p => p.quantity > 0);
+  }, [products]);
+
+  const handleEntrada = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await addMtdProduct({
-        code: code.trim(), description: description.trim(), mtdType,
-        portaria: portaria.trim(), notaFiscal: notaFiscal.trim(),
-        ofNumber: ofNumber.trim(), cliente: cliente.trim(), condicao: condicao.trim(),
+      // Create new product with qty 1
+      const newProduct = await addMtdProduct({
+        code: entCode.trim(),
+        description: entDescription.trim(),
+        mtdType: entMtdType,
+        portaria: entPortaria.trim(),
+        notaFiscal: entNotaFiscal.trim(),
+        ofNumber: entOfNumber.trim(),
+        cliente: entCliente.trim(),
+        condicao: entCondicao.trim(),
       });
-      toast.success('Motorredutor cadastrado!');
-      setCode(''); setDescription(''); setPortaria(''); setNotaFiscal('');
-      setOfNumber(''); setCliente(''); setCondicao(''); setShowForm(false);
+      // Record entrada movement
+      await addMtdMovement({
+        mtdProductId: newProduct.id,
+        mtdProductCode: newProduct.code,
+        mtdProductDescription: newProduct.description,
+        type: 'entrada',
+        quantity: 1,
+        clienteDestino: entCliente.trim(),
+        notaFiscal: entNotaFiscal.trim(),
+        date: entDate,
+        observacao: `OF: ${entOfNumber.trim()}`,
+      });
+      toast.success('Motor cadastrado e entrada registrada!');
+      setEntCode(''); setEntDescription(''); setEntPortaria('');
+      setEntNotaFiscal(''); setEntOfNumber(''); setEntCliente('');
+      setEntCondicao(''); setShowMovForm(false);
+      reload();
+    } catch (err: any) { toast.error(err.message); }
+  };
+
+  const handleSaida = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const product = products.find(p => p.id === saidaProductId);
+    if (!product) { toast.error('Selecione um motorredutor'); return; }
+    try {
+      await addMtdMovement({
+        mtdProductId: product.id,
+        mtdProductCode: product.code,
+        mtdProductDescription: product.description,
+        type: 'saida',
+        quantity: 1,
+        clienteDestino: saidaCliente.trim(),
+        notaFiscal: '',
+        date: saidaDate,
+        observacao: saidaObs.trim(),
+      });
+      toast.success('Saída registrada!');
+      setSaidaProductId(''); setSaidaCliente(''); setSaidaObs(''); setShowMovForm(false);
       reload();
     } catch (err: any) { toast.error(err.message); }
   };
@@ -124,28 +176,12 @@ const Motorredutores = () => {
     } catch (err: any) { toast.error(err.message); }
   };
 
-  const handleMovement = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const product = products.find(p => p.id === movProductId);
-    if (!product) { toast.error('Selecione um motorredutor'); return; }
-    try {
-      await addMtdMovement({
-        mtdProductId: product.id, mtdProductCode: product.code,
-        mtdProductDescription: product.description, type: movType,
-        quantity: parseInt(movQty) || 1, clienteDestino: movClienteDestino.trim(),
-        notaFiscal: movNotaFiscal.trim(),
-        date: movDate, observacao: movObs.trim(),
-      });
-      toast.success('Movimentação registrada!');
-      setMovProductId(''); setMovQty('1'); setMovClienteDestino(''); setMovNotaFiscal(''); setMovObs(''); setShowMovForm(false);
-      reload();
-    } catch (err: any) { toast.error(err.message); }
-  };
-
   const handlePrint = () => window.print();
 
   const monthEntries = filteredMovements.filter(m => m.type === 'entrada').reduce((s, m) => s + m.quantity, 0);
   const monthExits = filteredMovements.filter(m => m.type === 'saida').reduce((s, m) => s + m.quantity, 0);
+
+  const productsWithStock = products.filter(p => p.quantity > 0);
 
   return (
     <AppLayout>
@@ -162,82 +198,35 @@ const Motorredutores = () => {
               className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${tab === 'movimentacoes' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
               Movimentações
             </button>
-            <button onClick={handlePrint}
-              className="inline-flex items-center gap-2 border font-semibold px-4 py-2 rounded-md hover:bg-muted transition-colors text-sm">
-              <Printer className="w-4 h-4" /> Imprimir
+            <button onClick={() => setTab('imprimir')}
+              className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${tab === 'imprimir' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
+              <Printer className="w-4 h-4 inline mr-1" />Imprimir
             </button>
           </div>
         </div>
 
+        {/* ===== ESTOQUE TAB ===== */}
         {tab === 'estoque' && (
           <>
-            {/* Add button */}
-            <div className="flex justify-end print:hidden">
-              <button onClick={() => setShowForm(!showForm)}
-                className="inline-flex items-center gap-2 bg-primary text-primary-foreground font-semibold px-4 py-2 rounded-md hover:bg-primary/90 transition-colors text-sm">
-                <Plus className="w-4 h-4" /> Novo Motorredutor
-              </button>
-            </div>
-
-            {/* Add form */}
-            {showForm && (
-              <form onSubmit={handleAdd} className="bg-card border rounded-lg p-5 space-y-4 print:hidden">
-                <h3 className="font-semibold text-foreground">Cadastrar Motorredutor</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div>
-                    <label className="text-sm font-medium text-foreground block mb-1">Código</label>
-                    <input value={code} onChange={e => setCode(e.target.value)} className="input-steel w-full font-mono" required placeholder="Ex: MTD-001" />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-foreground block mb-1">Descrição</label>
-                    <input value={description} onChange={e => setDescription(e.target.value)} className="input-steel w-full" required placeholder="Descrição" />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-foreground block mb-1">Tipo MTD</label>
-                    <select value={mtdType} onChange={e => setMtdType(e.target.value as MtdType)} className="input-steel w-full">
-                      {Object.entries(MTD_TYPE_LABELS).map(([val, label]) => (
-                        <option key={val} value={val}>{label}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-foreground block mb-1">Condição</label>
-                    <select value={condicao} onChange={e => setCondicao(e.target.value)} className="input-steel w-full" required>
-                      <option value="">Selecione...</option>
-                      {CONDICAO_OPTIONS.map(opt => (
-                        <option key={opt} value={opt}>{opt}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-foreground block mb-1">Portaria</label>
-                    <input value={portaria} onChange={e => setPortaria(e.target.value)} className="input-steel w-full" placeholder="Portaria" />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-foreground block mb-1">Nota Fiscal</label>
-                    <input value={notaFiscal} onChange={e => setNotaFiscal(e.target.value)} className="input-steel w-full" placeholder="NF" />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-foreground block mb-1">OF</label>
-                    <input value={ofNumber} onChange={e => setOfNumber(e.target.value)} className="input-steel w-full" placeholder="Ordem de Fabricação" />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-foreground block mb-1">Cliente</label>
-                    <input value={cliente} onChange={e => setCliente(e.target.value)} className="input-steel w-full" placeholder="Cliente de compra" />
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <button type="submit" className="bg-primary text-primary-foreground font-semibold px-4 py-2 rounded-md hover:bg-primary/90 transition-colors text-sm">Salvar</button>
-                  <button type="button" onClick={() => setShowForm(false)} className="px-4 py-2 rounded-md border text-sm font-medium text-muted-foreground hover:bg-muted transition-colors">Cancelar</button>
-                </div>
-              </form>
-            )}
-
             {/* Filters */}
             <div className="flex flex-wrap gap-3 items-end print:hidden">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <input value={search} onChange={e => setSearch(e.target.value)} className="input-steel pl-10 w-64" placeholder="Buscar código, descrição, cliente..." />
+              </div>
+              <div className="flex gap-1">
+                <button onClick={() => setStockFilter('com_estoque')}
+                  className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${stockFilter === 'com_estoque' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
+                  Com Estoque
+                </button>
+                <button onClick={() => setStockFilter('sem_estoque')}
+                  className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${stockFilter === 'sem_estoque' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
+                  Sem Estoque
+                </button>
+                <button onClick={() => setStockFilter('todos')}
+                  className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${stockFilter === 'todos' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
+                  Todos
+                </button>
               </div>
               <div className="flex gap-1">
                 {(['todos', ...Object.keys(MTD_TYPE_LABELS)] as const).map(val => (
@@ -249,12 +238,13 @@ const Motorredutores = () => {
               </div>
             </div>
 
-            {/* Print header */}
-            <div className="hidden print:flex px-5 py-4 items-center gap-3 border-b bg-card rounded-lg border">
-              <img src={logoHeader} alt="Jhonrob" className="h-10" />
-              <div>
-                <h1 className="text-lg font-bold">Relatório de Estoque — Motorredutores</h1>
-                <p className="text-sm">Data: {new Date().toLocaleDateString('pt-BR')}</p>
+            {/* Summary */}
+            <div className="flex gap-4 print:hidden">
+              <div className="bg-card border rounded-lg px-4 py-2 text-sm">
+                Total exibido: <span className="font-bold">{filteredProducts.length}</span> motor(es)
+              </div>
+              <div className="bg-card border rounded-lg px-4 py-2 text-sm">
+                Em estoque: <span className="font-bold text-success">{productsWithStock.length}</span>
               </div>
             </div>
 
@@ -266,8 +256,8 @@ const Motorredutores = () => {
                     <th className="text-left px-4 py-3 font-medium text-muted-foreground">Código</th>
                     <th className="text-left px-4 py-3 font-medium text-muted-foreground">Descrição</th>
                     <th className="text-left px-4 py-3 font-medium text-muted-foreground">Tipo</th>
-                    <th className="text-right px-4 py-3 font-medium text-muted-foreground">Qtd</th>
                     <th className="text-left px-4 py-3 font-medium text-muted-foreground">Condição</th>
+                    <th className="text-center px-4 py-3 font-medium text-muted-foreground">Qtd</th>
                     <th className="text-left px-4 py-3 font-medium text-muted-foreground">Portaria</th>
                     <th className="text-left px-4 py-3 font-medium text-muted-foreground">NF</th>
                     <th className="text-left px-4 py-3 font-medium text-muted-foreground">OF</th>
@@ -280,7 +270,7 @@ const Motorredutores = () => {
                     <tr><td colSpan={10} className="px-5 py-8 text-center text-muted-foreground">Nenhum motorredutor encontrado</td></tr>
                   ) : (
                     filteredProducts.map(p => (
-                      <tr key={p.id} className="border-b last:border-0 table-row-alt hover:bg-muted/30 transition-colors">
+                      <tr key={p.id} className={`border-b last:border-0 hover:bg-muted/30 transition-colors ${p.quantity === 0 ? 'opacity-50' : ''}`}>
                         <td className="px-4 py-2.5 font-mono font-semibold text-primary">{p.code}</td>
                         <td className="px-4 py-2.5">{p.description}</td>
                         <td className="px-4 py-2.5">
@@ -288,8 +278,12 @@ const Motorredutores = () => {
                             {MTD_TYPE_LABELS[p.mtdType] || p.mtdType}
                           </span>
                         </td>
-                        <td className="px-4 py-2.5 text-right font-mono font-bold">{p.quantity}</td>
                         <td className="px-4 py-2.5 text-xs">{p.condicao || '—'}</td>
+                        <td className="px-4 py-2.5 text-center">
+                          <span className={`inline-flex px-2 py-0.5 rounded text-xs font-bold ${p.quantity > 0 ? 'bg-success/15 text-success' : 'bg-destructive/15 text-destructive'}`}>
+                            {p.quantity > 0 ? 'Em estoque' : 'Baixa'}
+                          </span>
+                        </td>
                         <td className="px-4 py-2.5 text-xs font-mono">{p.portaria || '—'}</td>
                         <td className="px-4 py-2.5 text-xs font-mono">{p.notaFiscal || '—'}</td>
                         <td className="px-4 py-2.5 text-xs font-mono">{p.ofNumber || '—'}</td>
@@ -309,19 +303,26 @@ const Motorredutores = () => {
           </>
         )}
 
+        {/* ===== MOVIMENTAÇÕES TAB ===== */}
         {tab === 'movimentacoes' && (
           <>
-            {/* Movement controls */}
+            {/* Controls */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 print:hidden">
               <div className="flex items-center gap-3">
                 <button onClick={prevMonth} className="p-1.5 rounded hover:bg-muted transition-colors"><ChevronLeft className="w-5 h-5" /></button>
                 <span className="font-semibold text-foreground capitalize min-w-[180px] text-center">{getMonthLabel(selectedMonth)}</span>
                 <button onClick={nextMonth} className="p-1.5 rounded hover:bg-muted transition-colors"><ChevronRight className="w-5 h-5" /></button>
               </div>
-              <button onClick={() => setShowMovForm(!showMovForm)}
-                className="inline-flex items-center gap-2 bg-primary text-primary-foreground font-semibold px-4 py-2 rounded-md hover:bg-primary/90 transition-colors text-sm">
-                <ArrowLeftRight className="w-4 h-4" /> Nova Movimentação
-              </button>
+              <div className="flex gap-2">
+                <button onClick={() => { setMovFormType('entrada'); setShowMovForm(true); }}
+                  className="inline-flex items-center gap-2 bg-success text-white font-semibold px-4 py-2 rounded-md hover:bg-success/90 transition-colors text-sm">
+                  <ArrowDown className="w-4 h-4" /> Entrada de Motor
+                </button>
+                <button onClick={() => { setMovFormType('saida'); setShowMovForm(true); }}
+                  className="inline-flex items-center gap-2 bg-destructive text-destructive-foreground font-semibold px-4 py-2 rounded-md hover:bg-destructive/90 transition-colors text-sm">
+                  <ArrowUp className="w-4 h-4" /> Saída de Motor
+                </button>
+              </div>
             </div>
 
             {/* Summary */}
@@ -336,54 +337,97 @@ const Motorredutores = () => {
               </div>
             </div>
 
-            {/* Movement form */}
-            {showMovForm && (
-              <form onSubmit={handleMovement} className="bg-card border rounded-lg p-5 space-y-4 print:hidden">
-                <h3 className="font-semibold text-foreground">Registrar Movimentação</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* Entrada form */}
+            {showMovForm && movFormType === 'entrada' && (
+              <form onSubmit={handleEntrada} className="bg-card border rounded-lg p-5 space-y-4 print:hidden">
+                <h3 className="font-semibold text-foreground flex items-center gap-2">
+                  <ArrowDown className="w-5 h-5 text-success" /> Entrada de Motor (Cadastrar Novo)
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   <div>
-                    <label className="text-sm font-medium text-foreground block mb-1">Motorredutor</label>
-                    <select value={movProductId} onChange={e => setMovProductId(e.target.value)} className="input-steel w-full" required>
-                      <option value="">Selecione...</option>
-                      {products.map(p => (
-                        <option key={p.id} value={p.id}>{p.code} — {p.description}</option>
+                    <label className="text-sm font-medium text-foreground block mb-1">Código</label>
+                    <input value={entCode} onChange={e => setEntCode(e.target.value)} className="input-steel w-full font-mono" required placeholder="Ex: 039000137" />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-foreground block mb-1">Descrição</label>
+                    <input value={entDescription} onChange={e => setEntDescription(e.target.value)} className="input-steel w-full" required placeholder="Descrição do motor" />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-foreground block mb-1">Tipo MTD</label>
+                    <select value={entMtdType} onChange={e => setEntMtdType(e.target.value as MtdType)} className="input-steel w-full">
+                      {Object.entries(MTD_TYPE_LABELS).map(([val, label]) => (
+                        <option key={val} value={val}>{label}</option>
                       ))}
                     </select>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-foreground block mb-1">Tipo</label>
-                    <select value={movType} onChange={e => setMovType(e.target.value as any)} className="input-steel w-full">
-                      <option value="saida">Saída</option>
-                      <option value="entrada">Entrada</option>
+                    <label className="text-sm font-medium text-foreground block mb-1">Condição</label>
+                    <select value={entCondicao} onChange={e => setEntCondicao(e.target.value)} className="input-steel w-full" required>
+                      <option value="">Selecione...</option>
+                      {CONDICAO_OPTIONS.map(opt => (
+                        <option key={opt} value={opt}>{opt}</option>
+                      ))}
                     </select>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-foreground block mb-1">Quantidade</label>
-                    <input type="number" min="1" value={movQty} onChange={e => setMovQty(e.target.value)} className="input-steel w-full font-mono" required />
+                    <label className="text-sm font-medium text-foreground block mb-1">Cliente (fornecedor)</label>
+                    <input value={entCliente} onChange={e => setEntCliente(e.target.value)} className="input-steel w-full" placeholder="De quem veio o motor" required />
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-foreground block mb-1">
-                      {movType === 'entrada' ? 'Cliente (de onde veio)' : 'Cliente Destino'}
-                    </label>
-                    <input value={movClienteDestino} onChange={e => setMovClienteDestino(e.target.value)} className="input-steel w-full" placeholder={movType === 'entrada' ? 'De qual cliente veio' : 'Para qual cliente'} required />
+                    <label className="text-sm font-medium text-foreground block mb-1">Nota Fiscal</label>
+                    <input value={entNotaFiscal} onChange={e => setEntNotaFiscal(e.target.value)} className="input-steel w-full" placeholder="Nº da NF" required />
                   </div>
-                  {movType === 'entrada' && (
-                    <div>
-                      <label className="text-sm font-medium text-foreground block mb-1">Nota Fiscal</label>
-                      <input value={movNotaFiscal} onChange={e => setMovNotaFiscal(e.target.value)} className="input-steel w-full" placeholder="Nº da NF" />
-                    </div>
-                  )}
+                  <div>
+                    <label className="text-sm font-medium text-foreground block mb-1">OF</label>
+                    <input value={entOfNumber} onChange={e => setEntOfNumber(e.target.value)} className="input-steel w-full" placeholder="Ordem de Fabricação" />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-foreground block mb-1">Portaria</label>
+                    <input value={entPortaria} onChange={e => setEntPortaria(e.target.value)} className="input-steel w-full" placeholder="Portaria" />
+                  </div>
                   <div>
                     <label className="text-sm font-medium text-foreground block mb-1">Data</label>
-                    <input type="date" value={movDate} onChange={e => setMovDate(e.target.value)} className="input-steel w-full font-mono" required />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-foreground block mb-1">Observação</label>
-                    <input value={movObs} onChange={e => setMovObs(e.target.value)} className="input-steel w-full" placeholder="Opcional" />
+                    <input type="date" value={entDate} onChange={e => setEntDate(e.target.value)} className="input-steel w-full font-mono" required />
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <button type="submit" className="bg-primary text-primary-foreground font-semibold px-4 py-2 rounded-md hover:bg-primary/90 transition-colors text-sm">Confirmar</button>
+                  <button type="submit" className="bg-success text-white font-semibold px-4 py-2 rounded-md hover:bg-success/90 transition-colors text-sm">Registrar Entrada</button>
+                  <button type="button" onClick={() => setShowMovForm(false)} className="px-4 py-2 rounded-md border text-sm font-medium text-muted-foreground hover:bg-muted transition-colors">Cancelar</button>
+                </div>
+              </form>
+            )}
+
+            {/* Saída form */}
+            {showMovForm && movFormType === 'saida' && (
+              <form onSubmit={handleSaida} className="bg-card border rounded-lg p-5 space-y-4 print:hidden">
+                <h3 className="font-semibold text-foreground flex items-center gap-2">
+                  <ArrowUp className="w-5 h-5 text-destructive" /> Saída de Motor
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-foreground block mb-1">Motorredutor (em estoque)</label>
+                    <select value={saidaProductId} onChange={e => setSaidaProductId(e.target.value)} className="input-steel w-full" required>
+                      <option value="">Selecione...</option>
+                      {productsWithStock.map(p => (
+                        <option key={p.id} value={p.id}>{p.code} — {p.description} ({p.cliente})</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-foreground block mb-1">Cliente Final</label>
+                    <input value={saidaCliente} onChange={e => setSaidaCliente(e.target.value)} className="input-steel w-full" placeholder="Para qual cliente vai o motor" required />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-foreground block mb-1">Data</label>
+                    <input type="date" value={saidaDate} onChange={e => setSaidaDate(e.target.value)} className="input-steel w-full font-mono" required />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-foreground block mb-1">Observação</label>
+                    <input value={saidaObs} onChange={e => setSaidaObs(e.target.value)} className="input-steel w-full" placeholder="Opcional" />
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <button type="submit" className="bg-destructive text-destructive-foreground font-semibold px-4 py-2 rounded-md hover:bg-destructive/90 transition-colors text-sm">Registrar Saída</button>
                   <button type="button" onClick={() => setShowMovForm(false)} className="px-4 py-2 rounded-md border text-sm font-medium text-muted-foreground hover:bg-muted transition-colors">Cancelar</button>
                 </div>
               </form>
@@ -398,7 +442,6 @@ const Motorredutores = () => {
                     <th className="text-left px-4 py-3 font-medium text-muted-foreground">Tipo</th>
                     <th className="text-left px-4 py-3 font-medium text-muted-foreground">Código</th>
                     <th className="text-left px-4 py-3 font-medium text-muted-foreground">Descrição</th>
-                    <th className="text-right px-4 py-3 font-medium text-muted-foreground">Qtd</th>
                     <th className="text-left px-4 py-3 font-medium text-muted-foreground">Cliente</th>
                     <th className="text-left px-4 py-3 font-medium text-muted-foreground">NF</th>
                     <th className="text-left px-4 py-3 font-medium text-muted-foreground">Observação</th>
@@ -406,10 +449,10 @@ const Motorredutores = () => {
                 </thead>
                 <tbody>
                   {filteredMovements.length === 0 ? (
-                    <tr><td colSpan={8} className="px-5 py-8 text-center text-muted-foreground">Nenhuma movimentação neste mês</td></tr>
+                    <tr><td colSpan={7} className="px-5 py-8 text-center text-muted-foreground">Nenhuma movimentação neste mês</td></tr>
                   ) : (
                     filteredMovements.map(m => (
-                      <tr key={m.id} className="border-b last:border-0 table-row-alt hover:bg-muted/30 transition-colors">
+                      <tr key={m.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
                         <td className="px-4 py-2.5 font-mono text-xs">{new Date(m.date).toLocaleDateString('pt-BR')}</td>
                         <td className="px-4 py-2.5">
                           <span className={`inline-flex px-2 py-0.5 rounded text-xs font-semibold ${m.type === 'entrada' ? 'bg-success/15 text-success' : 'bg-destructive/15 text-destructive'}`}>
@@ -418,7 +461,6 @@ const Motorredutores = () => {
                         </td>
                         <td className="px-4 py-2.5 font-mono font-semibold text-primary">{m.mtdProductCode}</td>
                         <td className="px-4 py-2.5">{m.mtdProductDescription}</td>
-                        <td className="px-4 py-2.5 text-right font-mono font-bold">{m.quantity}</td>
                         <td className="px-4 py-2.5 text-xs">{m.clienteDestino || '—'}</td>
                         <td className="px-4 py-2.5 text-xs font-mono">{m.notaFiscal || '—'}</td>
                         <td className="px-4 py-2.5 text-xs text-muted-foreground">{m.observacao || '—'}</td>
@@ -427,6 +469,66 @@ const Motorredutores = () => {
                   )}
                 </tbody>
               </table>
+            </div>
+          </>
+        )}
+
+        {/* ===== IMPRIMIR TAB ===== */}
+        {tab === 'imprimir' && (
+          <>
+            <div className="print:hidden flex justify-end">
+              <button onClick={handlePrint}
+                className="inline-flex items-center gap-2 bg-primary text-primary-foreground font-semibold px-4 py-2 rounded-md hover:bg-primary/90 transition-colors text-sm">
+                <Printer className="w-4 h-4" /> Imprimir Relatório
+              </button>
+            </div>
+
+            {/* Print header */}
+            <div className="flex px-5 py-4 items-center gap-3 border-b bg-card rounded-lg border">
+              <img src={logoHeader} alt="Jhonrob" className="h-10" />
+              <div>
+                <h1 className="text-lg font-bold">Relatório de Estoque — Motorredutores</h1>
+                <p className="text-sm text-muted-foreground">Data: {new Date().toLocaleDateString('pt-BR')} — Apenas motores em estoque</p>
+              </div>
+            </div>
+
+            {/* Print table */}
+            <div className="bg-card rounded-lg border overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b bg-muted/50">
+                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">Código</th>
+                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">Descrição</th>
+                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">Tipo</th>
+                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">Condição</th>
+                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">Portaria</th>
+                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">NF</th>
+                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">OF</th>
+                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">Cliente</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {printProducts.length === 0 ? (
+                    <tr><td colSpan={8} className="px-5 py-8 text-center text-muted-foreground">Nenhum motorredutor em estoque</td></tr>
+                  ) : (
+                    printProducts.map(p => (
+                      <tr key={p.id} className="border-b last:border-0">
+                        <td className="px-4 py-2 font-mono font-semibold">{p.code}</td>
+                        <td className="px-4 py-2">{p.description}</td>
+                        <td className="px-4 py-2 text-xs">{MTD_TYPE_LABELS[p.mtdType] || p.mtdType}</td>
+                        <td className="px-4 py-2 text-xs">{p.condicao || '—'}</td>
+                        <td className="px-4 py-2 text-xs font-mono">{p.portaria || '—'}</td>
+                        <td className="px-4 py-2 text-xs font-mono">{p.notaFiscal || '—'}</td>
+                        <td className="px-4 py-2 text-xs font-mono">{p.ofNumber || '—'}</td>
+                        <td className="px-4 py-2 text-xs">{p.cliente || '—'}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+            <div className="text-sm text-muted-foreground text-right">
+              Total em estoque: <span className="font-bold">{printProducts.length}</span> motor(es)
             </div>
           </>
         )}
