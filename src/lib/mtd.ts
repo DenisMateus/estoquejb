@@ -84,12 +84,12 @@ export async function getMtdProducts(): Promise<MtdProduct[]> {
   return (data || []).map(mapMtdProduct);
 }
 
-export async function addMtdProduct(product: Omit<MtdProduct, 'id' | 'createdAt' | 'quantity'>): Promise<MtdProduct> {
+export async function addMtdProduct(product: Omit<MtdProduct, 'id' | 'createdAt' | 'quantity'> & { quantity?: number }): Promise<MtdProduct> {
   const { data, error } = await supabase.from('mtd_products').insert({
     code: product.code,
     description: product.description,
     mtd_type: product.mtdType,
-    quantity: 0,
+    quantity: product.quantity ?? 1,
     portaria: product.portaria,
     nota_fiscal: product.notaFiscal,
     of_number: product.ofNumber,
@@ -129,19 +129,21 @@ export async function getMtdMovements(): Promise<MtdMovement[]> {
   return (data || []).map(mapMtdMovement);
 }
 
-export async function addMtdMovement(mov: Omit<MtdMovement, 'id' | 'createdAt'>): Promise<MtdMovement> {
-  const { data: product, error: pErr } = await supabase.from('mtd_products').select('*').eq('id', mov.mtdProductId).single();
-  if (pErr || !product) throw new Error('Motorredutor não encontrado');
+export async function addMtdMovement(mov: Omit<MtdMovement, 'id' | 'createdAt'>, skipQtyUpdate = false): Promise<MtdMovement> {
+  if (!skipQtyUpdate) {
+    const { data: product, error: pErr } = await supabase.from('mtd_products').select('*').eq('id', mov.mtdProductId).single();
+    if (pErr || !product) throw new Error('Motorredutor não encontrado');
 
-  const currentQty = Number(product.quantity);
-  if (mov.type === 'saida' && currentQty < mov.quantity) {
-    throw new Error('Estoque insuficiente');
+    const currentQty = Number(product.quantity);
+    if (mov.type === 'saida' && currentQty < mov.quantity) {
+      throw new Error('Estoque insuficiente');
+    }
+
+    const newQty = mov.type === 'entrada' ? currentQty + mov.quantity : currentQty - mov.quantity;
+
+    const { error: uErr } = await supabase.from('mtd_products').update({ quantity: newQty }).eq('id', mov.mtdProductId);
+    if (uErr) throw uErr;
   }
-
-  const newQty = mov.type === 'entrada' ? currentQty + mov.quantity : currentQty - mov.quantity;
-
-  const { error: uErr } = await supabase.from('mtd_products').update({ quantity: newQty }).eq('id', mov.mtdProductId);
-  if (uErr) throw uErr;
 
   const { data, error } = await supabase.from('mtd_movements').insert({
     mtd_product_id: mov.mtdProductId,
