@@ -120,7 +120,7 @@ const Motorredutores = () => {
         notaFiscal: entNotaFiscal.trim(),
         date: entDate,
         observacao: `OF: ${entOfNumber.trim()}`,
-      });
+      }, true);
       toast.success('Motor cadastrado e entrada registrada!');
       setEntCode(''); setEntDescription(''); setEntPortaria('');
       setEntNotaFiscal(''); setEntOfNumber(''); setEntCliente('');
