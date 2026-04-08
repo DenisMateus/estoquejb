@@ -1,0 +1,1 @@
+ALTER TABLE public.mtd_products DROP CONSTRAINT mtd_products_code_key;

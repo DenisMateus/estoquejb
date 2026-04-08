@@ -96,10 +96,7 @@ export async function addMtdProduct(product: Omit<MtdProduct, 'id' | 'createdAt'
     cliente: product.cliente,
     condicao: product.condicao,
   }).select().single();
-  if (error) {
-    if (error.code === '23505') throw new Error('Código já cadastrado');
-    throw error;
-  }
+  if (error) throw error;
   return mapMtdProduct(data);
 }
 
