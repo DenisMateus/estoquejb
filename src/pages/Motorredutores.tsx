@@ -30,12 +30,14 @@ const Motorredutores = () => {
   const [entNotaFiscal, setEntNotaFiscal] = useState('');
   const [entOfNumber, setEntOfNumber] = useState('');
   const [entCliente, setEntCliente] = useState('');
+  const [entQuantidade, setEntQuantidade] = useState(1);
 
   // Saida fields
   const [saidaProductId, setSaidaProductId] = useState('');
   const [saidaCliente, setSaidaCliente] = useState('');
   const [saidaDate, setSaidaDate] = useState(new Date().toISOString().split('T')[0]);
   const [saidaObs, setSaidaObs] = useState('');
+  const [saidaQtd, setSaidaQtd] = useState(1);
 
   // Entrada date
   const [entDate, setEntDate] = useState(new Date().toISOString().split('T')[0]);
@@ -77,7 +79,8 @@ const Motorredutores = () => {
       const matchesSearch = search === '' ||
         p.code.toLowerCase().includes(search.toLowerCase()) ||
         p.description.toLowerCase().includes(search.toLowerCase()) ||
-        p.cliente.toLowerCase().includes(search.toLowerCase());
+        p.cliente.toLowerCase().includes(search.toLowerCase()) ||
+        p.notaFiscal.toLowerCase().includes(search.toLowerCase());
       const matchesType = filterType === 'todos' || p.mtdType === filterType;
       const matchesStock = stockFilter === 'todos' ||
         (stockFilter === 'com_estoque' && p.quantity > 0) ||
@@ -97,34 +100,34 @@ const Motorredutores = () => {
 
   const handleEntrada = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (entQuantidade < 1) { toast.error('Quantidade deve ser pelo menos 1'); return; }
     try {
-      // Create new product with qty 1
       const newProduct = await addMtdProduct({
         code: entCode.trim(),
         description: entDescription.trim(),
         mtdType: entMtdType,
+        quantity: entQuantidade,
         portaria: entPortaria.trim(),
         notaFiscal: entNotaFiscal.trim(),
         ofNumber: entOfNumber.trim(),
         cliente: entCliente.trim(),
         condicao: entCondicao.trim(),
       });
-      // Record entrada movement
       await addMtdMovement({
         mtdProductId: newProduct.id,
         mtdProductCode: newProduct.code,
         mtdProductDescription: newProduct.description,
         type: 'entrada',
-        quantity: 1,
+        quantity: entQuantidade,
         clienteDestino: entCliente.trim(),
         notaFiscal: entNotaFiscal.trim(),
         date: entDate,
         observacao: `OF: ${entOfNumber.trim()}`,
       }, true);
-      toast.success('Motor cadastrado e entrada registrada!');
+      toast.success(`${entQuantidade} motor(es) cadastrado(s)!`);
       setEntCode(''); setEntDescription(''); setEntPortaria('');
       setEntNotaFiscal(''); setEntOfNumber(''); setEntCliente('');
-      setEntCondicao(''); setShowMovForm(false);
+      setEntCondicao(''); setEntQuantidade(1); setShowMovForm(false);
       reload();
     } catch (err: any) { toast.error(err.message); }
   };
@@ -133,20 +136,25 @@ const Motorredutores = () => {
     e.preventDefault();
     const product = products.find(p => p.id === saidaProductId);
     if (!product) { toast.error('Selecione um motorredutor'); return; }
+    if (saidaQtd < 1 || saidaQtd > product.quantity) {
+      toast.error(`Quantidade inválida. Estoque disponível: ${product.quantity}`);
+      return;
+    }
     try {
       await addMtdMovement({
         mtdProductId: product.id,
         mtdProductCode: product.code,
         mtdProductDescription: product.description,
         type: 'saida',
-        quantity: 1,
+        quantity: saidaQtd,
         clienteDestino: saidaCliente.trim(),
         notaFiscal: '',
         date: saidaDate,
         observacao: saidaObs.trim(),
       });
       toast.success('Saída registrada!');
-      setSaidaProductId(''); setSaidaCliente(''); setSaidaObs(''); setShowMovForm(false);
+      setSaidaProductId(''); setSaidaCliente(''); setSaidaObs('');
+      setSaidaQtd(1); setShowMovForm(false);
       reload();
     } catch (err: any) { toast.error(err.message); }
   };
@@ -183,6 +191,9 @@ const Motorredutores = () => {
 
   const productsWithStock = products.filter(p => p.quantity > 0);
 
+  // When selecting a product for saída, update max qty
+  const selectedSaidaProduct = products.find(p => p.id === saidaProductId);
+
   return (
     <AppLayout>
       <div className="space-y-4">
@@ -212,7 +223,7 @@ const Motorredutores = () => {
             <div className="flex flex-wrap gap-3 items-end print:hidden">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <input value={search} onChange={e => setSearch(e.target.value)} className="input-steel pl-10 w-64" placeholder="Buscar código, descrição, cliente..." />
+                <input value={search} onChange={e => setSearch(e.target.value)} className="input-steel pl-10 w-64" placeholder="Buscar código, descrição, NF..." />
               </div>
               <div className="flex gap-1">
                 <button onClick={() => setStockFilter('com_estoque')}
@@ -241,10 +252,10 @@ const Motorredutores = () => {
             {/* Summary */}
             <div className="flex gap-4 print:hidden">
               <div className="bg-card border rounded-lg px-4 py-2 text-sm">
-                Total exibido: <span className="font-bold">{filteredProducts.length}</span> motor(es)
+                Total exibido: <span className="font-bold">{filteredProducts.length}</span> registro(s)
               </div>
               <div className="bg-card border rounded-lg px-4 py-2 text-sm">
-                Em estoque: <span className="font-bold text-success">{productsWithStock.length}</span>
+                Total de motores em estoque: <span className="font-bold text-success">{productsWithStock.reduce((s, p) => s + p.quantity, 0)}</span>
               </div>
             </div>
 
@@ -255,7 +266,7 @@ const Motorredutores = () => {
                   <tr className="border-b bg-muted/50">
                     <th className="text-left px-4 py-3 font-medium text-muted-foreground">Código</th>
                     <th className="text-left px-4 py-3 font-medium text-muted-foreground">Descrição</th>
-                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">Tipo</th>
+                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">Equipamento</th>
                     <th className="text-left px-4 py-3 font-medium text-muted-foreground">Condição</th>
                     <th className="text-center px-4 py-3 font-medium text-muted-foreground">Qtd</th>
                     <th className="text-left px-4 py-3 font-medium text-muted-foreground">Portaria</th>
@@ -279,9 +290,9 @@ const Motorredutores = () => {
                           </span>
                         </td>
                         <td className="px-4 py-2.5 text-xs">{p.condicao || '—'}</td>
-                        <td className="px-4 py-2.5 text-center">
+                        <td className="px-4 py-2.5 text-center font-bold">
                           <span className={`inline-flex px-2 py-0.5 rounded text-xs font-bold ${p.quantity > 0 ? 'bg-success/15 text-success' : 'bg-destructive/15 text-destructive'}`}>
-                            {p.quantity > 0 ? 'Em estoque' : 'Baixa'}
+                            {p.quantity}
                           </span>
                         </td>
                         <td className="px-4 py-2.5 text-xs font-mono">{p.portaria || '—'}</td>
@@ -353,7 +364,7 @@ const Motorredutores = () => {
                     <input value={entDescription} onChange={e => setEntDescription(e.target.value)} className="input-steel w-full" required placeholder="Descrição do motor" />
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-foreground block mb-1">Tipo MTD</label>
+                    <label className="text-sm font-medium text-foreground block mb-1">Equipamento (Tipo MTD)</label>
                     <select value={entMtdType} onChange={e => setEntMtdType(e.target.value as MtdType)} className="input-steel w-full">
                       {Object.entries(MTD_TYPE_LABELS).map(([val, label]) => (
                         <option key={val} value={val}>{label}</option>
@@ -370,8 +381,12 @@ const Motorredutores = () => {
                     </select>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-foreground block mb-1">Cliente (fornecedor)</label>
-                    <input value={entCliente} onChange={e => setEntCliente(e.target.value)} className="input-steel w-full" placeholder="De quem veio o motor" required />
+                    <label className="text-sm font-medium text-foreground block mb-1">Quantidade</label>
+                    <input type="number" min={1} value={entQuantidade} onChange={e => setEntQuantidade(Number(e.target.value))} className="input-steel w-full font-mono" required />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-foreground block mb-1">Cliente (fornecedor/reserva)</label>
+                    <input value={entCliente} onChange={e => setEntCliente(e.target.value)} className="input-steel w-full" placeholder="De quem é o motor" required />
                   </div>
                   <div>
                     <label className="text-sm font-medium text-foreground block mb-1">Nota Fiscal</label>
@@ -404,21 +419,28 @@ const Motorredutores = () => {
                   <ArrowUp className="w-5 h-5 text-destructive" /> Saída de Motor
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  <div>
+                  <div className="sm:col-span-2 lg:col-span-3">
                     <label className="text-sm font-medium text-foreground block mb-1">Motorredutor (em estoque)</label>
-                    <select value={saidaProductId} onChange={e => setSaidaProductId(e.target.value)} className="input-steel w-full" required>
+                    <select value={saidaProductId} onChange={e => { setSaidaProductId(e.target.value); setSaidaQtd(1); }} className="input-steel w-full" required>
                       <option value="">Selecione...</option>
                       {productsWithStock.map(p => (
-                        <option key={p.id} value={p.id}>{p.code} — {p.description} ({p.cliente})</option>
+                        <option key={p.id} value={p.id}>
+                          {p.code} — {p.description} | NF: {p.notaFiscal || '—'} | Cliente: {p.cliente || '—'} | Qtd: {p.quantity}
+                        </option>
                       ))}
                     </select>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-foreground block mb-1">Cliente Final</label>
+                    <label className="text-sm font-medium text-foreground block mb-1">Cliente Final (destino)</label>
                     <input value={saidaCliente} onChange={e => setSaidaCliente(e.target.value)} className="input-steel w-full" placeholder="Para qual cliente vai o motor" required />
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-foreground block mb-1">Data</label>
+                    <label className="text-sm font-medium text-foreground block mb-1">Quantidade</label>
+                    <input type="number" min={1} max={selectedSaidaProduct?.quantity || 1} value={saidaQtd} onChange={e => setSaidaQtd(Number(e.target.value))} className="input-steel w-full font-mono" required />
+                    {selectedSaidaProduct && <p className="text-xs text-muted-foreground mt-1">Disponível: {selectedSaidaProduct.quantity}</p>}
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-foreground block mb-1">Data da Baixa</label>
                     <input type="date" value={saidaDate} onChange={e => setSaidaDate(e.target.value)} className="input-steel w-full font-mono" required />
                   </div>
                   <div>
@@ -442,6 +464,7 @@ const Motorredutores = () => {
                     <th className="text-left px-4 py-3 font-medium text-muted-foreground">Tipo</th>
                     <th className="text-left px-4 py-3 font-medium text-muted-foreground">Código</th>
                     <th className="text-left px-4 py-3 font-medium text-muted-foreground">Descrição</th>
+                    <th className="text-center px-4 py-3 font-medium text-muted-foreground">Qtd</th>
                     <th className="text-left px-4 py-3 font-medium text-muted-foreground">Cliente</th>
                     <th className="text-left px-4 py-3 font-medium text-muted-foreground">NF</th>
                     <th className="text-left px-4 py-3 font-medium text-muted-foreground">Observação</th>
@@ -449,7 +472,7 @@ const Motorredutores = () => {
                 </thead>
                 <tbody>
                   {filteredMovements.length === 0 ? (
-                    <tr><td colSpan={7} className="px-5 py-8 text-center text-muted-foreground">Nenhuma movimentação neste mês</td></tr>
+                    <tr><td colSpan={8} className="px-5 py-8 text-center text-muted-foreground">Nenhuma movimentação neste mês</td></tr>
                   ) : (
                     filteredMovements.map(m => (
                       <tr key={m.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
@@ -461,6 +484,7 @@ const Motorredutores = () => {
                         </td>
                         <td className="px-4 py-2.5 font-mono font-semibold text-primary">{m.mtdProductCode}</td>
                         <td className="px-4 py-2.5">{m.mtdProductDescription}</td>
+                        <td className="px-4 py-2.5 text-center font-bold">{m.quantity}</td>
                         <td className="px-4 py-2.5 text-xs">{m.clienteDestino || '—'}</td>
                         <td className="px-4 py-2.5 text-xs font-mono">{m.notaFiscal || '—'}</td>
                         <td className="px-4 py-2.5 text-xs text-muted-foreground">{m.observacao || '—'}</td>
@@ -499,8 +523,9 @@ const Motorredutores = () => {
                   <tr className="border-b bg-muted/50">
                     <th className="text-left px-4 py-3 font-medium text-muted-foreground">Código</th>
                     <th className="text-left px-4 py-3 font-medium text-muted-foreground">Descrição</th>
-                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">Tipo</th>
+                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">Equipamento</th>
                     <th className="text-left px-4 py-3 font-medium text-muted-foreground">Condição</th>
+                    <th className="text-center px-4 py-3 font-medium text-muted-foreground">Qtd</th>
                     <th className="text-left px-4 py-3 font-medium text-muted-foreground">Portaria</th>
                     <th className="text-left px-4 py-3 font-medium text-muted-foreground">NF</th>
                     <th className="text-left px-4 py-3 font-medium text-muted-foreground">OF</th>
@@ -509,7 +534,7 @@ const Motorredutores = () => {
                 </thead>
                 <tbody>
                   {printProducts.length === 0 ? (
-                    <tr><td colSpan={8} className="px-5 py-8 text-center text-muted-foreground">Nenhum motorredutor em estoque</td></tr>
+                    <tr><td colSpan={9} className="px-5 py-8 text-center text-muted-foreground">Nenhum motorredutor em estoque</td></tr>
                   ) : (
                     printProducts.map(p => (
                       <tr key={p.id} className="border-b last:border-0">
@@ -517,6 +542,7 @@ const Motorredutores = () => {
                         <td className="px-4 py-2">{p.description}</td>
                         <td className="px-4 py-2 text-xs">{MTD_TYPE_LABELS[p.mtdType] || p.mtdType}</td>
                         <td className="px-4 py-2 text-xs">{p.condicao || '—'}</td>
+                        <td className="px-4 py-2 text-center font-bold">{p.quantity}</td>
                         <td className="px-4 py-2 text-xs font-mono">{p.portaria || '—'}</td>
                         <td className="px-4 py-2 text-xs font-mono">{p.notaFiscal || '—'}</td>
                         <td className="px-4 py-2 text-xs font-mono">{p.ofNumber || '—'}</td>
@@ -528,7 +554,7 @@ const Motorredutores = () => {
               </table>
             </div>
             <div className="text-sm text-muted-foreground text-right">
-              Total em estoque: <span className="font-bold">{printProducts.length}</span> motor(es)
+              Total em estoque: <span className="font-bold">{printProducts.reduce((s, p) => s + p.quantity, 0)}</span> motor(es) em <span className="font-bold">{printProducts.length}</span> registro(s)
             </div>
           </>
         )}
@@ -553,7 +579,7 @@ const Motorredutores = () => {
                   <input value={editDescription} onChange={e => setEditDescription(e.target.value)} className="input-steel w-full" required />
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-foreground block mb-1">Tipo MTD</label>
+                  <label className="text-sm font-medium text-foreground block mb-1">Equipamento (Tipo MTD)</label>
                   <select value={editMtdType} onChange={e => setEditMtdType(e.target.value as MtdType)} className="input-steel w-full">
                     {Object.entries(MTD_TYPE_LABELS).map(([val, label]) => (
                       <option key={val} value={val}>{label}</option>
