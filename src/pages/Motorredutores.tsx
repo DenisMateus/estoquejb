@@ -232,7 +232,7 @@ const Motorredutores = () => {
                 </button>
                 <button onClick={() => setStockFilter('sem_estoque')}
                   className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${stockFilter === 'sem_estoque' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
-                  Sem Estoque
+                  Baixados
                 </button>
                 <button onClick={() => setStockFilter('todos')}
                   className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${stockFilter === 'todos' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
