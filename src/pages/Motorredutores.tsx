@@ -166,10 +166,31 @@ const Motorredutores = () => {
     } catch (err: any) { toast.error(err.message); }
   };
 
-  const handleDelete = async (id: string, desc: string) => {
-    if (!confirm(`Excluir "${desc}"?`)) return;
-    try { await deleteMtdProduct(id); toast.success('Excluído'); reload(); }
-    catch (err: any) { toast.error(err.message); }
+  const handleDeleteClick = (id: string, desc: string) => {
+    setDeleteTarget({ id, desc });
+    setDeleteCode('');
+    setDeleteStep('confirm');
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (deleteStep === 'confirm') {
+      setDeleteStep('code');
+      return;
+    }
+    if (deleteCode !== DELETE_SECRET_CODE) {
+      toast.error('Código incorreto!');
+      return;
+    }
+    if (!deleteTarget) return;
+    try {
+      await deleteMtdProduct(deleteTarget.id);
+      toast.success('Excluído');
+      reload();
+    } catch (err: any) {
+      toast.error(err.message);
+    }
+    setDeleteTarget(null);
+    setDeleteCode('');
   };
 
   const openEdit = (p: MtdProduct) => {
