@@ -219,6 +219,20 @@ const Motorredutores = () => {
 
   const productsWithStock = products.filter(p => p.quantity > 0);
 
+  // Saida search
+  const [saidaSearchType, setSaidaSearchType] = useState<'codigo' | 'nf'>('codigo');
+  const [saidaSearch, setSaidaSearch] = useState('');
+
+  const saidaFilteredProducts = useMemo(() => {
+    if (!saidaSearch.trim()) return productsWithStock;
+    const term = saidaSearch.toLowerCase().trim();
+    return productsWithStock.filter(p =>
+      saidaSearchType === 'nf'
+        ? p.notaFiscal.toLowerCase().includes(term)
+        : p.code.toLowerCase().includes(term)
+    );
+  }, [productsWithStock, saidaSearch, saidaSearchType]);
+
   // When selecting a product for saída, update max qty
   const selectedSaidaProduct = products.find(p => p.id === saidaProductId);
 
