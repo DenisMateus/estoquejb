@@ -219,6 +219,20 @@ const Motorredutores = () => {
 
   const productsWithStock = products.filter(p => p.quantity > 0);
 
+  // Saida search
+  const [saidaSearchType, setSaidaSearchType] = useState<'codigo' | 'nf'>('codigo');
+  const [saidaSearch, setSaidaSearch] = useState('');
+
+  const saidaFilteredProducts = useMemo(() => {
+    if (!saidaSearch.trim()) return productsWithStock;
+    const term = saidaSearch.toLowerCase().trim();
+    return productsWithStock.filter(p =>
+      saidaSearchType === 'nf'
+        ? p.notaFiscal.toLowerCase().includes(term)
+        : p.code.toLowerCase().includes(term)
+    );
+  }, [productsWithStock, saidaSearch, saidaSearchType]);
+
   // When selecting a product for saída, update max qty
   const selectedSaidaProduct = products.find(p => p.id === saidaProductId);
 
@@ -447,16 +461,46 @@ const Motorredutores = () => {
                   <ArrowUp className="w-5 h-5 text-destructive" /> Saída de Motor
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  <div className="sm:col-span-2 lg:col-span-3">
-                    <label className="text-sm font-medium text-foreground block mb-1">Motorredutor (em estoque)</label>
-                    <select value={saidaProductId} onChange={e => { setSaidaProductId(e.target.value); setSaidaQtd(1); }} className="input-steel w-full" required>
-                      <option value="">Selecione...</option>
-                      {productsWithStock.map(p => (
-                        <option key={p.id} value={p.id}>
-                          {p.code} — {p.description} | NF: {p.notaFiscal || '—'} | Cliente: {p.cliente || '—'} | Qtd: {p.quantity}
-                        </option>
-                      ))}
-                    </select>
+                  <div className="sm:col-span-2 lg:col-span-3 space-y-2">
+                    <label className="text-sm font-medium text-foreground block">Buscar Motorredutor</label>
+                    <div className="flex gap-2 items-center">
+                      <div className="flex gap-1">
+                        <button type="button" onClick={() => { setSaidaSearchType('codigo'); setSaidaSearch(''); setSaidaProductId(''); }}
+                          className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${saidaSearchType === 'codigo' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
+                          Por Código
+                        </button>
+                        <button type="button" onClick={() => { setSaidaSearchType('nf'); setSaidaSearch(''); setSaidaProductId(''); }}
+                          className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${saidaSearchType === 'nf' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
+                          Por NF
+                        </button>
+                      </div>
+                      <div className="relative flex-1">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <input value={saidaSearch} onChange={e => { setSaidaSearch(e.target.value); setSaidaProductId(''); }}
+                          className="input-steel w-full pl-10" placeholder={saidaSearchType === 'nf' ? 'Digite o nº da NF...' : 'Digite o código do motor...'} />
+                      </div>
+                    </div>
+                    {saidaSearch.trim() && (
+                      <div className="border rounded-md max-h-48 overflow-y-auto bg-card">
+                        {saidaFilteredProducts.length === 0 ? (
+                          <p className="text-sm text-muted-foreground text-center py-3">Nenhum motor encontrado</p>
+                        ) : (
+                          saidaFilteredProducts.map(p => (
+                            <button type="button" key={p.id} onClick={() => { setSaidaProductId(p.id); setSaidaQtd(1); setSaidaSearch(saidaSearchType === 'nf' ? p.notaFiscal : p.code); }}
+                              className={`w-full text-left px-3 py-2 text-sm hover:bg-muted/50 border-b last:border-0 transition-colors ${saidaProductId === p.id ? 'bg-primary/10' : ''}`}>
+                              <span className="font-mono font-semibold text-primary">{p.code}</span>
+                              <span className="text-muted-foreground"> — {p.description}</span>
+                              <span className="text-xs text-muted-foreground"> | NF: {p.notaFiscal || '—'} | Cliente: {p.cliente || '—'} | Qtd: {p.quantity}</span>
+                            </button>
+                          ))
+                        )}
+                      </div>
+                    )}
+                    {saidaProductId && selectedSaidaProduct && (
+                      <p className="text-xs text-success font-medium">
+                        ✓ Selecionado: {selectedSaidaProduct.code} — {selectedSaidaProduct.description} (NF: {selectedSaidaProduct.notaFiscal || '—'})
+                      </p>
+                    )}
                   </div>
                   <div>
                     <label className="text-sm font-medium text-foreground block mb-1">Cliente Final (destino)</label>
