@@ -9,6 +9,8 @@ import { Plus, Trash2, Search, Pencil, X, ArrowLeftRight, Printer, ChevronLeft, 
 import { toast } from 'sonner';
 import logoHeader from '@/assets/logo_header.png';
 
+const DELETE_SECRET_CODE = 'Jhonrob@1';
+
 const Motorredutores = () => {
   const [products, setProducts] = useState<MtdProduct[]>([]);
   const [movements, setMovements] = useState<MtdMovement[]>([]);
@@ -16,6 +18,11 @@ const Motorredutores = () => {
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState<'todos' | MtdType>('todos');
   const [stockFilter, setStockFilter] = useState<'com_estoque' | 'sem_estoque' | 'todos'>('com_estoque');
+
+  // Delete confirmation
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; desc: string } | null>(null);
+  const [deleteCode, setDeleteCode] = useState('');
+  const [deleteStep, setDeleteStep] = useState<'confirm' | 'code'>('confirm');
 
   // Movement form
   const [showMovForm, setShowMovForm] = useState(false);
