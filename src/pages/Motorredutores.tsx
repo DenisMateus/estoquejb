@@ -648,6 +648,44 @@ const Motorredutores = () => {
           </div>
         </div>
       )}
+
+      {/* Delete confirmation dialog */}
+      {deleteTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+          <div className="bg-background rounded-lg shadow-xl p-6 w-full max-w-md mx-4 border">
+            {deleteStep === 'confirm' ? (
+              <>
+                <h3 className="text-lg font-bold mb-3 text-foreground">Excluir Motorredutor</h3>
+                <p className="text-muted-foreground mb-5">
+                  Deseja realmente excluir <strong className="text-foreground">"{deleteTarget.desc}"</strong>?
+                </p>
+                <div className="flex justify-end gap-3">
+                  <button onClick={() => setDeleteTarget(null)} className="px-4 py-2 rounded-md bg-destructive text-destructive-foreground font-medium hover:bg-destructive/90">Cancelar</button>
+                  <button onClick={handleDeleteConfirm} className="px-4 py-2 rounded-md bg-green-600 text-white font-medium hover:bg-green-700">Confirmar</button>
+                </div>
+              </>
+            ) : (
+              <>
+                <h3 className="text-lg font-bold mb-3 text-foreground">Digite o código de segurança</h3>
+                <p className="text-muted-foreground mb-4">Para excluir, insira o código de autorização:</p>
+                <input
+                  type="password"
+                  value={deleteCode}
+                  onChange={e => setDeleteCode(e.target.value)}
+                  placeholder="Código de segurança"
+                  className="w-full border rounded-md px-3 py-2 mb-5 bg-background text-foreground"
+                  autoFocus
+                  onKeyDown={e => e.key === 'Enter' && handleDeleteConfirm()}
+                />
+                <div className="flex justify-end gap-3">
+                  <button onClick={() => setDeleteTarget(null)} className="px-4 py-2 rounded-md bg-destructive text-destructive-foreground font-medium hover:bg-destructive/90">Cancelar</button>
+                  <button onClick={handleDeleteConfirm} className="px-4 py-2 rounded-md bg-green-600 text-white font-medium hover:bg-green-700">Excluir</button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </AppLayout>
   );
 };
