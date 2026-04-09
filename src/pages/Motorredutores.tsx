@@ -330,7 +330,7 @@ const Motorredutores = () => {
                         <td className="px-4 py-2.5 print:hidden">
                           <div className="flex items-center gap-1">
                             <button onClick={() => openEdit(p)} className="text-muted-foreground hover:text-primary transition-colors"><Pencil className="w-4 h-4" /></button>
-                            <button onClick={() => handleDelete(p.id, p.description)} className="text-destructive hover:text-destructive/80 transition-colors"><Trash2 className="w-4 h-4" /></button>
+                            <button onClick={() => handleDeleteClick(p.id, p.description)} className="text-destructive hover:text-destructive/80 transition-colors"><Trash2 className="w-4 h-4" /></button>
                           </div>
                         </td>
                       </tr>
