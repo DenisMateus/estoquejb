@@ -9,6 +9,8 @@ import { Plus, Trash2, Search, Pencil, X, ArrowLeftRight, Printer, ChevronLeft, 
 import { toast } from 'sonner';
 import logoHeader from '@/assets/logo_header.png';
 
+const DELETE_SECRET_CODE = 'Jhonrob@1';
+
 const Motorredutores = () => {
   const [products, setProducts] = useState<MtdProduct[]>([]);
   const [movements, setMovements] = useState<MtdMovement[]>([]);
@@ -16,6 +18,11 @@ const Motorredutores = () => {
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState<'todos' | MtdType>('todos');
   const [stockFilter, setStockFilter] = useState<'com_estoque' | 'sem_estoque' | 'todos'>('com_estoque');
+
+  // Delete confirmation
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; desc: string } | null>(null);
+  const [deleteCode, setDeleteCode] = useState('');
+  const [deleteStep, setDeleteStep] = useState<'confirm' | 'code'>('confirm');
 
   // Movement form
   const [showMovForm, setShowMovForm] = useState(false);
@@ -159,10 +166,31 @@ const Motorredutores = () => {
     } catch (err: any) { toast.error(err.message); }
   };
 
-  const handleDelete = async (id: string, desc: string) => {
-    if (!confirm(`Excluir "${desc}"?`)) return;
-    try { await deleteMtdProduct(id); toast.success('Excluído'); reload(); }
-    catch (err: any) { toast.error(err.message); }
+  const handleDeleteClick = (id: string, desc: string) => {
+    setDeleteTarget({ id, desc });
+    setDeleteCode('');
+    setDeleteStep('confirm');
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (deleteStep === 'confirm') {
+      setDeleteStep('code');
+      return;
+    }
+    if (deleteCode !== DELETE_SECRET_CODE) {
+      toast.error('Código incorreto!');
+      return;
+    }
+    if (!deleteTarget) return;
+    try {
+      await deleteMtdProduct(deleteTarget.id);
+      toast.success('Excluído');
+      reload();
+    } catch (err: any) {
+      toast.error(err.message);
+    }
+    setDeleteTarget(null);
+    setDeleteCode('');
   };
 
   const openEdit = (p: MtdProduct) => {
@@ -302,7 +330,7 @@ const Motorredutores = () => {
                         <td className="px-4 py-2.5 print:hidden">
                           <div className="flex items-center gap-1">
                             <button onClick={() => openEdit(p)} className="text-muted-foreground hover:text-primary transition-colors"><Pencil className="w-4 h-4" /></button>
-                            <button onClick={() => handleDelete(p.id, p.description)} className="text-destructive hover:text-destructive/80 transition-colors"><Trash2 className="w-4 h-4" /></button>
+                            <button onClick={() => handleDeleteClick(p.id, p.description)} className="text-destructive hover:text-destructive/80 transition-colors"><Trash2 className="w-4 h-4" /></button>
                           </div>
                         </td>
                       </tr>
@@ -617,6 +645,44 @@ const Motorredutores = () => {
                 <button type="submit" className="bg-primary text-primary-foreground font-semibold px-4 py-2 rounded-md hover:bg-primary/90 transition-colors text-sm">Salvar</button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete confirmation dialog */}
+      {deleteTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+          <div className="bg-background rounded-lg shadow-xl p-6 w-full max-w-md mx-4 border">
+            {deleteStep === 'confirm' ? (
+              <>
+                <h3 className="text-lg font-bold mb-3 text-foreground">Excluir Motorredutor</h3>
+                <p className="text-muted-foreground mb-5">
+                  Deseja realmente excluir <strong className="text-foreground">"{deleteTarget.desc}"</strong>?
+                </p>
+                <div className="flex justify-end gap-3">
+                  <button onClick={() => setDeleteTarget(null)} className="px-4 py-2 rounded-md bg-destructive text-destructive-foreground font-medium hover:bg-destructive/90">Cancelar</button>
+                  <button onClick={handleDeleteConfirm} className="px-4 py-2 rounded-md bg-green-600 text-white font-medium hover:bg-green-700">Confirmar</button>
+                </div>
+              </>
+            ) : (
+              <>
+                <h3 className="text-lg font-bold mb-3 text-foreground">Digite o código de segurança</h3>
+                <p className="text-muted-foreground mb-4">Para excluir, insira o código de autorização:</p>
+                <input
+                  type="password"
+                  value={deleteCode}
+                  onChange={e => setDeleteCode(e.target.value)}
+                  placeholder="Código de segurança"
+                  className="w-full border rounded-md px-3 py-2 mb-5 bg-background text-foreground"
+                  autoFocus
+                  onKeyDown={e => e.key === 'Enter' && handleDeleteConfirm()}
+                />
+                <div className="flex justify-end gap-3">
+                  <button onClick={() => setDeleteTarget(null)} className="px-4 py-2 rounded-md bg-destructive text-destructive-foreground font-medium hover:bg-destructive/90">Cancelar</button>
+                  <button onClick={handleDeleteConfirm} className="px-4 py-2 rounded-md bg-green-600 text-white font-medium hover:bg-green-700">Excluir</button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
