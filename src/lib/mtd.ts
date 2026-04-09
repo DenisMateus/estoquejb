@@ -1,6 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 
-export type MtdType = 'REDLER' | 'ELEVADOR' | 'THV' | 'CT' | 'MPL' | 'CAVACO' | 'TRIPPER' | 'TH' | 'VALVULA_ROTATIVA';
+export type MtdType = 'REDLER' | 'ELEVADOR' | 'THV' | 'CT' | 'MPL' | 'CAVACO' | 'TRIPPER' | 'TH' | 'VALVULA_ROTATIVA' | 'TORRADOR';
 
 export const MTD_TYPE_LABELS: Record<MtdType, string> = {
   REDLER: 'Redler',
@@ -12,6 +12,7 @@ export const MTD_TYPE_LABELS: Record<MtdType, string> = {
   TRIPPER: 'Tripper',
   TH: 'TH',
   VALVULA_ROTATIVA: 'Válvula Rotativa',
+  TORRADOR: 'Torrador',
 };
 
 export interface MtdProduct {
