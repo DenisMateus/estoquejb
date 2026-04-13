@@ -5,7 +5,7 @@ import {
   MtdProduct, MtdMovement, MtdType, MTD_TYPE_LABELS, CONDICAO_OPTIONS,
 } from '@/lib/mtd';
 import AppLayout from '@/components/AppLayout';
-import { Plus, Trash2, Search, Pencil, X, ArrowLeftRight, Printer, ChevronLeft, ChevronRight, ArrowDown, ArrowUp } from 'lucide-react';
+import { Plus, Trash2, Search, Pencil, X, ArrowLeftRight, Printer, ChevronLeft, ChevronRight, ArrowDown, ArrowUp, ClipboardCheck, Check, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import logoHeader from '@/assets/logo_header.png';
 
@@ -14,7 +14,7 @@ const DELETE_SECRET_CODE = 'Jhonrob@1';
 const Motorredutores = () => {
   const [products, setProducts] = useState<MtdProduct[]>([]);
   const [movements, setMovements] = useState<MtdMovement[]>([]);
-  const [tab, setTab] = useState<'estoque' | 'movimentacoes' | 'imprimir'>('estoque');
+  const [tab, setTab] = useState<'estoque' | 'movimentacoes' | 'inventario' | 'imprimir'>('estoque');
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState<'todos' | MtdType>('todos');
   const [stockFilter, setStockFilter] = useState<'com_estoque' | 'sem_estoque' | 'todos'>('com_estoque');
@@ -62,6 +62,10 @@ const Motorredutores = () => {
 
   // Month filter for movements
   const [selectedMonth, setSelectedMonth] = useState(new Date());
+
+  // Inventário
+  const [inventarioChecked, setInventarioChecked] = useState<Record<string, 'sim' | 'nao'>>({});
+  const [inventarioProcessing, setInventarioProcessing] = useState<string | null>(null);
 
   const reload = async () => {
     try {
@@ -214,10 +218,43 @@ const Motorredutores = () => {
 
   const handlePrint = () => window.print();
 
-  const monthEntries = filteredMovements.filter(m => m.type === 'entrada').reduce((s, m) => s + m.quantity, 0);
-  const monthExits = filteredMovements.filter(m => m.type === 'saida').reduce((s, m) => s + m.quantity, 0);
+  const handleInventarioNao = async (product: MtdProduct) => {
+    setInventarioProcessing(product.id);
+    try {
+      await addMtdMovement({
+        mtdProductId: product.id,
+        mtdProductCode: product.code,
+        mtdProductDescription: product.description,
+        type: 'saida',
+        quantity: product.quantity,
+        clienteDestino: 'INVENTÁRIO - Baixa automática',
+        notaFiscal: '',
+        date: new Date().toISOString().split('T')[0],
+        observacao: 'Baixa por inventário - motor não encontrado no estoque físico',
+      });
+      setInventarioChecked(prev => ({ ...prev, [product.id]: 'nao' }));
+      toast.success(`Motor ${product.code} baixado do estoque (inventário)`);
+      await reload();
+    } catch (err: any) {
+      toast.error(err.message);
+    }
+    setInventarioProcessing(null);
+  };
+
+  const handleInventarioSim = (productId: string) => {
+    setInventarioChecked(prev => ({ ...prev, [productId]: 'sim' }));
+    toast.success('Motor confirmado no inventário!');
+  };
 
   const productsWithStock = products.filter(p => p.quantity > 0);
+
+  const inventarioProducts = productsWithStock;
+  const inventarioTotal = inventarioProducts.length;
+  const inventarioCheckedCount = inventarioProducts.filter(p => inventarioChecked[p.id]).length;
+  const inventarioPendingCount = inventarioTotal - inventarioCheckedCount;
+
+  const monthEntries = filteredMovements.filter(m => m.type === 'entrada').reduce((s, m) => s + m.quantity, 0);
+  const monthExits = filteredMovements.filter(m => m.type === 'saida').reduce((s, m) => s + m.quantity, 0);
 
   // Saida search
   const [saidaSearchType, setSaidaSearchType] = useState<'codigo' | 'nf'>('codigo');
@@ -250,6 +287,10 @@ const Motorredutores = () => {
             <button onClick={() => setTab('movimentacoes')}
               className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${tab === 'movimentacoes' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
               Movimentações
+            </button>
+            <button onClick={() => { setTab('inventario'); setInventarioChecked({}); }}
+              className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${tab === 'inventario' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
+              <ClipboardCheck className="w-4 h-4 inline mr-1" />Inventário
             </button>
             <button onClick={() => setTab('imprimir')}
               className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${tab === 'imprimir' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
@@ -562,6 +603,90 @@ const Motorredutores = () => {
                         <td className="px-4 py-2.5 text-xs text-muted-foreground">{m.observacao || '—'}</td>
                       </tr>
                     ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
+
+        {/* ===== INVENTÁRIO TAB ===== */}
+        {tab === 'inventario' && (
+          <>
+            <div className="bg-card border rounded-lg p-4 space-y-1">
+              <h3 className="font-semibold text-foreground flex items-center gap-2">
+                <ClipboardCheck className="w-5 h-5 text-primary" /> Inventário de Motorredutores
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                Confira cada motor no estoque físico. Clique <strong className="text-success">SIM</strong> se o motor está presente ou <strong className="text-destructive">NÃO</strong> para dar baixa automática.
+              </p>
+              <div className="flex gap-4 pt-2">
+                <span className="text-sm">Total: <strong>{inventarioTotal}</strong></span>
+                <span className="text-sm text-success">Confirmados: <strong>{inventarioProducts.filter(p => inventarioChecked[p.id] === 'sim').length}</strong></span>
+                <span className="text-sm text-destructive">Baixados: <strong>{inventarioProducts.filter(p => inventarioChecked[p.id] === 'nao').length}</strong></span>
+                <span className="text-sm text-muted-foreground">Pendentes: <strong>{inventarioPendingCount}</strong></span>
+              </div>
+            </div>
+
+            <div className="bg-card rounded-lg border overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b bg-muted/50">
+                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">Código</th>
+                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">Descrição</th>
+                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">Equipamento</th>
+                    <th className="text-center px-4 py-3 font-medium text-muted-foreground">Qtd</th>
+                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">NF</th>
+                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">OF</th>
+                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">Cliente</th>
+                    <th className="text-center px-4 py-3 font-medium text-muted-foreground">Status</th>
+                    <th className="text-center px-4 py-3 font-medium text-muted-foreground">Ação</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {inventarioProducts.length === 0 ? (
+                    <tr><td colSpan={9} className="px-5 py-8 text-center text-muted-foreground">Nenhum motorredutor em estoque para inventariar</td></tr>
+                  ) : (
+                    inventarioProducts.map(p => {
+                      const status = inventarioChecked[p.id];
+                      const isProcessing = inventarioProcessing === p.id;
+                      return (
+                        <tr key={p.id} className={`border-b last:border-0 transition-colors ${status === 'sim' ? 'bg-success/5' : status === 'nao' ? 'bg-destructive/5 opacity-50' : 'hover:bg-muted/30'}`}>
+                          <td className="px-4 py-2.5 font-mono font-semibold text-primary">{p.code}</td>
+                          <td className="px-4 py-2.5">{p.description}</td>
+                          <td className="px-4 py-2.5">
+                            <span className="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-primary/10 text-primary">
+                              {MTD_TYPE_LABELS[p.mtdType] || p.mtdType}
+                            </span>
+                          </td>
+                          <td className="px-4 py-2.5 text-center font-bold">{p.quantity}</td>
+                          <td className="px-4 py-2.5 text-xs font-mono">{p.notaFiscal || '—'}</td>
+                          <td className="px-4 py-2.5 text-xs font-mono">{p.ofNumber || '—'}</td>
+                          <td className="px-4 py-2.5 text-xs">{p.cliente || '—'}</td>
+                          <td className="px-4 py-2.5 text-center">
+                            {status === 'sim' && <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold bg-success/15 text-success"><Check className="w-3 h-3" /> OK</span>}
+                            {status === 'nao' && <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold bg-destructive/15 text-destructive"><XCircle className="w-3 h-3" /> Baixado</span>}
+                            {!status && <span className="text-xs text-muted-foreground">Pendente</span>}
+                          </td>
+                          <td className="px-4 py-2.5 text-center">
+                            {!status && !isProcessing && (
+                              <div className="flex items-center justify-center gap-2">
+                                <button onClick={() => handleInventarioSim(p.id)}
+                                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded text-xs font-bold bg-success text-white hover:bg-success/90 transition-colors">
+                                  <Check className="w-3.5 h-3.5" /> SIM
+                                </button>
+                                <button onClick={() => handleInventarioNao(p)}
+                                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded text-xs font-bold bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors">
+                                  <XCircle className="w-3.5 h-3.5" /> NÃO
+                                </button>
+                              </div>
+                            )}
+                            {isProcessing && <span className="text-xs text-muted-foreground">Processando...</span>}
+                            {status && !isProcessing && <span className="text-xs text-muted-foreground">—</span>}
+                          </td>
+                        </tr>
+                      );
+                    })
                   )}
                 </tbody>
               </table>
