@@ -5,7 +5,7 @@ import {
   MtdProduct, MtdMovement, MtdType, MTD_TYPE_LABELS, CONDICAO_OPTIONS,
 } from '@/lib/mtd';
 import AppLayout from '@/components/AppLayout';
-import { Plus, Trash2, Search, Pencil, X, ArrowLeftRight, Printer, ChevronLeft, ChevronRight, ArrowDown, ArrowUp } from 'lucide-react';
+import { Plus, Trash2, Search, Pencil, X, ArrowLeftRight, Printer, ChevronLeft, ChevronRight, ArrowDown, ArrowUp, ClipboardCheck, Check, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import logoHeader from '@/assets/logo_header.png';
 
