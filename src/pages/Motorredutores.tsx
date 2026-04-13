@@ -5,7 +5,7 @@ import {
   MtdProduct, MtdMovement, MtdType, MTD_TYPE_LABELS, CONDICAO_OPTIONS,
 } from '@/lib/mtd';
 import AppLayout from '@/components/AppLayout';
-import { Plus, Trash2, Search, Pencil, X, ArrowLeftRight, Printer, ChevronLeft, ChevronRight, ArrowDown, ArrowUp, ClipboardCheck, Check, XCircle } from 'lucide-react';
+import { Plus, Trash2, Search, Pencil, X, ArrowLeftRight, Printer, ChevronLeft, ChevronRight, ArrowDown, ArrowUp, ClipboardCheck, Check, XCircle, Undo2 } from 'lucide-react';
 import { toast } from 'sonner';
 import logoHeader from '@/assets/logo_header.png';
 
@@ -67,6 +67,7 @@ const Motorredutores = () => {
   const [inventarioChecked, setInventarioChecked] = useState<Record<string, 'sim' | 'nao'>>({});
   const [inventarioProcessing, setInventarioProcessing] = useState<string | null>(null);
   const [inventarioSearch, setInventarioSearch] = useState('');
+  const [inventarioConfirm, setInventarioConfirm] = useState<{ type: 'sim' | 'nao'; product: MtdProduct } | null>(null);
 
   const reload = async () => {
     try {
@@ -220,6 +221,7 @@ const Motorredutores = () => {
   const handlePrint = () => window.print();
 
   const handleInventarioNao = async (product: MtdProduct) => {
+    setInventarioConfirm(null);
     setInventarioProcessing(product.id);
     try {
       await addMtdMovement({
@@ -242,9 +244,37 @@ const Motorredutores = () => {
     setInventarioProcessing(null);
   };
 
-  const handleInventarioSim = (productId: string) => {
-    setInventarioChecked(prev => ({ ...prev, [productId]: 'sim' }));
+  const handleInventarioSim = (product: MtdProduct) => {
+    setInventarioConfirm(null);
+    setInventarioChecked(prev => ({ ...prev, [product.id]: 'sim' }));
     toast.success('Motor confirmado no inventário!');
+  };
+
+  const handleInventarioRetornar = async (product: MtdProduct) => {
+    setInventarioProcessing(product.id);
+    try {
+      await addMtdMovement({
+        mtdProductId: product.id,
+        mtdProductCode: product.code,
+        mtdProductDescription: product.description,
+        type: 'entrada',
+        quantity: 1,
+        clienteDestino: '',
+        notaFiscal: '',
+        date: new Date().toISOString().split('T')[0],
+        observacao: 'Retorno ao estoque - correção de inventário',
+      });
+      setInventarioChecked(prev => {
+        const copy = { ...prev };
+        delete copy[product.id];
+        return copy;
+      });
+      toast.success(`Motor ${product.code} retornado ao estoque!`);
+      await reload();
+    } catch (err: any) {
+      toast.error(err.message);
+    }
+    setInventarioProcessing(null);
   };
 
   const productsWithStock = products.filter(p => p.quantity > 0);
@@ -691,18 +721,24 @@ const Motorredutores = () => {
                           <td className="px-4 py-2.5 text-center">
                             {!status && !isProcessing && (
                               <div className="flex items-center justify-center gap-2">
-                                <button onClick={() => handleInventarioSim(p.id)}
+                                <button onClick={() => setInventarioConfirm({ type: 'sim', product: p })}
                                   className="inline-flex items-center gap-1 px-3 py-1.5 rounded text-xs font-bold bg-success text-white hover:bg-success/90 transition-colors">
                                   <Check className="w-3.5 h-3.5" /> SIM
                                 </button>
-                                <button onClick={() => handleInventarioNao(p)}
+                                <button onClick={() => setInventarioConfirm({ type: 'nao', product: p })}
                                   className="inline-flex items-center gap-1 px-3 py-1.5 rounded text-xs font-bold bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors">
                                   <XCircle className="w-3.5 h-3.5" /> NÃO
                                 </button>
                               </div>
                             )}
                             {isProcessing && <span className="text-xs text-muted-foreground">Processando...</span>}
-                            {status && !isProcessing && <span className="text-xs text-muted-foreground">—</span>}
+                            {status === 'sim' && !isProcessing && <span className="text-xs text-muted-foreground">—</span>}
+                            {status === 'nao' && !isProcessing && (
+                              <button onClick={() => handleInventarioRetornar(p)}
+                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded text-xs font-bold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
+                                <Undo2 className="w-3.5 h-3.5" /> Retornar
+                              </button>
+                            )}
                           </td>
                         </tr>
                       );
@@ -711,6 +747,64 @@ const Motorredutores = () => {
                 </tbody>
               </table>
             </div>
+
+            {/* Modal de confirmação do inventário */}
+            {inventarioConfirm && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+                <div className="bg-card rounded-lg border shadow-lg p-6 w-full max-w-md space-y-4">
+                  {inventarioConfirm.type === 'sim' ? (
+                    <>
+                      <h3 className="text-lg font-bold text-success flex items-center gap-2">
+                        <Check className="w-5 h-5" /> Confirmar Presença no Estoque
+                      </h3>
+                      <p className="text-sm text-muted-foreground">
+                        Tem certeza que o motor <strong className="text-foreground">{inventarioConfirm.product.code}</strong> está presente no estoque físico?
+                      </p>
+                      <div className="text-xs space-y-1 bg-muted/50 rounded p-3">
+                        <p><strong>Descrição:</strong> {inventarioConfirm.product.description}</p>
+                        <p><strong>NF:</strong> {inventarioConfirm.product.notaFiscal || '—'} | <strong>OF:</strong> {inventarioConfirm.product.ofNumber || '—'}</p>
+                        <p><strong>Cliente:</strong> {inventarioConfirm.product.cliente || '—'}</p>
+                      </div>
+                      <div className="flex gap-3 justify-end pt-2">
+                        <button onClick={() => setInventarioConfirm(null)}
+                          className="px-4 py-2 rounded text-sm font-medium bg-muted text-muted-foreground hover:bg-muted/80 transition-colors">
+                          Cancelar
+                        </button>
+                        <button onClick={() => handleInventarioSim(inventarioConfirm.product)}
+                          className="px-4 py-2 rounded text-sm font-bold bg-success text-white hover:bg-success/90 transition-colors">
+                          Sim, está no estoque
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <h3 className="text-lg font-bold text-destructive flex items-center gap-2">
+                        <XCircle className="w-5 h-5" /> Dar Baixa no Estoque
+                      </h3>
+                      <p className="text-sm text-muted-foreground">
+                        Tem certeza que o motor <strong className="text-foreground">{inventarioConfirm.product.code}</strong> <strong className="text-destructive">NÃO</strong> foi encontrado no estoque físico?
+                      </p>
+                      <div className="text-xs space-y-1 bg-muted/50 rounded p-3">
+                        <p><strong>Descrição:</strong> {inventarioConfirm.product.description}</p>
+                        <p><strong>NF:</strong> {inventarioConfirm.product.notaFiscal || '—'} | <strong>OF:</strong> {inventarioConfirm.product.ofNumber || '—'}</p>
+                        <p><strong>Cliente:</strong> {inventarioConfirm.product.cliente || '—'}</p>
+                      </div>
+                      <p className="text-xs text-destructive font-semibold">⚠️ Esta ação vai dar baixa automática deste motor no sistema. Se errar, você pode clicar em "Retornar" para devolver ao estoque.</p>
+                      <div className="flex gap-3 justify-end pt-2">
+                        <button onClick={() => setInventarioConfirm(null)}
+                          className="px-4 py-2 rounded text-sm font-medium bg-muted text-muted-foreground hover:bg-muted/80 transition-colors">
+                          Cancelar
+                        </button>
+                        <button onClick={() => handleInventarioNao(inventarioConfirm.product)}
+                          className="px-4 py-2 rounded text-sm font-bold bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors">
+                          Sim, dar baixa
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
           </>
         )}
 
