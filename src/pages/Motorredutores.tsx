@@ -747,6 +747,64 @@ const Motorredutores = () => {
                 </tbody>
               </table>
             </div>
+
+            {/* Modal de confirmação do inventário */}
+            {inventarioConfirm && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+                <div className="bg-card rounded-lg border shadow-lg p-6 w-full max-w-md space-y-4">
+                  {inventarioConfirm.type === 'sim' ? (
+                    <>
+                      <h3 className="text-lg font-bold text-success flex items-center gap-2">
+                        <Check className="w-5 h-5" /> Confirmar Presença no Estoque
+                      </h3>
+                      <p className="text-sm text-muted-foreground">
+                        Tem certeza que o motor <strong className="text-foreground">{inventarioConfirm.product.code}</strong> está presente no estoque físico?
+                      </p>
+                      <div className="text-xs space-y-1 bg-muted/50 rounded p-3">
+                        <p><strong>Descrição:</strong> {inventarioConfirm.product.description}</p>
+                        <p><strong>NF:</strong> {inventarioConfirm.product.notaFiscal || '—'} | <strong>OF:</strong> {inventarioConfirm.product.ofNumber || '—'}</p>
+                        <p><strong>Cliente:</strong> {inventarioConfirm.product.cliente || '—'}</p>
+                      </div>
+                      <div className="flex gap-3 justify-end pt-2">
+                        <button onClick={() => setInventarioConfirm(null)}
+                          className="px-4 py-2 rounded text-sm font-medium bg-muted text-muted-foreground hover:bg-muted/80 transition-colors">
+                          Cancelar
+                        </button>
+                        <button onClick={() => handleInventarioSim(inventarioConfirm.product)}
+                          className="px-4 py-2 rounded text-sm font-bold bg-success text-white hover:bg-success/90 transition-colors">
+                          Sim, está no estoque
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <h3 className="text-lg font-bold text-destructive flex items-center gap-2">
+                        <XCircle className="w-5 h-5" /> Dar Baixa no Estoque
+                      </h3>
+                      <p className="text-sm text-muted-foreground">
+                        Tem certeza que o motor <strong className="text-foreground">{inventarioConfirm.product.code}</strong> <strong className="text-destructive">NÃO</strong> foi encontrado no estoque físico?
+                      </p>
+                      <div className="text-xs space-y-1 bg-muted/50 rounded p-3">
+                        <p><strong>Descrição:</strong> {inventarioConfirm.product.description}</p>
+                        <p><strong>NF:</strong> {inventarioConfirm.product.notaFiscal || '—'} | <strong>OF:</strong> {inventarioConfirm.product.ofNumber || '—'}</p>
+                        <p><strong>Cliente:</strong> {inventarioConfirm.product.cliente || '—'}</p>
+                      </div>
+                      <p className="text-xs text-destructive font-semibold">⚠️ Esta ação vai dar baixa automática deste motor no sistema. Se errar, você pode clicar em "Retornar" para devolver ao estoque.</p>
+                      <div className="flex gap-3 justify-end pt-2">
+                        <button onClick={() => setInventarioConfirm(null)}
+                          className="px-4 py-2 rounded text-sm font-medium bg-muted text-muted-foreground hover:bg-muted/80 transition-colors">
+                          Cancelar
+                        </button>
+                        <button onClick={() => handleInventarioNao(inventarioConfirm.product)}
+                          className="px-4 py-2 rounded text-sm font-bold bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors">
+                          Sim, dar baixa
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
           </>
         )}
 
