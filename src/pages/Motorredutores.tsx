@@ -63,6 +63,10 @@ const Motorredutores = () => {
   // Month filter for movements
   const [selectedMonth, setSelectedMonth] = useState(new Date());
 
+  // Inventário
+  const [inventarioChecked, setInventarioChecked] = useState<Record<string, 'sim' | 'nao'>>({});
+  const [inventarioProcessing, setInventarioProcessing] = useState<string | null>(null);
+
   const reload = async () => {
     try {
       const [p, m] = await Promise.all([getMtdProducts(), getMtdMovements()]);
