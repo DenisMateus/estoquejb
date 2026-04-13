@@ -218,6 +218,39 @@ const Motorredutores = () => {
 
   const handlePrint = () => window.print();
 
+  const handleInventarioNao = async (product: MtdProduct) => {
+    setInventarioProcessing(product.id);
+    try {
+      await addMtdMovement({
+        mtdProductId: product.id,
+        mtdProductCode: product.code,
+        mtdProductDescription: product.description,
+        type: 'saida',
+        quantity: product.quantity,
+        clienteDestino: 'INVENTÁRIO - Baixa automática',
+        notaFiscal: '',
+        date: new Date().toISOString().split('T')[0],
+        observacao: 'Baixa por inventário - motor não encontrado no estoque físico',
+      });
+      setInventarioChecked(prev => ({ ...prev, [product.id]: 'nao' }));
+      toast.success(`Motor ${product.code} baixado do estoque (inventário)`);
+      await reload();
+    } catch (err: any) {
+      toast.error(err.message);
+    }
+    setInventarioProcessing(null);
+  };
+
+  const handleInventarioSim = (productId: string) => {
+    setInventarioChecked(prev => ({ ...prev, [productId]: 'sim' }));
+    toast.success('Motor confirmado no inventário!');
+  };
+
+  const inventarioProducts = productsWithStock;
+  const inventarioTotal = inventarioProducts.length;
+  const inventarioCheckedCount = inventarioProducts.filter(p => inventarioChecked[p.id]).length;
+  const inventarioPendingCount = inventarioTotal - inventarioCheckedCount;
+
   const monthEntries = filteredMovements.filter(m => m.type === 'entrada').reduce((s, m) => s + m.quantity, 0);
   const monthExits = filteredMovements.filter(m => m.type === 'saida').reduce((s, m) => s + m.quantity, 0);
 
