@@ -14,7 +14,7 @@ const DELETE_SECRET_CODE = 'Jhonrob@1';
 const Motorredutores = () => {
   const [products, setProducts] = useState<MtdProduct[]>([]);
   const [movements, setMovements] = useState<MtdMovement[]>([]);
-  const [tab, setTab] = useState<'estoque' | 'movimentacoes' | 'imprimir'>('estoque');
+  const [tab, setTab] = useState<'estoque' | 'movimentacoes' | 'inventario' | 'imprimir'>('estoque');
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState<'todos' | MtdType>('todos');
   const [stockFilter, setStockFilter] = useState<'com_estoque' | 'sem_estoque' | 'todos'>('com_estoque');
