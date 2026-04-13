@@ -251,10 +251,10 @@ const Motorredutores = () => {
   const inventarioCheckedCount = inventarioProducts.filter(p => inventarioChecked[p.id]).length;
   const inventarioPendingCount = inventarioTotal - inventarioCheckedCount;
 
+  const productsWithStock = products.filter(p => p.quantity > 0);
+
   const monthEntries = filteredMovements.filter(m => m.type === 'entrada').reduce((s, m) => s + m.quantity, 0);
   const monthExits = filteredMovements.filter(m => m.type === 'saida').reduce((s, m) => s + m.quantity, 0);
-
-  const productsWithStock = products.filter(p => p.quantity > 0);
 
   // Saida search
   const [saidaSearchType, setSaidaSearchType] = useState<'codigo' | 'nf'>('codigo');
