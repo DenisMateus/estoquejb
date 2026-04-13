@@ -721,18 +721,24 @@ const Motorredutores = () => {
                           <td className="px-4 py-2.5 text-center">
                             {!status && !isProcessing && (
                               <div className="flex items-center justify-center gap-2">
-                                <button onClick={() => handleInventarioSim(p.id)}
+                                <button onClick={() => setInventarioConfirm({ type: 'sim', product: p })}
                                   className="inline-flex items-center gap-1 px-3 py-1.5 rounded text-xs font-bold bg-success text-white hover:bg-success/90 transition-colors">
                                   <Check className="w-3.5 h-3.5" /> SIM
                                 </button>
-                                <button onClick={() => handleInventarioNao(p)}
+                                <button onClick={() => setInventarioConfirm({ type: 'nao', product: p })}
                                   className="inline-flex items-center gap-1 px-3 py-1.5 rounded text-xs font-bold bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors">
                                   <XCircle className="w-3.5 h-3.5" /> NÃO
                                 </button>
                               </div>
                             )}
                             {isProcessing && <span className="text-xs text-muted-foreground">Processando...</span>}
-                            {status && !isProcessing && <span className="text-xs text-muted-foreground">—</span>}
+                            {status === 'sim' && !isProcessing && <span className="text-xs text-muted-foreground">—</span>}
+                            {status === 'nao' && !isProcessing && (
+                              <button onClick={() => handleInventarioRetornar(p)}
+                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded text-xs font-bold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
+                                <Undo2 className="w-3.5 h-3.5" /> Retornar
+                              </button>
+                            )}
                           </td>
                         </tr>
                       );
