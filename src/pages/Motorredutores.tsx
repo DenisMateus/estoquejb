@@ -66,6 +66,7 @@ const Motorredutores = () => {
   // Inventário
   const [inventarioChecked, setInventarioChecked] = useState<Record<string, 'sim' | 'nao'>>({});
   const [inventarioProcessing, setInventarioProcessing] = useState<string | null>(null);
+  const [inventarioSearch, setInventarioSearch] = useState('');
 
   const reload = async () => {
     try {
@@ -248,7 +249,15 @@ const Motorredutores = () => {
 
   const productsWithStock = products.filter(p => p.quantity > 0);
 
-  const inventarioProducts = productsWithStock;
+  const inventarioProducts = productsWithStock.filter(p => {
+    if (!inventarioSearch.trim()) return true;
+    const term = inventarioSearch.toLowerCase().trim();
+    return p.code.toLowerCase().includes(term) ||
+      p.description.toLowerCase().includes(term) ||
+      (p.notaFiscal || '').toLowerCase().includes(term) ||
+      (p.ofNumber || '').toLowerCase().includes(term) ||
+      (p.cliente || '').toLowerCase().includes(term);
+  });
   const inventarioTotal = inventarioProducts.length;
   const inventarioCheckedCount = inventarioProducts.filter(p => inventarioChecked[p.id]).length;
   const inventarioPendingCount = inventarioTotal - inventarioCheckedCount;
@@ -626,6 +635,17 @@ const Motorredutores = () => {
                 <span className="text-sm text-destructive">Baixados: <strong>{inventarioProducts.filter(p => inventarioChecked[p.id] === 'nao').length}</strong></span>
                 <span className="text-sm text-muted-foreground">Pendentes: <strong>{inventarioPendingCount}</strong></span>
               </div>
+            </div>
+
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Pesquisar por código, descrição, NF, OF ou cliente..."
+                value={inventarioSearch}
+                onChange={e => setInventarioSearch(e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 rounded-lg border bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              />
             </div>
 
             <div className="bg-card rounded-lg border overflow-x-auto">
