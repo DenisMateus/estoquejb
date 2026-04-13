@@ -5,7 +5,7 @@ import {
   MtdProduct, MtdMovement, MtdType, MTD_TYPE_LABELS, CONDICAO_OPTIONS,
 } from '@/lib/mtd';
 import AppLayout from '@/components/AppLayout';
-import { Plus, Trash2, Search, Pencil, X, ArrowLeftRight, Printer, ChevronLeft, ChevronRight, ArrowDown, ArrowUp, ClipboardCheck, Check, XCircle } from 'lucide-react';
+import { Plus, Trash2, Search, Pencil, X, ArrowLeftRight, Printer, ChevronLeft, ChevronRight, ArrowDown, ArrowUp, ClipboardCheck, Check, XCircle, Undo2 } from 'lucide-react';
 import { toast } from 'sonner';
 import logoHeader from '@/assets/logo_header.png';
 
@@ -67,6 +67,7 @@ const Motorredutores = () => {
   const [inventarioChecked, setInventarioChecked] = useState<Record<string, 'sim' | 'nao'>>({});
   const [inventarioProcessing, setInventarioProcessing] = useState<string | null>(null);
   const [inventarioSearch, setInventarioSearch] = useState('');
+  const [inventarioConfirm, setInventarioConfirm] = useState<{ type: 'sim' | 'nao'; product: MtdProduct } | null>(null);
 
   const reload = async () => {
     try {
@@ -220,6 +221,7 @@ const Motorredutores = () => {
   const handlePrint = () => window.print();
 
   const handleInventarioNao = async (product: MtdProduct) => {
+    setInventarioConfirm(null);
     setInventarioProcessing(product.id);
     try {
       await addMtdMovement({
@@ -242,9 +244,37 @@ const Motorredutores = () => {
     setInventarioProcessing(null);
   };
 
-  const handleInventarioSim = (productId: string) => {
-    setInventarioChecked(prev => ({ ...prev, [productId]: 'sim' }));
+  const handleInventarioSim = (product: MtdProduct) => {
+    setInventarioConfirm(null);
+    setInventarioChecked(prev => ({ ...prev, [product.id]: 'sim' }));
     toast.success('Motor confirmado no inventário!');
+  };
+
+  const handleInventarioRetornar = async (product: MtdProduct) => {
+    setInventarioProcessing(product.id);
+    try {
+      await addMtdMovement({
+        mtdProductId: product.id,
+        mtdProductCode: product.code,
+        mtdProductDescription: product.description,
+        type: 'entrada',
+        quantity: 1,
+        clienteDestino: '',
+        notaFiscal: '',
+        date: new Date().toISOString().split('T')[0],
+        observacao: 'Retorno ao estoque - correção de inventário',
+      });
+      setInventarioChecked(prev => {
+        const copy = { ...prev };
+        delete copy[product.id];
+        return copy;
+      });
+      toast.success(`Motor ${product.code} retornado ao estoque!`);
+      await reload();
+    } catch (err: any) {
+      toast.error(err.message);
+    }
+    setInventarioProcessing(null);
   };
 
   const productsWithStock = products.filter(p => p.quantity > 0);
