@@ -596,9 +596,31 @@ const Motorredutores = () => {
                       </p>
                     )}
                   </div>
-                  <div>
+                  <div className="relative">
                     <label className="text-sm font-medium text-foreground block mb-1">Cliente Final (destino)</label>
-                    <input value={saidaCliente} onChange={e => setSaidaCliente(e.target.value)} className="input-steel w-full" placeholder="Para qual cliente vai o motor" required />
+                    <input
+                      value={saidaCliente}
+                      onChange={e => { setSaidaCliente(e.target.value); setShowClienteSuggestions(true); }}
+                      onFocus={() => setShowClienteSuggestions(true)}
+                      onBlur={() => setTimeout(() => setShowClienteSuggestions(false), 200)}
+                      className="input-steel w-full"
+                      placeholder="Digite o nome do cliente"
+                      required
+                      autoComplete="off"
+                    />
+                    {showClienteSuggestions && filteredClientes.length > 0 && (
+                      <ul className="absolute z-50 left-0 right-0 mt-1 max-h-40 overflow-y-auto rounded-md border bg-popover text-popover-foreground shadow-md">
+                        {filteredClientes.map(c => (
+                          <li
+                            key={c}
+                            className="px-3 py-2 text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground"
+                            onMouseDown={() => { setSaidaCliente(c); setShowClienteSuggestions(false); }}
+                          >
+                            {c}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                   </div>
                   <div>
                     <label className="text-sm font-medium text-foreground block mb-1">Quantidade</label>
