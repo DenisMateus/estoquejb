@@ -848,7 +848,7 @@ const Motorredutores = () => {
                                 <td className="px-4 py-2.5 text-xs text-muted-foreground">{m.observacao || '—'}</td>
                                 <td className="px-4 py-2.5 text-center">
                                   {isBaixa && product && product.quantity === 0 && !isProcessing ? (
-                                    <button onClick={() => handleInventarioRetornar(product)}
+                                    <button onClick={() => { setRetornarTarget(product); setRetornarCode(''); }}
                                       className="inline-flex items-center gap-1 px-3 py-1.5 rounded text-xs font-bold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
                                       <Undo2 className="w-3.5 h-3.5" /> Retornar
                                     </button>
