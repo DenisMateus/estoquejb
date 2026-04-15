@@ -68,6 +68,20 @@ const Motorredutores = () => {
   const [inventarioProcessing, setInventarioProcessing] = useState<string | null>(null);
   const [inventarioSearch, setInventarioSearch] = useState('');
   const [inventarioConfirm, setInventarioConfirm] = useState<{ type: 'sim' | 'nao'; product: MtdProduct } | null>(null);
+  const [showClienteSuggestions, setShowClienteSuggestions] = useState(false);
+
+  const allClientes = useMemo(() => {
+    const set = new Set<string>();
+    products.forEach(p => { if (p.cliente?.trim()) set.add(p.cliente.trim()); });
+    movements.forEach(m => { if (m.clienteDestino?.trim() && !m.clienteDestino.startsWith('INVENTÁRIO')) set.add(m.clienteDestino.trim()); });
+    return Array.from(set).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  }, [products, movements]);
+
+  const filteredClientes = useMemo(() => {
+    if (!saidaCliente.trim()) return allClientes;
+    const term = saidaCliente.toLowerCase().trim();
+    return allClientes.filter(c => c.toLowerCase().includes(term));
+  }, [allClientes, saidaCliente]);
 
   const reload = async () => {
     try {
