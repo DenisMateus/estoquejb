@@ -69,6 +69,8 @@ const Motorredutores = () => {
   const [inventarioSearch, setInventarioSearch] = useState('');
   const [inventarioConfirm, setInventarioConfirm] = useState<{ type: 'sim' | 'nao'; product: MtdProduct } | null>(null);
   const [inventarioSubTab, setInventarioSubTab] = useState<'contagem' | 'historico'>('contagem');
+  const [retornarTarget, setRetornarTarget] = useState<MtdProduct | null>(null);
+  const [retornarCode, setRetornarCode] = useState('');
   const [showClienteSuggestions, setShowClienteSuggestions] = useState(false);
 
   const allClientes = useMemo(() => {
@@ -266,6 +268,12 @@ const Motorredutores = () => {
   };
 
   const handleInventarioRetornar = async (product: MtdProduct) => {
+    if (retornarCode !== DELETE_SECRET_CODE) {
+      toast.error('Código de segurança incorreto!');
+      return;
+    }
+    setRetornarTarget(null);
+    setRetornarCode('');
     setInventarioProcessing(product.id);
     try {
       await addMtdMovement({
@@ -840,7 +848,7 @@ const Motorredutores = () => {
                                 <td className="px-4 py-2.5 text-xs text-muted-foreground">{m.observacao || '—'}</td>
                                 <td className="px-4 py-2.5 text-center">
                                   {isBaixa && product && product.quantity === 0 && !isProcessing ? (
-                                    <button onClick={() => handleInventarioRetornar(product)}
+                                    <button onClick={() => { setRetornarTarget(product); setRetornarCode(''); }}
                                       className="inline-flex items-center gap-1 px-3 py-1.5 rounded text-xs font-bold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
                                       <Undo2 className="w-3.5 h-3.5" /> Retornar
                                     </button>
@@ -915,6 +923,42 @@ const Motorredutores = () => {
                       </div>
                     </>
                   )}
+                </div>
+              </div>
+            )}
+
+            {/* Modal senha para retornar */}
+            {retornarTarget && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+                <div className="bg-card rounded-lg border shadow-lg p-6 w-full max-w-md space-y-4">
+                  <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
+                    <Undo2 className="w-5 h-5 text-primary" /> Retornar Motor ao Estoque
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Retornar <strong className="text-foreground">{retornarTarget.code}</strong> — {retornarTarget.description}
+                  </p>
+                  <div>
+                    <label className="text-sm font-medium text-foreground block mb-1">Código de segurança</label>
+                    <input
+                      type="password"
+                      value={retornarCode}
+                      onChange={e => setRetornarCode(e.target.value)}
+                      placeholder="Digite o código"
+                      className="w-full border rounded-md px-3 py-2 bg-background text-foreground"
+                      autoFocus
+                      onKeyDown={e => e.key === 'Enter' && handleInventarioRetornar(retornarTarget)}
+                    />
+                  </div>
+                  <div className="flex gap-3 justify-end pt-2">
+                    <button onClick={() => { setRetornarTarget(null); setRetornarCode(''); }}
+                      className="px-4 py-2 rounded text-sm font-medium bg-muted text-muted-foreground hover:bg-muted/80 transition-colors">
+                      Cancelar
+                    </button>
+                    <button onClick={() => handleInventarioRetornar(retornarTarget)}
+                      className="px-4 py-2 rounded text-sm font-bold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
+                      Confirmar Retorno
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
