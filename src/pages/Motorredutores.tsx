@@ -268,6 +268,12 @@ const Motorredutores = () => {
   };
 
   const handleInventarioRetornar = async (product: MtdProduct) => {
+    if (retornarCode !== DELETE_SECRET_CODE) {
+      toast.error('Código de segurança incorreto!');
+      return;
+    }
+    setRetornarTarget(null);
+    setRetornarCode('');
     setInventarioProcessing(product.id);
     try {
       await addMtdMovement({
