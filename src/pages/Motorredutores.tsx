@@ -704,86 +704,162 @@ const Motorredutores = () => {
               </div>
             </div>
 
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <input
-                type="text"
-                placeholder="Pesquisar por código, descrição, NF, OF ou cliente..."
-                value={inventarioSearch}
-                onChange={e => setInventarioSearch(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 rounded-lg border bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-              />
+            {/* Sub-tabs */}
+            <div className="flex gap-2">
+              <button onClick={() => setInventarioSubTab('contagem')}
+                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${inventarioSubTab === 'contagem' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
+                <ClipboardCheck className="w-4 h-4 inline mr-1.5" />Contagem
+              </button>
+              <button onClick={() => setInventarioSubTab('historico')}
+                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${inventarioSubTab === 'historico' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
+                <ArrowLeftRight className="w-4 h-4 inline mr-1.5" />Histórico de Inventário
+              </button>
             </div>
 
-            <div className="bg-card rounded-lg border overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b bg-muted/50">
-                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">Código</th>
-                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">Descrição</th>
-                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">Equipamento</th>
-                    <th className="text-center px-4 py-3 font-medium text-muted-foreground">Qtd</th>
-                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">NF</th>
-                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">OF</th>
-                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">Cliente</th>
-                    <th className="text-center px-4 py-3 font-medium text-muted-foreground">Status</th>
-                    <th className="text-center px-4 py-3 font-medium text-muted-foreground">Ação</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {inventarioProducts.length === 0 ? (
-                    <tr><td colSpan={9} className="px-5 py-8 text-center text-muted-foreground">Nenhum motorredutor em estoque para inventariar</td></tr>
-                  ) : (
-                    inventarioProducts.map(p => {
-                      const status = inventarioChecked[p.id];
-                      const isProcessing = inventarioProcessing === p.id;
-                      return (
-                        <tr key={p.id} className={`border-b last:border-0 transition-colors ${status === 'sim' ? 'bg-success/5' : status === 'nao' ? 'bg-destructive/5 opacity-50' : 'hover:bg-muted/30'}`}>
-                          <td className="px-4 py-2.5 font-mono font-semibold text-primary">{p.code}</td>
-                          <td className="px-4 py-2.5">{p.description}</td>
-                          <td className="px-4 py-2.5">
-                            <span className="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-primary/10 text-primary">
-                              {MTD_TYPE_LABELS[p.mtdType] || p.mtdType}
-                            </span>
-                          </td>
-                          <td className="px-4 py-2.5 text-center font-bold">{p.quantity}</td>
-                          <td className="px-4 py-2.5 text-xs font-mono">{p.notaFiscal || '—'}</td>
-                          <td className="px-4 py-2.5 text-xs font-mono">{p.ofNumber || '—'}</td>
-                          <td className="px-4 py-2.5 text-xs">{p.cliente || '—'}</td>
-                          <td className="px-4 py-2.5 text-center">
-                            {status === 'sim' && <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold bg-success/15 text-success"><Check className="w-3 h-3" /> OK</span>}
-                            {status === 'nao' && <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold bg-destructive/15 text-destructive"><XCircle className="w-3 h-3" /> Baixado</span>}
-                            {!status && <span className="text-xs text-muted-foreground">Pendente</span>}
-                          </td>
-                          <td className="px-4 py-2.5 text-center">
-                            {!status && !isProcessing && (
-                              <div className="flex items-center justify-center gap-2">
-                                <button onClick={() => setInventarioConfirm({ type: 'sim', product: p })}
-                                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded text-xs font-bold bg-success text-white hover:bg-success/90 transition-colors">
-                                  <Check className="w-3.5 h-3.5" /> SIM
-                                </button>
-                                <button onClick={() => setInventarioConfirm({ type: 'nao', product: p })}
-                                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded text-xs font-bold bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors">
-                                  <XCircle className="w-3.5 h-3.5" /> NÃO
-                                </button>
-                              </div>
-                            )}
-                            {isProcessing && <span className="text-xs text-muted-foreground">Processando...</span>}
-                            {status === 'sim' && !isProcessing && <span className="text-xs text-muted-foreground">—</span>}
-                            {status === 'nao' && !isProcessing && (
-                              <button onClick={() => handleInventarioRetornar(p)}
-                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded text-xs font-bold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
-                                <Undo2 className="w-3.5 h-3.5" /> Retornar
-                              </button>
-                            )}
-                          </td>
+            {inventarioSubTab === 'contagem' && (
+              <>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <input
+                    type="text"
+                    placeholder="Pesquisar por código, descrição, NF, OF ou cliente..."
+                    value={inventarioSearch}
+                    onChange={e => setInventarioSearch(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2.5 rounded-lg border bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
+                </div>
+
+                <div className="bg-card rounded-lg border overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b bg-muted/50">
+                        <th className="text-left px-4 py-3 font-medium text-muted-foreground">Código</th>
+                        <th className="text-left px-4 py-3 font-medium text-muted-foreground">Descrição</th>
+                        <th className="text-left px-4 py-3 font-medium text-muted-foreground">Equipamento</th>
+                        <th className="text-center px-4 py-3 font-medium text-muted-foreground">Qtd</th>
+                        <th className="text-left px-4 py-3 font-medium text-muted-foreground">NF</th>
+                        <th className="text-left px-4 py-3 font-medium text-muted-foreground">OF</th>
+                        <th className="text-left px-4 py-3 font-medium text-muted-foreground">Cliente</th>
+                        <th className="text-center px-4 py-3 font-medium text-muted-foreground">Status</th>
+                        <th className="text-center px-4 py-3 font-medium text-muted-foreground">Ação</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {inventarioProducts.length === 0 ? (
+                        <tr><td colSpan={9} className="px-5 py-8 text-center text-muted-foreground">Nenhum motorredutor em estoque para inventariar</td></tr>
+                      ) : (
+                        inventarioProducts.map(p => {
+                          const status = inventarioChecked[p.id];
+                          const isProcessing = inventarioProcessing === p.id;
+                          return (
+                            <tr key={p.id} className={`border-b last:border-0 transition-colors ${status === 'sim' ? 'bg-success/5' : status === 'nao' ? 'bg-destructive/5 opacity-50' : 'hover:bg-muted/30'}`}>
+                              <td className="px-4 py-2.5 font-mono font-semibold text-primary">{p.code}</td>
+                              <td className="px-4 py-2.5">{p.description}</td>
+                              <td className="px-4 py-2.5">
+                                <span className="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-primary/10 text-primary">
+                                  {MTD_TYPE_LABELS[p.mtdType] || p.mtdType}
+                                </span>
+                              </td>
+                              <td className="px-4 py-2.5 text-center font-bold">{p.quantity}</td>
+                              <td className="px-4 py-2.5 text-xs font-mono">{p.notaFiscal || '—'}</td>
+                              <td className="px-4 py-2.5 text-xs font-mono">{p.ofNumber || '—'}</td>
+                              <td className="px-4 py-2.5 text-xs">{p.cliente || '—'}</td>
+                              <td className="px-4 py-2.5 text-center">
+                                {status === 'sim' && <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold bg-success/15 text-success"><Check className="w-3 h-3" /> OK</span>}
+                                {status === 'nao' && <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold bg-destructive/15 text-destructive"><XCircle className="w-3 h-3" /> Baixado</span>}
+                                {!status && <span className="text-xs text-muted-foreground">Pendente</span>}
+                              </td>
+                              <td className="px-4 py-2.5 text-center">
+                                {!status && !isProcessing && (
+                                  <div className="flex items-center justify-center gap-2">
+                                    <button onClick={() => setInventarioConfirm({ type: 'sim', product: p })}
+                                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded text-xs font-bold bg-success text-white hover:bg-success/90 transition-colors">
+                                      <Check className="w-3.5 h-3.5" /> SIM
+                                    </button>
+                                    <button onClick={() => setInventarioConfirm({ type: 'nao', product: p })}
+                                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded text-xs font-bold bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors">
+                                      <XCircle className="w-3.5 h-3.5" /> NÃO
+                                    </button>
+                                  </div>
+                                )}
+                                {isProcessing && <span className="text-xs text-muted-foreground">Processando...</span>}
+                                {status === 'sim' && !isProcessing && <span className="text-xs text-muted-foreground">—</span>}
+                                {status === 'nao' && !isProcessing && <span className="text-xs text-muted-foreground">Baixado</span>}
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            )}
+
+            {inventarioSubTab === 'historico' && (() => {
+              const inventarioMovements = movements.filter(m =>
+                m.clienteDestino === 'INVENTÁRIO - Baixa automática' ||
+                m.observacao?.includes('correção de inventário') ||
+                m.observacao?.includes('Baixa por inventário')
+              );
+              return (
+                <>
+                  <div className="bg-card rounded-lg border overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b bg-muted/50">
+                          <th className="text-left px-4 py-3 font-medium text-muted-foreground">Data</th>
+                          <th className="text-left px-4 py-3 font-medium text-muted-foreground">Código</th>
+                          <th className="text-left px-4 py-3 font-medium text-muted-foreground">Descrição</th>
+                          <th className="text-center px-4 py-3 font-medium text-muted-foreground">Tipo</th>
+                          <th className="text-center px-4 py-3 font-medium text-muted-foreground">Qtd</th>
+                          <th className="text-left px-4 py-3 font-medium text-muted-foreground">Observação</th>
+                          <th className="text-center px-4 py-3 font-medium text-muted-foreground">Ação</th>
                         </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
+                      </thead>
+                      <tbody>
+                        {inventarioMovements.length === 0 ? (
+                          <tr><td colSpan={7} className="px-5 py-8 text-center text-muted-foreground">Nenhum movimento de inventário registrado</td></tr>
+                        ) : (
+                          inventarioMovements.map(m => {
+                            const isBaixa = m.type === 'saida';
+                            const product = products.find(p => p.id === m.mtdProductId);
+                            const isProcessing = inventarioProcessing === m.mtdProductId;
+                            return (
+                              <tr key={m.id} className={`border-b last:border-0 ${isBaixa ? 'bg-destructive/5' : 'bg-success/5'}`}>
+                                <td className="px-4 py-2.5 text-xs font-mono">{m.date}</td>
+                                <td className="px-4 py-2.5 font-mono font-semibold text-primary">{m.mtdProductCode}</td>
+                                <td className="px-4 py-2.5">{m.mtdProductDescription}</td>
+                                <td className="px-4 py-2.5 text-center">
+                                  {isBaixa
+                                    ? <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold bg-destructive/15 text-destructive"><XCircle className="w-3 h-3" /> Baixa</span>
+                                    : <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold bg-success/15 text-success"><Undo2 className="w-3 h-3" /> Retorno</span>
+                                  }
+                                </td>
+                                <td className="px-4 py-2.5 text-center font-bold">{m.quantity}</td>
+                                <td className="px-4 py-2.5 text-xs text-muted-foreground">{m.observacao || '—'}</td>
+                                <td className="px-4 py-2.5 text-center">
+                                  {isBaixa && product && product.quantity === 0 && !isProcessing ? (
+                                    <button onClick={() => handleInventarioRetornar(product)}
+                                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded text-xs font-bold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
+                                      <Undo2 className="w-3.5 h-3.5" /> Retornar
+                                    </button>
+                                  ) : isBaixa && isProcessing ? (
+                                    <span className="text-xs text-muted-foreground">Processando...</span>
+                                  ) : (
+                                    <span className="text-xs text-muted-foreground">—</span>
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          })
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              );
+            })()}
 
             {/* Modal de confirmação do inventário */}
             {inventarioConfirm && (
@@ -826,7 +902,7 @@ const Motorredutores = () => {
                         <p><strong>NF:</strong> {inventarioConfirm.product.notaFiscal || '—'} | <strong>OF:</strong> {inventarioConfirm.product.ofNumber || '—'}</p>
                         <p><strong>Cliente:</strong> {inventarioConfirm.product.cliente || '—'}</p>
                       </div>
-                      <p className="text-xs text-destructive font-semibold">⚠️ Esta ação vai dar baixa automática deste motor no sistema. Se errar, você pode clicar em "Retornar" para devolver ao estoque.</p>
+                      <p className="text-xs text-destructive font-semibold">⚠️ Esta ação vai dar baixa automática deste motor no sistema. Você pode reverter pelo Histórico de Inventário.</p>
                       <div className="flex gap-3 justify-end pt-2">
                         <button onClick={() => setInventarioConfirm(null)}
                           className="px-4 py-2 rounded text-sm font-medium bg-muted text-muted-foreground hover:bg-muted/80 transition-colors">
