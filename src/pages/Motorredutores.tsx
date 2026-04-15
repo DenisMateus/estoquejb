@@ -68,6 +68,7 @@ const Motorredutores = () => {
   const [inventarioProcessing, setInventarioProcessing] = useState<string | null>(null);
   const [inventarioSearch, setInventarioSearch] = useState('');
   const [inventarioConfirm, setInventarioConfirm] = useState<{ type: 'sim' | 'nao'; product: MtdProduct } | null>(null);
+  const [inventarioSubTab, setInventarioSubTab] = useState<'contagem' | 'historico'>('contagem');
   const [showClienteSuggestions, setShowClienteSuggestions] = useState(false);
 
   const allClientes = useMemo(() => {
