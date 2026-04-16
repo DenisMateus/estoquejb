@@ -248,7 +248,6 @@ const Motorredutores = () => {
       setSubmittingSaida(false);
     }
   };
-  };
 
   const handleDeleteClick = (id: string, desc: string) => {
     setDeleteTarget({ id, desc });
