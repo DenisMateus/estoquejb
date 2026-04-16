@@ -135,9 +135,37 @@ const Motorredutores = () => {
     });
   }, [products, search, filterType, stockFilter]);
 
+  // Search in movements tab
+  const [movSearch, setMovSearch] = useState('');
+  const [movSearchType, setMovSearchType] = useState<'codigo' | 'nf'>('codigo');
+  const [movTypeFilter, setMovTypeFilter] = useState<'todos' | 'entrada' | 'saida'>('todos');
+
   const filteredMovements = useMemo(() => {
-    return movements.filter(m => m.date.startsWith(monthKey));
-  }, [movements, monthKey]);
+    return movements
+      .filter(m => m.date.startsWith(monthKey))
+      .filter(m => movTypeFilter === 'todos' || m.type === movTypeFilter)
+      .filter(m => {
+        if (!movSearch.trim()) return true;
+        const term = movSearch.toLowerCase().trim();
+        if (movSearchType === 'nf') {
+          return (m.notaFiscal || '').toLowerCase().includes(term);
+        }
+        return m.mtdProductCode.toLowerCase().includes(term) ||
+               m.mtdProductDescription.toLowerCase().includes(term);
+      });
+  }, [movements, monthKey, movSearch, movSearchType, movTypeFilter]);
+
+  // Last "saida" date per product (used to display "Data Baixa" in stock list)
+  const lastExitByProduct = useMemo(() => {
+    const map: Record<string, string> = {};
+    // movements come ordered by created_at desc, so first match wins
+    movements.forEach(m => {
+      if (m.type === 'saida' && !map[m.mtdProductId]) {
+        map[m.mtdProductId] = m.date;
+      }
+    });
+    return map;
+  }, [movements]);
 
   // Print only motors with stock
   const printProducts = useMemo(() => {
@@ -478,12 +506,15 @@ const Motorredutores = () => {
                     <th className="text-left px-4 py-3 font-medium text-muted-foreground">NF</th>
                     <th className="text-left px-4 py-3 font-medium text-muted-foreground">OF</th>
                     <th className="text-left px-4 py-3 font-medium text-muted-foreground">Cliente</th>
+                    {stockFilter === 'sem_estoque' && (
+                      <th className="text-left px-4 py-3 font-medium text-muted-foreground">Data Baixa</th>
+                    )}
                     <th className="px-4 py-3 print:hidden"></th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredProducts.length === 0 ? (
-                    <tr><td colSpan={10} className="px-5 py-8 text-center text-muted-foreground">Nenhum motorredutor encontrado</td></tr>
+                    <tr><td colSpan={stockFilter === 'sem_estoque' ? 11 : 10} className="px-5 py-8 text-center text-muted-foreground">Nenhum motorredutor encontrado</td></tr>
                   ) : (
                     filteredProducts.map(p => (
                       <tr key={p.id} className={`border-b last:border-0 hover:bg-muted/30 transition-colors ${p.quantity === 0 ? 'opacity-50' : ''}`}>
@@ -504,6 +535,13 @@ const Motorredutores = () => {
                         <td className="px-4 py-2.5 text-xs font-mono">{p.notaFiscal || '—'}</td>
                         <td className="px-4 py-2.5 text-xs font-mono">{p.ofNumber || '—'}</td>
                         <td className="px-4 py-2.5 text-xs">{p.cliente || '—'}</td>
+                        {stockFilter === 'sem_estoque' && (
+                          <td className="px-4 py-2.5 text-xs font-mono">
+                            {lastExitByProduct[p.id]
+                              ? new Date(lastExitByProduct[p.id]).toLocaleDateString('pt-BR')
+                              : '—'}
+                          </td>
+                        )}
                         <td className="px-4 py-2.5 print:hidden">
                           <div className="flex items-center gap-1">
                             <button onClick={() => openEdit(p)} className="text-muted-foreground hover:text-primary transition-colors"><Pencil className="w-4 h-4" /></button>
@@ -785,6 +823,34 @@ const Motorredutores = () => {
                 </div>
               </div>
             )}
+
+            {/* Search & filter movements */}
+            <div className="flex flex-wrap gap-2 items-center print:hidden">
+              <div className="flex gap-1">
+                <button onClick={() => setMovSearchType('codigo')}
+                  className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${movSearchType === 'codigo' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
+                  Por Código
+                </button>
+                <button onClick={() => setMovSearchType('nf')}
+                  className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${movSearchType === 'nf' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
+                  Por NF
+                </button>
+              </div>
+              <div className="relative flex-1 min-w-[220px]">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <input value={movSearch} onChange={e => setMovSearch(e.target.value)}
+                  className="input-steel pl-10 w-full"
+                  placeholder={movSearchType === 'nf' ? 'Pesquisar movimentação por NF...' : 'Pesquisar movimentação por código/descrição...'} />
+              </div>
+              <div className="flex gap-1">
+                {(['todos', 'entrada', 'saida'] as const).map(f => (
+                  <button key={f} onClick={() => setMovTypeFilter(f)}
+                    className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${movTypeFilter === f ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
+                    {f === 'todos' ? 'Todos' : f === 'entrada' ? 'Entradas' : 'Saídas'}
+                  </button>
+                ))}
+              </div>
+            </div>
 
             {/* Movements table */}
             <div className="bg-card rounded-lg border overflow-x-auto">
