@@ -135,9 +135,37 @@ const Motorredutores = () => {
     });
   }, [products, search, filterType, stockFilter]);
 
+  // Search in movements tab
+  const [movSearch, setMovSearch] = useState('');
+  const [movSearchType, setMovSearchType] = useState<'codigo' | 'nf'>('codigo');
+  const [movTypeFilter, setMovTypeFilter] = useState<'todos' | 'entrada' | 'saida'>('todos');
+
   const filteredMovements = useMemo(() => {
-    return movements.filter(m => m.date.startsWith(monthKey));
-  }, [movements, monthKey]);
+    return movements
+      .filter(m => m.date.startsWith(monthKey))
+      .filter(m => movTypeFilter === 'todos' || m.type === movTypeFilter)
+      .filter(m => {
+        if (!movSearch.trim()) return true;
+        const term = movSearch.toLowerCase().trim();
+        if (movSearchType === 'nf') {
+          return (m.notaFiscal || '').toLowerCase().includes(term);
+        }
+        return m.mtdProductCode.toLowerCase().includes(term) ||
+               m.mtdProductDescription.toLowerCase().includes(term);
+      });
+  }, [movements, monthKey, movSearch, movSearchType, movTypeFilter]);
+
+  // Last "saida" date per product (used to display "Data Baixa" in stock list)
+  const lastExitByProduct = useMemo(() => {
+    const map: Record<string, string> = {};
+    // movements come ordered by created_at desc, so first match wins
+    movements.forEach(m => {
+      if (m.type === 'saida' && !map[m.mtdProductId]) {
+        map[m.mtdProductId] = m.date;
+      }
+    });
+    return map;
+  }, [movements]);
 
   // Print only motors with stock
   const printProducts = useMemo(() => {
