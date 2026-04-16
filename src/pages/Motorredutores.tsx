@@ -506,12 +506,15 @@ const Motorredutores = () => {
                     <th className="text-left px-4 py-3 font-medium text-muted-foreground">NF</th>
                     <th className="text-left px-4 py-3 font-medium text-muted-foreground">OF</th>
                     <th className="text-left px-4 py-3 font-medium text-muted-foreground">Cliente</th>
+                    {stockFilter === 'sem_estoque' && (
+                      <th className="text-left px-4 py-3 font-medium text-muted-foreground">Data Baixa</th>
+                    )}
                     <th className="px-4 py-3 print:hidden"></th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredProducts.length === 0 ? (
-                    <tr><td colSpan={10} className="px-5 py-8 text-center text-muted-foreground">Nenhum motorredutor encontrado</td></tr>
+                    <tr><td colSpan={stockFilter === 'sem_estoque' ? 11 : 10} className="px-5 py-8 text-center text-muted-foreground">Nenhum motorredutor encontrado</td></tr>
                   ) : (
                     filteredProducts.map(p => (
                       <tr key={p.id} className={`border-b last:border-0 hover:bg-muted/30 transition-colors ${p.quantity === 0 ? 'opacity-50' : ''}`}>
@@ -532,6 +535,13 @@ const Motorredutores = () => {
                         <td className="px-4 py-2.5 text-xs font-mono">{p.notaFiscal || '—'}</td>
                         <td className="px-4 py-2.5 text-xs font-mono">{p.ofNumber || '—'}</td>
                         <td className="px-4 py-2.5 text-xs">{p.cliente || '—'}</td>
+                        {stockFilter === 'sem_estoque' && (
+                          <td className="px-4 py-2.5 text-xs font-mono">
+                            {lastExitByProduct[p.id]
+                              ? new Date(lastExitByProduct[p.id]).toLocaleDateString('pt-BR')
+                              : '—'}
+                          </td>
+                        )}
                         <td className="px-4 py-2.5 print:hidden">
                           <div className="flex items-center gap-1">
                             <button onClick={() => openEdit(p)} className="text-muted-foreground hover:text-primary transition-colors"><Pencil className="w-4 h-4" /></button>
