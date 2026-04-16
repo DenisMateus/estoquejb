@@ -178,31 +178,76 @@ const Motorredutores = () => {
     } catch (err: any) { toast.error(err.message); }
   };
 
-  const handleSaida = async (e: React.FormEvent) => {
+  const handleAddToSaidaCart = (e: React.FormEvent) => {
     e.preventDefault();
     const product = products.find(p => p.id === saidaProductId);
     if (!product) { toast.error('Selecione um motorredutor'); return; }
-    if (saidaQtd < 1 || saidaQtd > product.quantity) {
-      toast.error(`Quantidade inválida. Estoque disponível: ${product.quantity}`);
+    if (!saidaCliente.trim()) { toast.error('Informe o cliente final'); return; }
+
+    // Verify total quantity already in cart for this product does not exceed stock
+    const alreadyInCart = saidaCart
+      .filter(it => it.productId === product.id)
+      .reduce((s, it) => s + it.quantity, 0);
+    const remaining = product.quantity - alreadyInCart;
+    if (saidaQtd < 1 || saidaQtd > remaining) {
+      toast.error(`Quantidade inválida. Disponível (descontando o carrinho): ${remaining}`);
       return;
     }
+
+    setSaidaCart(prev => [...prev, {
+      tempId: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      productId: product.id,
+      productCode: product.code,
+      productDescription: product.description,
+      productNotaFiscal: product.notaFiscal,
+      availableQty: product.quantity,
+      quantity: saidaQtd,
+      cliente: saidaCliente.trim(),
+      observacao: saidaObs.trim(),
+      date: saidaDate,
+    }]);
+    toast.success('Motor adicionado à lista de saída');
+
+    // Reset item fields (keep date for convenience)
+    setSaidaProductId('');
+    setSaidaCliente('');
+    setSaidaObs('');
+    setSaidaQtd(1);
+    setSaidaSearch('');
+  };
+
+  const handleRemoveFromCart = (tempId: string) => {
+    setSaidaCart(prev => prev.filter(it => it.tempId !== tempId));
+  };
+
+  const handleSubmitSaidaCart = async () => {
+    if (saidaCart.length === 0) { toast.error('Adicione pelo menos um motor à lista'); return; }
+    setSubmittingSaida(true);
     try {
-      await addMtdMovement({
-        mtdProductId: product.id,
-        mtdProductCode: product.code,
-        mtdProductDescription: product.description,
-        type: 'saida',
-        quantity: saidaQtd,
-        clienteDestino: saidaCliente.trim(),
-        notaFiscal: '',
-        date: saidaDate,
-        observacao: saidaObs.trim(),
-      });
-      toast.success('Saída registrada!');
-      setSaidaProductId(''); setSaidaCliente(''); setSaidaObs('');
-      setSaidaQtd(1); setShowMovForm(false);
+      for (const item of saidaCart) {
+        await addMtdMovement({
+          mtdProductId: item.productId,
+          mtdProductCode: item.productCode,
+          mtdProductDescription: item.productDescription,
+          type: 'saida',
+          quantity: item.quantity,
+          clienteDestino: item.cliente,
+          notaFiscal: '',
+          date: item.date,
+          observacao: item.observacao,
+        });
+      }
+      toast.success(`${saidaCart.length} saída(s) registrada(s) com sucesso!`);
+      setSaidaCart([]);
+      setShowMovForm(false);
       reload();
-    } catch (err: any) { toast.error(err.message); }
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao registrar saídas');
+      reload();
+    } finally {
+      setSubmittingSaida(false);
+    }
+  };
   };
 
   const handleDeleteClick = (id: string, desc: string) => {
