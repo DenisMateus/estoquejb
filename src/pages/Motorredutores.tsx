@@ -39,12 +39,28 @@ const Motorredutores = () => {
   const [entCliente, setEntCliente] = useState('');
   const [entQuantidade, setEntQuantidade] = useState(1);
 
-  // Saida fields
+  // Saida fields (item being added to the cart)
   const [saidaProductId, setSaidaProductId] = useState('');
   const [saidaCliente, setSaidaCliente] = useState('');
   const [saidaDate, setSaidaDate] = useState(new Date().toISOString().split('T')[0]);
   const [saidaObs, setSaidaObs] = useState('');
   const [saidaQtd, setSaidaQtd] = useState(1);
+
+  // Saida cart - allows grouping multiple motor exits in one operation
+  type SaidaCartItem = {
+    tempId: string;
+    productId: string;
+    productCode: string;
+    productDescription: string;
+    productNotaFiscal: string;
+    availableQty: number;
+    quantity: number;
+    cliente: string;
+    observacao: string;
+    date: string;
+  };
+  const [saidaCart, setSaidaCart] = useState<SaidaCartItem[]>([]);
+  const [submittingSaida, setSubmittingSaida] = useState(false);
 
   // Entrada date
   const [entDate, setEntDate] = useState(new Date().toISOString().split('T')[0]);
