@@ -39,12 +39,28 @@ const Motorredutores = () => {
   const [entCliente, setEntCliente] = useState('');
   const [entQuantidade, setEntQuantidade] = useState(1);
 
-  // Saida fields
+  // Saida fields (item being added to the cart)
   const [saidaProductId, setSaidaProductId] = useState('');
   const [saidaCliente, setSaidaCliente] = useState('');
   const [saidaDate, setSaidaDate] = useState(new Date().toISOString().split('T')[0]);
   const [saidaObs, setSaidaObs] = useState('');
   const [saidaQtd, setSaidaQtd] = useState(1);
+
+  // Saida cart - allows grouping multiple motor exits in one operation
+  type SaidaCartItem = {
+    tempId: string;
+    productId: string;
+    productCode: string;
+    productDescription: string;
+    productNotaFiscal: string;
+    availableQty: number;
+    quantity: number;
+    cliente: string;
+    observacao: string;
+    date: string;
+  };
+  const [saidaCart, setSaidaCart] = useState<SaidaCartItem[]>([]);
+  const [submittingSaida, setSubmittingSaida] = useState(false);
 
   // Entrada date
   const [entDate, setEntDate] = useState(new Date().toISOString().split('T')[0]);
@@ -162,31 +178,75 @@ const Motorredutores = () => {
     } catch (err: any) { toast.error(err.message); }
   };
 
-  const handleSaida = async (e: React.FormEvent) => {
+  const handleAddToSaidaCart = (e: React.FormEvent) => {
     e.preventDefault();
     const product = products.find(p => p.id === saidaProductId);
     if (!product) { toast.error('Selecione um motorredutor'); return; }
-    if (saidaQtd < 1 || saidaQtd > product.quantity) {
-      toast.error(`Quantidade inválida. Estoque disponível: ${product.quantity}`);
+    if (!saidaCliente.trim()) { toast.error('Informe o cliente final'); return; }
+
+    // Verify total quantity already in cart for this product does not exceed stock
+    const alreadyInCart = saidaCart
+      .filter(it => it.productId === product.id)
+      .reduce((s, it) => s + it.quantity, 0);
+    const remaining = product.quantity - alreadyInCart;
+    if (saidaQtd < 1 || saidaQtd > remaining) {
+      toast.error(`Quantidade inválida. Disponível (descontando o carrinho): ${remaining}`);
       return;
     }
+
+    setSaidaCart(prev => [...prev, {
+      tempId: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      productId: product.id,
+      productCode: product.code,
+      productDescription: product.description,
+      productNotaFiscal: product.notaFiscal,
+      availableQty: product.quantity,
+      quantity: saidaQtd,
+      cliente: saidaCliente.trim(),
+      observacao: saidaObs.trim(),
+      date: saidaDate,
+    }]);
+    toast.success('Motor adicionado à lista de saída');
+
+    // Reset item fields (keep date for convenience)
+    setSaidaProductId('');
+    setSaidaCliente('');
+    setSaidaObs('');
+    setSaidaQtd(1);
+    setSaidaSearch('');
+  };
+
+  const handleRemoveFromCart = (tempId: string) => {
+    setSaidaCart(prev => prev.filter(it => it.tempId !== tempId));
+  };
+
+  const handleSubmitSaidaCart = async () => {
+    if (saidaCart.length === 0) { toast.error('Adicione pelo menos um motor à lista'); return; }
+    setSubmittingSaida(true);
     try {
-      await addMtdMovement({
-        mtdProductId: product.id,
-        mtdProductCode: product.code,
-        mtdProductDescription: product.description,
-        type: 'saida',
-        quantity: saidaQtd,
-        clienteDestino: saidaCliente.trim(),
-        notaFiscal: '',
-        date: saidaDate,
-        observacao: saidaObs.trim(),
-      });
-      toast.success('Saída registrada!');
-      setSaidaProductId(''); setSaidaCliente(''); setSaidaObs('');
-      setSaidaQtd(1); setShowMovForm(false);
+      for (const item of saidaCart) {
+        await addMtdMovement({
+          mtdProductId: item.productId,
+          mtdProductCode: item.productCode,
+          mtdProductDescription: item.productDescription,
+          type: 'saida',
+          quantity: item.quantity,
+          clienteDestino: item.cliente,
+          notaFiscal: '',
+          date: item.date,
+          observacao: item.observacao,
+        });
+      }
+      toast.success(`${saidaCart.length} saída(s) registrada(s) com sucesso!`);
+      setSaidaCart([]);
+      setShowMovForm(false);
       reload();
-    } catch (err: any) { toast.error(err.message); }
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao registrar saídas');
+      reload();
+    } finally {
+      setSubmittingSaida(false);
+    }
   };
 
   const handleDeleteClick = (id: string, desc: string) => {
@@ -557,99 +617,173 @@ const Motorredutores = () => {
               </form>
             )}
 
-            {/* Saída form */}
+            {/* Saída form (with cart for grouping multiple exits) */}
             {showMovForm && movFormType === 'saida' && (
-              <form onSubmit={handleSaida} className="bg-card border rounded-lg p-5 space-y-4 print:hidden">
-                <h3 className="font-semibold text-foreground flex items-center gap-2">
-                  <ArrowUp className="w-5 h-5 text-destructive" /> Saída de Motor
-                </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  <div className="sm:col-span-2 lg:col-span-3 space-y-2">
-                    <label className="text-sm font-medium text-foreground block">Buscar Motorredutor</label>
-                    <div className="flex gap-2 items-center">
-                      <div className="flex gap-1">
-                        <button type="button" onClick={() => { setSaidaSearchType('codigo'); setSaidaSearch(''); setSaidaProductId(''); }}
-                          className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${saidaSearchType === 'codigo' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
-                          Por Código
-                        </button>
-                        <button type="button" onClick={() => { setSaidaSearchType('nf'); setSaidaSearch(''); setSaidaProductId(''); }}
-                          className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${saidaSearchType === 'nf' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
-                          Por NF
-                        </button>
+              <div className="bg-card border rounded-lg p-5 space-y-4 print:hidden">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold text-foreground flex items-center gap-2">
+                    <ArrowUp className="w-5 h-5 text-destructive" /> Saída de Motor (vários por vez)
+                  </h3>
+                  {saidaCart.length > 0 && (
+                    <span className="text-xs font-medium px-2 py-1 rounded bg-primary/15 text-primary">
+                      {saidaCart.length} motor(es) na lista
+                    </span>
+                  )}
+                </div>
+
+                <p className="text-xs text-muted-foreground -mt-1">
+                  Adicione um motor por vez à lista (cada um com seu cliente e observação) e clique em <strong>Registrar Saídas</strong> ao final.
+                </p>
+
+                <form onSubmit={handleAddToSaidaCart} className="space-y-4 border-t pt-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="sm:col-span-2 lg:col-span-3 space-y-2">
+                      <label className="text-sm font-medium text-foreground block">Buscar Motorredutor</label>
+                      <div className="flex gap-2 items-center">
+                        <div className="flex gap-1">
+                          <button type="button" onClick={() => { setSaidaSearchType('codigo'); setSaidaSearch(''); setSaidaProductId(''); }}
+                            className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${saidaSearchType === 'codigo' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
+                            Por Código
+                          </button>
+                          <button type="button" onClick={() => { setSaidaSearchType('nf'); setSaidaSearch(''); setSaidaProductId(''); }}
+                            className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${saidaSearchType === 'nf' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
+                            Por NF
+                          </button>
+                        </div>
+                        <div className="relative flex-1">
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                          <input value={saidaSearch} onChange={e => { setSaidaSearch(e.target.value); setSaidaProductId(''); }}
+                            className="input-steel w-full pl-10" placeholder={saidaSearchType === 'nf' ? 'Digite o nº da NF...' : 'Digite o código do motor...'} />
+                        </div>
                       </div>
-                      <div className="relative flex-1">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                        <input value={saidaSearch} onChange={e => { setSaidaSearch(e.target.value); setSaidaProductId(''); }}
-                          className="input-steel w-full pl-10" placeholder={saidaSearchType === 'nf' ? 'Digite o nº da NF...' : 'Digite o código do motor...'} />
-                      </div>
+                      {saidaSearch.trim() && (
+                        <div className="border rounded-md max-h-48 overflow-y-auto bg-card">
+                          {saidaFilteredProducts.length === 0 ? (
+                            <p className="text-sm text-muted-foreground text-center py-3">Nenhum motor encontrado</p>
+                          ) : (
+                            saidaFilteredProducts.map(p => {
+                              const inCart = saidaCart.filter(it => it.productId === p.id).reduce((s, it) => s + it.quantity, 0);
+                              const remaining = p.quantity - inCart;
+                              return (
+                                <button type="button" key={p.id} disabled={remaining <= 0} onClick={() => { setSaidaProductId(p.id); setSaidaQtd(1); setSaidaSearch(saidaSearchType === 'nf' ? p.notaFiscal : p.code); }}
+                                  className={`w-full text-left px-3 py-2 text-sm hover:bg-muted/50 border-b last:border-0 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${saidaProductId === p.id ? 'bg-primary/10' : ''}`}>
+                                  <span className="font-mono font-semibold text-primary">{p.code}</span>
+                                  <span className="text-muted-foreground"> — {p.description}</span>
+                                  <span className="text-xs text-muted-foreground"> | NF: {p.notaFiscal || '—'} | Cliente: {p.cliente || '—'} | Disp.: {remaining}{inCart > 0 ? ` (${inCart} no carrinho)` : ''}</span>
+                                </button>
+                              );
+                            })
+                          )}
+                        </div>
+                      )}
+                      {saidaProductId && selectedSaidaProduct && (
+                        <p className="text-xs text-success font-medium">
+                          ✓ Selecionado: {selectedSaidaProduct.code} — {selectedSaidaProduct.description} (NF: {selectedSaidaProduct.notaFiscal || '—'})
+                        </p>
+                      )}
                     </div>
-                    {saidaSearch.trim() && (
-                      <div className="border rounded-md max-h-48 overflow-y-auto bg-card">
-                        {saidaFilteredProducts.length === 0 ? (
-                          <p className="text-sm text-muted-foreground text-center py-3">Nenhum motor encontrado</p>
-                        ) : (
-                          saidaFilteredProducts.map(p => (
-                            <button type="button" key={p.id} onClick={() => { setSaidaProductId(p.id); setSaidaQtd(1); setSaidaSearch(saidaSearchType === 'nf' ? p.notaFiscal : p.code); }}
-                              className={`w-full text-left px-3 py-2 text-sm hover:bg-muted/50 border-b last:border-0 transition-colors ${saidaProductId === p.id ? 'bg-primary/10' : ''}`}>
-                              <span className="font-mono font-semibold text-primary">{p.code}</span>
-                              <span className="text-muted-foreground"> — {p.description}</span>
-                              <span className="text-xs text-muted-foreground"> | NF: {p.notaFiscal || '—'} | Cliente: {p.cliente || '—'} | Qtd: {p.quantity}</span>
-                            </button>
-                          ))
-                        )}
-                      </div>
-                    )}
-                    {saidaProductId && selectedSaidaProduct && (
-                      <p className="text-xs text-success font-medium">
-                        ✓ Selecionado: {selectedSaidaProduct.code} — {selectedSaidaProduct.description} (NF: {selectedSaidaProduct.notaFiscal || '—'})
-                      </p>
-                    )}
+                    <div className="relative">
+                      <label className="text-sm font-medium text-foreground block mb-1">Cliente Final (destino)</label>
+                      <input
+                        value={saidaCliente}
+                        onChange={e => { setSaidaCliente(e.target.value); setShowClienteSuggestions(true); }}
+                        onFocus={() => setShowClienteSuggestions(true)}
+                        onBlur={() => setTimeout(() => setShowClienteSuggestions(false), 200)}
+                        className="input-steel w-full"
+                        placeholder="Digite o nome do cliente"
+                        required
+                        autoComplete="off"
+                      />
+                      {showClienteSuggestions && filteredClientes.length > 0 && (
+                        <ul className="absolute z-50 left-0 right-0 mt-1 max-h-40 overflow-y-auto rounded-md border bg-popover text-popover-foreground shadow-md">
+                          {filteredClientes.map(c => (
+                            <li
+                              key={c}
+                              className="px-3 py-2 text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground"
+                              onMouseDown={() => { setSaidaCliente(c); setShowClienteSuggestions(false); }}
+                            >
+                              {c}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-foreground block mb-1">Quantidade</label>
+                      {(() => {
+                        const inCart = selectedSaidaProduct ? saidaCart.filter(it => it.productId === selectedSaidaProduct.id).reduce((s, it) => s + it.quantity, 0) : 0;
+                        const remaining = selectedSaidaProduct ? selectedSaidaProduct.quantity - inCart : 1;
+                        return (
+                          <>
+                            <input type="number" min={1} max={remaining || 1} value={saidaQtd} onChange={e => setSaidaQtd(Number(e.target.value))} className="input-steel w-full font-mono" required />
+                            {selectedSaidaProduct && <p className="text-xs text-muted-foreground mt-1">Disponível: {remaining}{inCart > 0 ? ` (${inCart} já no carrinho)` : ''}</p>}
+                          </>
+                        );
+                      })()}
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-foreground block mb-1">Data da Baixa</label>
+                      <input type="date" value={saidaDate} onChange={e => setSaidaDate(e.target.value)} className="input-steel w-full font-mono" required />
+                    </div>
+                    <div className="sm:col-span-2 lg:col-span-3">
+                      <label className="text-sm font-medium text-foreground block mb-1">Observação</label>
+                      <input value={saidaObs} onChange={e => setSaidaObs(e.target.value)} className="input-steel w-full" placeholder="Opcional (específica deste motor)" />
+                    </div>
                   </div>
-                  <div className="relative">
-                    <label className="text-sm font-medium text-foreground block mb-1">Cliente Final (destino)</label>
-                    <input
-                      value={saidaCliente}
-                      onChange={e => { setSaidaCliente(e.target.value); setShowClienteSuggestions(true); }}
-                      onFocus={() => setShowClienteSuggestions(true)}
-                      onBlur={() => setTimeout(() => setShowClienteSuggestions(false), 200)}
-                      className="input-steel w-full"
-                      placeholder="Digite o nome do cliente"
-                      required
-                      autoComplete="off"
-                    />
-                    {showClienteSuggestions && filteredClientes.length > 0 && (
-                      <ul className="absolute z-50 left-0 right-0 mt-1 max-h-40 overflow-y-auto rounded-md border bg-popover text-popover-foreground shadow-md">
-                        {filteredClientes.map(c => (
-                          <li
-                            key={c}
-                            className="px-3 py-2 text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground"
-                            onMouseDown={() => { setSaidaCliente(c); setShowClienteSuggestions(false); }}
-                          >
-                            {c}
-                          </li>
-                        ))}
-                      </ul>
-                    )}
+                  <div className="flex gap-2">
+                    <button type="submit" className="inline-flex items-center gap-2 bg-primary text-primary-foreground font-semibold px-4 py-2 rounded-md hover:bg-primary/90 transition-colors text-sm">
+                      <Plus className="w-4 h-4" /> Adicionar à lista
+                    </button>
                   </div>
-                  <div>
-                    <label className="text-sm font-medium text-foreground block mb-1">Quantidade</label>
-                    <input type="number" min={1} max={selectedSaidaProduct?.quantity || 1} value={saidaQtd} onChange={e => setSaidaQtd(Number(e.target.value))} className="input-steel w-full font-mono" required />
-                    {selectedSaidaProduct && <p className="text-xs text-muted-foreground mt-1">Disponível: {selectedSaidaProduct.quantity}</p>}
+                </form>
+
+                {/* Cart list */}
+                {saidaCart.length > 0 && (
+                  <div className="border-t pt-4 space-y-3">
+                    <h4 className="text-sm font-semibold text-foreground">Motores a dar saída ({saidaCart.length})</h4>
+                    <div className="border rounded-md overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b bg-muted/50">
+                            <th className="text-left px-3 py-2 font-medium text-muted-foreground">Código</th>
+                            <th className="text-left px-3 py-2 font-medium text-muted-foreground">Descrição</th>
+                            <th className="text-center px-3 py-2 font-medium text-muted-foreground">Qtd</th>
+                            <th className="text-left px-3 py-2 font-medium text-muted-foreground">Cliente</th>
+                            <th className="text-left px-3 py-2 font-medium text-muted-foreground">Observação</th>
+                            <th className="text-left px-3 py-2 font-medium text-muted-foreground">Data</th>
+                            <th className="px-3 py-2"></th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {saidaCart.map(it => (
+                            <tr key={it.tempId} className="border-b last:border-0">
+                              <td className="px-3 py-2 font-mono font-semibold text-primary">{it.productCode}</td>
+                              <td className="px-3 py-2 text-xs">{it.productDescription}</td>
+                              <td className="px-3 py-2 text-center font-bold">{it.quantity}</td>
+                              <td className="px-3 py-2 text-xs">{it.cliente}</td>
+                              <td className="px-3 py-2 text-xs text-muted-foreground">{it.observacao || '—'}</td>
+                              <td className="px-3 py-2 text-xs font-mono">{new Date(it.date).toLocaleDateString('pt-BR')}</td>
+                              <td className="px-3 py-2">
+                                <button type="button" onClick={() => handleRemoveFromCart(it.tempId)} className="p-1 rounded hover:bg-destructive/15 text-destructive transition-colors" title="Remover da lista">
+                                  <X className="w-4 h-4" />
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
-                  <div>
-                    <label className="text-sm font-medium text-foreground block mb-1">Data da Baixa</label>
-                    <input type="date" value={saidaDate} onChange={e => setSaidaDate(e.target.value)} className="input-steel w-full font-mono" required />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-foreground block mb-1">Observação</label>
-                    <input value={saidaObs} onChange={e => setSaidaObs(e.target.value)} className="input-steel w-full" placeholder="Opcional" />
-                  </div>
+                )}
+
+                <div className="flex flex-wrap gap-2 border-t pt-4">
+                  <button type="button" disabled={submittingSaida || saidaCart.length === 0} onClick={handleSubmitSaidaCart}
+                    className="bg-destructive text-destructive-foreground font-semibold px-4 py-2 rounded-md hover:bg-destructive/90 transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed">
+                    {submittingSaida ? 'Registrando...' : `Registrar Saídas (${saidaCart.length})`}
+                  </button>
+                  <button type="button" onClick={() => { setShowMovForm(false); setSaidaCart([]); }} className="px-4 py-2 rounded-md border text-sm font-medium text-muted-foreground hover:bg-muted transition-colors">Cancelar</button>
                 </div>
-                <div className="flex gap-2">
-                  <button type="submit" className="bg-destructive text-destructive-foreground font-semibold px-4 py-2 rounded-md hover:bg-destructive/90 transition-colors text-sm">Registrar Saída</button>
-                  <button type="button" onClick={() => setShowMovForm(false)} className="px-4 py-2 rounded-md border text-sm font-medium text-muted-foreground hover:bg-muted transition-colors">Cancelar</button>
-                </div>
-              </form>
+              </div>
             )}
 
             {/* Movements table */}
