@@ -290,7 +290,9 @@ const Movements = () => {
                 <span className="font-bold">{selectedProduct?.code} — {selectedProduct?.description}</span>
               </p>
               <p className="text-2xl font-bold font-mono text-foreground">
-                {quantity} {selectedProduct?.unit}
+                {isBarraProduct && inputMode === 'peso'
+                  ? `${quantity} kg → ${computedBarras.toFixed(2)} barra(s)`
+                  : `${quantity} ${selectedProduct?.unit}`}
               </p>
               <p className={`text-xs font-semibold uppercase ${type === 'entrada' ? 'text-success' : 'text-destructive'}`}>
                 {type === 'entrada' ? '▼ Entrada' : '▲ Saída'}
