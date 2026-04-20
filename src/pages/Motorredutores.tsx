@@ -798,7 +798,7 @@ const Motorredutores = () => {
                             <tr key={it.tempId} className="border-b last:border-0">
                               <td className="px-3 py-2 font-mono font-semibold text-primary">{it.productCode}</td>
                               <td className="px-3 py-2 text-xs">{it.productDescription}</td>
-                              <td className="px-3 py-2 text-center font-bold">{it.quantity}</td>
+                              <td className="px-3 py-2 text-center font-bold">{formatQuantity(it.quantity)}</td>
                               <td className="px-3 py-2 text-xs">{it.cliente}</td>
                               <td className="px-3 py-2 text-xs text-muted-foreground">{it.observacao || '—'}</td>
                               <td className="px-3 py-2 text-xs font-mono">{new Date(it.date).toLocaleDateString('pt-BR')}</td>
