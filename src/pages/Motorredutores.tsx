@@ -4,6 +4,7 @@ import {
   getMtdMovements, addMtdMovement,
   MtdProduct, MtdMovement, MtdType, MTD_TYPE_LABELS, CONDICAO_OPTIONS,
 } from '@/lib/mtd';
+import { formatQuantity } from '@/lib/inventory';
 import AppLayout from '@/components/AppLayout';
 import { Plus, Trash2, Search, Pencil, X, ArrowLeftRight, Printer, ChevronLeft, ChevronRight, ArrowDown, ArrowUp, ClipboardCheck, Check, XCircle, Undo2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -528,7 +529,7 @@ const Motorredutores = () => {
                         <td className="px-4 py-2.5 text-xs">{p.condicao || '—'}</td>
                         <td className="px-4 py-2.5 text-center font-bold">
                           <span className={`inline-flex px-2 py-0.5 rounded text-xs font-bold ${p.quantity > 0 ? 'bg-success/15 text-success' : 'bg-destructive/15 text-destructive'}`}>
-                            {p.quantity}
+                            {formatQuantity(p.quantity)}
                           </span>
                         </td>
                         <td className="px-4 py-2.5 text-xs font-mono">{p.portaria || '—'}</td>
@@ -797,7 +798,7 @@ const Motorredutores = () => {
                             <tr key={it.tempId} className="border-b last:border-0">
                               <td className="px-3 py-2 font-mono font-semibold text-primary">{it.productCode}</td>
                               <td className="px-3 py-2 text-xs">{it.productDescription}</td>
-                              <td className="px-3 py-2 text-center font-bold">{it.quantity}</td>
+                              <td className="px-3 py-2 text-center font-bold">{formatQuantity(it.quantity)}</td>
                               <td className="px-3 py-2 text-xs">{it.cliente}</td>
                               <td className="px-3 py-2 text-xs text-muted-foreground">{it.observacao || '—'}</td>
                               <td className="px-3 py-2 text-xs font-mono">{new Date(it.date).toLocaleDateString('pt-BR')}</td>
@@ -881,7 +882,7 @@ const Motorredutores = () => {
                         </td>
                         <td className="px-4 py-2.5 font-mono font-semibold text-primary">{m.mtdProductCode}</td>
                         <td className="px-4 py-2.5">{m.mtdProductDescription}</td>
-                        <td className="px-4 py-2.5 text-center font-bold">{m.quantity}</td>
+                        <td className="px-4 py-2.5 text-center font-bold">{formatQuantity(m.quantity)}</td>
                         <td className="px-4 py-2.5 text-xs">{m.clienteDestino || '—'}</td>
                         <td className="px-4 py-2.5 text-xs font-mono">{m.notaFiscal || '—'}</td>
                         <td className="px-4 py-2.5 text-xs text-muted-foreground">{m.observacao || '—'}</td>
@@ -968,7 +969,7 @@ const Motorredutores = () => {
                                   {MTD_TYPE_LABELS[p.mtdType] || p.mtdType}
                                 </span>
                               </td>
-                              <td className="px-4 py-2.5 text-center font-bold">{p.quantity}</td>
+                              <td className="px-4 py-2.5 text-center font-bold">{formatQuantity(p.quantity)}</td>
                               <td className="px-4 py-2.5 text-xs font-mono">{p.notaFiscal || '—'}</td>
                               <td className="px-4 py-2.5 text-xs font-mono">{p.ofNumber || '—'}</td>
                               <td className="px-4 py-2.5 text-xs">{p.cliente || '—'}</td>
@@ -1044,7 +1045,7 @@ const Motorredutores = () => {
                                     : <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold bg-success/15 text-success"><Undo2 className="w-3 h-3" /> Retorno</span>
                                   }
                                 </td>
-                                <td className="px-4 py-2.5 text-center font-bold">{m.quantity}</td>
+                                <td className="px-4 py-2.5 text-center font-bold">{formatQuantity(m.quantity)}</td>
                                 <td className="px-4 py-2.5 text-xs text-muted-foreground">{m.observacao || '—'}</td>
                                 <td className="px-4 py-2.5 text-center">
                                   {isBaixa && product && product.quantity === 0 && !isProcessing ? (
@@ -1210,7 +1211,7 @@ const Motorredutores = () => {
                         <td className="px-4 py-2">{p.description}</td>
                         <td className="px-4 py-2 text-xs">{MTD_TYPE_LABELS[p.mtdType] || p.mtdType}</td>
                         <td className="px-4 py-2 text-xs">{p.condicao || '—'}</td>
-                        <td className="px-4 py-2 text-center font-bold">{p.quantity}</td>
+                        <td className="px-4 py-2 text-center font-bold">{formatQuantity(p.quantity)}</td>
                         <td className="px-4 py-2 text-xs font-mono">{p.portaria || '—'}</td>
                         <td className="px-4 py-2 text-xs font-mono">{p.notaFiscal || '—'}</td>
                         <td className="px-4 py-2 text-xs font-mono">{p.ofNumber || '—'}</td>

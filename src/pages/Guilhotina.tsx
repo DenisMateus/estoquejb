@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getProducts, addProduct, updateProduct, deleteProduct, Product, CategoryType, CATEGORY_LABELS } from '@/lib/inventory';
+import { getProducts, addProduct, updateProduct, deleteProduct, Product, CategoryType, CATEGORY_LABELS, formatQuantity } from '@/lib/inventory';
 import AppLayout from '@/components/AppLayout';
 import { Plus, Trash2, Search, Filter, Pencil, X } from 'lucide-react';
 import { toast } from 'sonner';
@@ -243,7 +243,7 @@ const Guilhotina = () => {
                         </span>
                       </td>
                       <td className="px-5 py-3 uppercase font-mono text-xs">{p.unit}</td>
-                      <td className="px-5 py-3 text-right font-mono font-bold">{p.quantity}</td>
+                      <td className="px-5 py-3 text-right font-mono font-bold">{formatQuantity(p.quantity)}</td>
                       <td className="px-5 py-3 text-right font-mono text-xs">
                         {p.weightPerUnit > 0 ? p.weightPerUnit.toFixed(2) : '—'}
                       </td>
