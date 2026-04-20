@@ -244,7 +244,7 @@ const Products = () => {
                         </span>
                       </td>
                       <td className="px-5 py-3 uppercase font-mono text-xs">{p.unit}</td>
-                      <td className="px-5 py-3 text-right font-mono font-bold">{p.quantity}</td>
+                      <td className="px-5 py-3 text-right font-mono font-bold">{formatQuantity(p.quantity)}</td>
                       <td className="px-5 py-3 text-right font-mono text-xs">
                         {p.weightPerUnit > 0 ? p.weightPerUnit.toFixed(2) : '—'}
                       </td>
