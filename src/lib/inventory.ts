@@ -1,12 +1,9 @@
 import { supabase } from '@/integrations/supabase/client';
 
-// Formata números decimais abreviando (7.955... -> 7955)
+// Formata números decimais - mostra apenas parte inteira (80.5468 -> 80)
 export function formatQuantity(value: number): string {
   if (!value || value === 0) return '0';
-  // Se tiver decimais, multiplica por 1000 e arredonda
-  if (value % 1 !== 0) {
-    return Math.round(value * 1000).toString();
-  }
+  // Retorna apenas a parte inteira (antes da vírgula)
   return Math.floor(value).toString();
 }
 
