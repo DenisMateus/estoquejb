@@ -48,11 +48,27 @@ const Movements = () => {
 
   const selectedProduct = products.find(p => p.id === productId);
 
+  const isBarraProduct = selectedProduct?.unit === 'barra';
+  const computedBarras = (() => {
+    if (!selectedProduct) return 0;
+    const qty = parseFloat(quantity);
+    if (isNaN(qty) || qty <= 0) return 0;
+    if (isBarraProduct && inputMode === 'peso') {
+      const wpu = selectedProduct.weightPerUnit || 0;
+      if (wpu <= 0) return 0;
+      return qty / wpu;
+    }
+    return qty;
+  })();
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedProduct) { toast.error('Selecione um produto'); return; }
     const qty = parseFloat(quantity);
     if (isNaN(qty) || qty <= 0) { toast.error('Quantidade inválida'); return; }
+    if (isBarraProduct && inputMode === 'peso' && (!selectedProduct.weightPerUnit || selectedProduct.weightPerUnit <= 0)) {
+      toast.error('Produto não possui peso unitário cadastrado'); return;
+    }
 
     // Show CAPTCHA instead of submitting directly
     setCaptcha(generateCaptcha());
@@ -65,7 +81,8 @@ const Movements = () => {
 
     setShowCaptcha(false);
     if (!selectedProduct) return;
-    const qty = parseFloat(quantity);
+    const finalQty = computedBarras;
+    if (finalQty <= 0) { toast.error('Quantidade inválida'); return; }
 
     try {
       await addMovement({
@@ -73,7 +90,7 @@ const Movements = () => {
         productCode: selectedProduct.code,
         productDescription: selectedProduct.description,
         type,
-        quantity: qty,
+        quantity: finalQty,
         unit: selectedProduct.unit,
         date,
       });
