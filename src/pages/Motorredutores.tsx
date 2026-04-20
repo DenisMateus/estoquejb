@@ -1045,7 +1045,7 @@ const Motorredutores = () => {
                                     : <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold bg-success/15 text-success"><Undo2 className="w-3 h-3" /> Retorno</span>
                                   }
                                 </td>
-                                <td className="px-4 py-2.5 text-center font-bold">{m.quantity}</td>
+                                <td className="px-4 py-2.5 text-center font-bold">{formatQuantity(m.quantity)}</td>
                                 <td className="px-4 py-2.5 text-xs text-muted-foreground">{m.observacao || '—'}</td>
                                 <td className="px-4 py-2.5 text-center">
                                   {isBaixa && product && product.quantity === 0 && !isProcessing ? (
