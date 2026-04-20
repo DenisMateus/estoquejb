@@ -3,7 +3,10 @@ import { supabase } from '@/integrations/supabase/client';
 // Formata números decimais abreviando (7.955... -> 7955)
 export function formatQuantity(value: number): string {
   if (!value || value === 0) return '0';
-  // Remove decimais e retorna como string
+  // Se tiver decimais, multiplica por 1000 e arredonda
+  if (value % 1 !== 0) {
+    return Math.round(value * 1000).toString();
+  }
   return Math.floor(value).toString();
 }
 
