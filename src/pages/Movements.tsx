@@ -161,10 +161,27 @@ const Movements = () => {
             </div>
             <div>
               <label className="text-sm font-medium text-foreground block mb-1">
-                Quantidade ({selectedProduct?.unit || 'un'})
+                Quantidade ({isBarraProduct ? (inputMode === 'peso' ? 'kg' : 'barra') : (selectedProduct?.unit || 'un')})
               </label>
+              {isBarraProduct && (
+                <div className="flex gap-1 mb-1">
+                  <button type="button" onClick={() => setInputMode('barra')}
+                    className={`px-2 py-1 rounded text-xs font-semibold transition-colors ${inputMode === 'barra' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
+                    Por Barra
+                  </button>
+                  <button type="button" onClick={() => setInputMode('peso')}
+                    className={`px-2 py-1 rounded text-xs font-semibold transition-colors ${inputMode === 'peso' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
+                    Por Peso (kg)
+                  </button>
+                </div>
+              )}
               <input type="number" step="0.01" min="0.01" value={quantity}
                 onChange={e => setQuantity(e.target.value)} className="input-steel w-full font-mono" placeholder="0.00" required />
+              {isBarraProduct && inputMode === 'peso' && computedBarras > 0 && (
+                <p className="text-xs text-muted-foreground mt-1 font-mono">
+                  ≈ {computedBarras.toFixed(2)} barra(s) (peso unit.: {selectedProduct?.weightPerUnit} kg)
+                </p>
+              )}
             </div>
             <div>
               <label className="text-sm font-medium text-foreground block mb-1">Data</label>
