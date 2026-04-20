@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import { getProducts, addMovement, getMovements, Product, Movement } from '@/lib/inventory';
+import { getProducts, addMovement, getMovements, Product, Movement, formatQuantity } from '@/lib/inventory';
 import AppLayout from '@/components/AppLayout';
 import { ArrowDownCircle, ArrowUpCircle, ShieldCheck, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
@@ -154,7 +154,7 @@ const Movements = () => {
                 <option value="">Selecione...</option>
                 {products.map(p => (
                   <option key={p.id} value={p.id}>
-                    {p.code} - {p.description} (Estoque: {p.quantity} {p.unit})
+                    {p.code} - {p.description} (Estoque: {formatQuantity(p.quantity)} {p.unit})
                   </option>
                 ))}
               </select>
@@ -260,7 +260,7 @@ const Movements = () => {
                           {m.type === 'entrada' ? '▼ Entrada' : '▲ Saída'}
                         </span>
                       </td>
-                      <td className="px-5 py-3 text-right font-mono font-bold">{m.quantity}</td>
+                      <td className="px-5 py-3 text-right font-mono font-bold">{formatQuantity(m.quantity)}</td>
                       <td className="px-5 py-3 uppercase font-mono text-xs">{m.unit}</td>
                     </tr>
                   ))
