@@ -4,6 +4,7 @@ import {
   getMtdMovements, addMtdMovement,
   MtdProduct, MtdMovement, MtdType, MTD_TYPE_LABELS, CONDICAO_OPTIONS,
 } from '@/lib/mtd';
+import { formatQuantity } from '@/lib/inventory';
 import AppLayout from '@/components/AppLayout';
 import { Plus, Trash2, Search, Pencil, X, ArrowLeftRight, Printer, ChevronLeft, ChevronRight, ArrowDown, ArrowUp, ClipboardCheck, Check, XCircle, Undo2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -528,7 +529,7 @@ const Motorredutores = () => {
                         <td className="px-4 py-2.5 text-xs">{p.condicao || '—'}</td>
                         <td className="px-4 py-2.5 text-center font-bold">
                           <span className={`inline-flex px-2 py-0.5 rounded text-xs font-bold ${p.quantity > 0 ? 'bg-success/15 text-success' : 'bg-destructive/15 text-destructive'}`}>
-                            {p.quantity}
+                            {formatQuantity(p.quantity)}
                           </span>
                         </td>
                         <td className="px-4 py-2.5 text-xs font-mono">{p.portaria || '—'}</td>
