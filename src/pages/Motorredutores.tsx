@@ -882,7 +882,7 @@ const Motorredutores = () => {
                         </td>
                         <td className="px-4 py-2.5 font-mono font-semibold text-primary">{m.mtdProductCode}</td>
                         <td className="px-4 py-2.5">{m.mtdProductDescription}</td>
-                        <td className="px-4 py-2.5 text-center font-bold">{m.quantity}</td>
+                        <td className="px-4 py-2.5 text-center font-bold">{formatQuantity(m.quantity)}</td>
                         <td className="px-4 py-2.5 text-xs">{m.clienteDestino || '—'}</td>
                         <td className="px-4 py-2.5 text-xs font-mono">{m.notaFiscal || '—'}</td>
                         <td className="px-4 py-2.5 text-xs text-muted-foreground">{m.observacao || '—'}</td>
@@ -969,7 +969,7 @@ const Motorredutores = () => {
                                   {MTD_TYPE_LABELS[p.mtdType] || p.mtdType}
                                 </span>
                               </td>
-                              <td className="px-4 py-2.5 text-center font-bold">{p.quantity}</td>
+                              <td className="px-4 py-2.5 text-center font-bold">{formatQuantity(p.quantity)}</td>
                               <td className="px-4 py-2.5 text-xs font-mono">{p.notaFiscal || '—'}</td>
                               <td className="px-4 py-2.5 text-xs font-mono">{p.ofNumber || '—'}</td>
                               <td className="px-4 py-2.5 text-xs">{p.cliente || '—'}</td>
@@ -1211,7 +1211,7 @@ const Motorredutores = () => {
                         <td className="px-4 py-2">{p.description}</td>
                         <td className="px-4 py-2 text-xs">{MTD_TYPE_LABELS[p.mtdType] || p.mtdType}</td>
                         <td className="px-4 py-2 text-xs">{p.condicao || '—'}</td>
-                        <td className="px-4 py-2 text-center font-bold">{p.quantity}</td>
+                        <td className="px-4 py-2 text-center font-bold">{formatQuantity(p.quantity)}</td>
                         <td className="px-4 py-2 text-xs font-mono">{p.portaria || '—'}</td>
                         <td className="px-4 py-2 text-xs font-mono">{p.notaFiscal || '—'}</td>
                         <td className="px-4 py-2 text-xs font-mono">{p.ofNumber || '—'}</td>
