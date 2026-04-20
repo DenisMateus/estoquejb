@@ -1,5 +1,12 @@
 import { supabase } from '@/integrations/supabase/client';
 
+// Formata números decimais abreviando (7.955... -> 7955)
+export function formatQuantity(value: number): string {
+  if (!value || value === 0) return '0';
+  // Remove decimais e retorna como string
+  return Math.floor(value).toString();
+}
+
 export type UnitType = 'kg' | 'barra';
 export type MovementType = 'entrada' | 'saida';
 
