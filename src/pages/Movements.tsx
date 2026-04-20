@@ -24,6 +24,7 @@ const Movements = () => {
   const [type, setType] = useState<'entrada' | 'saida'>('entrada');
   const [productId, setProductId] = useState('');
   const [quantity, setQuantity] = useState('');
+  const [inputMode, setInputMode] = useState<'barra' | 'peso'>('barra');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [filterType, setFilterType] = useState<'todos' | 'entrada' | 'saida'>('todos');
   const [selectedMonth, setSelectedMonth] = useState(new Date());
