@@ -24,6 +24,7 @@ const Movements = () => {
   const [type, setType] = useState<'entrada' | 'saida'>('entrada');
   const [productId, setProductId] = useState('');
   const [quantity, setQuantity] = useState('');
+  const [inputMode, setInputMode] = useState<'barra' | 'peso'>('barra');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [filterType, setFilterType] = useState<'todos' | 'entrada' | 'saida'>('todos');
   const [selectedMonth, setSelectedMonth] = useState(new Date());
@@ -47,11 +48,27 @@ const Movements = () => {
 
   const selectedProduct = products.find(p => p.id === productId);
 
+  const isBarraProduct = selectedProduct?.unit === 'barra';
+  const computedBarras = (() => {
+    if (!selectedProduct) return 0;
+    const qty = parseFloat(quantity);
+    if (isNaN(qty) || qty <= 0) return 0;
+    if (isBarraProduct && inputMode === 'peso') {
+      const wpu = selectedProduct.weightPerUnit || 0;
+      if (wpu <= 0) return 0;
+      return qty / wpu;
+    }
+    return qty;
+  })();
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedProduct) { toast.error('Selecione um produto'); return; }
     const qty = parseFloat(quantity);
     if (isNaN(qty) || qty <= 0) { toast.error('Quantidade inválida'); return; }
+    if (isBarraProduct && inputMode === 'peso' && (!selectedProduct.weightPerUnit || selectedProduct.weightPerUnit <= 0)) {
+      toast.error('Produto não possui peso unitário cadastrado'); return;
+    }
 
     // Show CAPTCHA instead of submitting directly
     setCaptcha(generateCaptcha());
@@ -64,7 +81,8 @@ const Movements = () => {
 
     setShowCaptcha(false);
     if (!selectedProduct) return;
-    const qty = parseFloat(quantity);
+    const finalQty = computedBarras;
+    if (finalQty <= 0) { toast.error('Quantidade inválida'); return; }
 
     try {
       await addMovement({
@@ -72,7 +90,7 @@ const Movements = () => {
         productCode: selectedProduct.code,
         productDescription: selectedProduct.description,
         type,
-        quantity: qty,
+        quantity: finalQty,
         unit: selectedProduct.unit,
         date,
       });
@@ -143,10 +161,27 @@ const Movements = () => {
             </div>
             <div>
               <label className="text-sm font-medium text-foreground block mb-1">
-                Quantidade ({selectedProduct?.unit || 'un'})
+                Quantidade ({isBarraProduct ? (inputMode === 'peso' ? 'kg' : 'barra') : (selectedProduct?.unit || 'un')})
               </label>
+              {isBarraProduct && (
+                <div className="flex gap-1 mb-1">
+                  <button type="button" onClick={() => setInputMode('barra')}
+                    className={`px-2 py-1 rounded text-xs font-semibold transition-colors ${inputMode === 'barra' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
+                    Por Barra
+                  </button>
+                  <button type="button" onClick={() => setInputMode('peso')}
+                    className={`px-2 py-1 rounded text-xs font-semibold transition-colors ${inputMode === 'peso' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
+                    Por Peso (kg)
+                  </button>
+                </div>
+              )}
               <input type="number" step="0.01" min="0.01" value={quantity}
                 onChange={e => setQuantity(e.target.value)} className="input-steel w-full font-mono" placeholder="0.00" required />
+              {isBarraProduct && inputMode === 'peso' && computedBarras > 0 && (
+                <p className="text-xs text-muted-foreground mt-1 font-mono">
+                  ≈ {computedBarras.toFixed(2)} barra(s) (peso unit.: {selectedProduct?.weightPerUnit} kg)
+                </p>
+              )}
             </div>
             <div>
               <label className="text-sm font-medium text-foreground block mb-1">Data</label>
@@ -255,7 +290,9 @@ const Movements = () => {
                 <span className="font-bold">{selectedProduct?.code} — {selectedProduct?.description}</span>
               </p>
               <p className="text-2xl font-bold font-mono text-foreground">
-                {quantity} {selectedProduct?.unit}
+                {isBarraProduct && inputMode === 'peso'
+                  ? `${quantity} kg → ${computedBarras.toFixed(2)} barra(s)`
+                  : `${quantity} ${selectedProduct?.unit}`}
               </p>
               <p className={`text-xs font-semibold uppercase ${type === 'entrada' ? 'text-success' : 'text-destructive'}`}>
                 {type === 'entrada' ? '▼ Entrada' : '▲ Saída'}
