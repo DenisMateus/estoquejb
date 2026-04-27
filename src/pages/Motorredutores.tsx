@@ -454,7 +454,7 @@ const Motorredutores = () => {
               className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${tab === 'movimentacoes' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
               Movimentações
             </button>
-            <button onClick={() => { setTab('inventario'); setInventarioChecked({}); }}
+            <button onClick={() => setTab('inventario')}
               className={`px-3 py-1.5 rounded text-sm font-medium transition-colors ${tab === 'inventario' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
               <ClipboardCheck className="w-4 h-4 inline mr-1" />Inventário
             </button>
