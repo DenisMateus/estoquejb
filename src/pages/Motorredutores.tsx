@@ -12,6 +12,23 @@ import logoHeader from '@/assets/logo_header.png';
 
 const DELETE_SECRET_CODE = 'Jhonrob@1';
 
+// Retorna a data local (fuso do usuário) no formato YYYY-MM-DD, evitando shift de UTC
+const todayLocalISO = () => {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+};
+
+// Formata uma string YYYY-MM-DD para DD/MM/YYYY sem criar Date (evita shift de fuso)
+const formatDateBR = (iso: string) => {
+  if (!iso) return '';
+  const [y, m, d] = iso.split('T')[0].split('-');
+  if (!y || !m || !d) return iso;
+  return `${d}/${m}/${y}`;
+};
+
 const Motorredutores = () => {
   const [products, setProducts] = useState<MtdProduct[]>([]);
   const [movements, setMovements] = useState<MtdMovement[]>([]);
