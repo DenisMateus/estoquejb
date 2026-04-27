@@ -168,6 +168,11 @@ const Motorredutores = () => {
         }
         return m.mtdProductCode.toLowerCase().includes(term) ||
                m.mtdProductDescription.toLowerCase().includes(term);
+      })
+      .sort((a, b) => {
+        // Mais recentes primeiro (por data e, em empate, por created_at)
+        if (a.date !== b.date) return b.date.localeCompare(a.date);
+        return (b.createdAt || '').localeCompare(a.createdAt || '');
       });
   }, [movements, monthKey, movSearch, movSearchType, movTypeFilter]);
 
