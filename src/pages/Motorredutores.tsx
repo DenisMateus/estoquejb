@@ -60,7 +60,7 @@ const Motorredutores = () => {
   // Saida fields (item being added to the cart)
   const [saidaProductId, setSaidaProductId] = useState('');
   const [saidaCliente, setSaidaCliente] = useState('');
-  const [saidaDate, setSaidaDate] = useState(new Date().toISOString().split('T')[0]);
+  const [saidaDate, setSaidaDate] = useState(todayLocalISO());
   const [saidaObs, setSaidaObs] = useState('');
   const [saidaQtd, setSaidaQtd] = useState(1);
 
@@ -81,7 +81,7 @@ const Motorredutores = () => {
   const [submittingSaida, setSubmittingSaida] = useState(false);
 
   // Entrada date
-  const [entDate, setEntDate] = useState(new Date().toISOString().split('T')[0]);
+  const [entDate, setEntDate] = useState(todayLocalISO());
 
   // Edit
   const [editProduct, setEditProduct] = useState<MtdProduct | null>(null);
@@ -375,7 +375,7 @@ const Motorredutores = () => {
         quantity: product.quantity,
         clienteDestino: 'INVENTÁRIO - Baixa automática',
         notaFiscal: '',
-        date: new Date().toISOString().split('T')[0],
+        date: todayLocalISO(),
         observacao: 'Baixa por inventário - motor não encontrado no estoque físico',
       });
       setInventarioChecked(prev => ({ ...prev, [product.id]: 'nao' }));
@@ -410,7 +410,7 @@ const Motorredutores = () => {
         quantity: 1,
         clienteDestino: '',
         notaFiscal: '',
-        date: new Date().toISOString().split('T')[0],
+        date: todayLocalISO(),
         observacao: 'Retorno ao estoque - correção de inventário',
       });
       setInventarioChecked(prev => {
@@ -576,7 +576,7 @@ const Motorredutores = () => {
                         {stockFilter === 'sem_estoque' && (
                           <td className="px-4 py-2.5 text-xs font-mono">
                             {lastExitByProduct[p.id]
-                              ? new Date(lastExitByProduct[p.id]).toLocaleDateString('pt-BR')
+                              ? formatDateBR(lastExitByProduct[p.id])
                               : '—'}
                           </td>
                         )}
@@ -838,7 +838,7 @@ const Motorredutores = () => {
                               <td className="px-3 py-2 text-center font-bold">{formatQuantity(it.quantity)}</td>
                               <td className="px-3 py-2 text-xs">{it.cliente}</td>
                               <td className="px-3 py-2 text-xs text-muted-foreground">{it.observacao || '—'}</td>
-                              <td className="px-3 py-2 text-xs font-mono">{new Date(it.date).toLocaleDateString('pt-BR')}</td>
+                              <td className="px-3 py-2 text-xs font-mono">{formatDateBR(it.date)}</td>
                               <td className="px-3 py-2">
                                 <button type="button" onClick={() => handleRemoveFromCart(it.tempId)} className="p-1 rounded hover:bg-destructive/15 text-destructive transition-colors" title="Remover da lista">
                                   <X className="w-4 h-4" />
@@ -911,7 +911,7 @@ const Motorredutores = () => {
                   ) : (
                     filteredMovements.map(m => (
                       <tr key={m.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
-                        <td className="px-4 py-2.5 font-mono text-xs">{new Date(m.date).toLocaleDateString('pt-BR')}</td>
+                        <td className="px-4 py-2.5 font-mono text-xs">{formatDateBR(m.date)}</td>
                         <td className="px-4 py-2.5">
                           <span className={`inline-flex px-2 py-0.5 rounded text-xs font-semibold ${m.type === 'entrada' ? 'bg-success/15 text-success' : 'bg-destructive/15 text-destructive'}`}>
                             {m.type === 'entrada' ? 'Entrada' : 'Saída'}
