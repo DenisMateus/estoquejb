@@ -80,8 +80,23 @@ const Motorredutores = () => {
   // Month filter for movements
   const [selectedMonth, setSelectedMonth] = useState(new Date());
 
-  // Inventário
-  const [inventarioChecked, setInventarioChecked] = useState<Record<string, 'sim' | 'nao'>>({});
+  // Inventário - persistido em localStorage para manter as marcações ao trocar de tela
+  const INVENTARIO_STORAGE_KEY = 'mtd_inventario_checked';
+  const [inventarioChecked, setInventarioCheckedState] = useState<Record<string, 'sim' | 'nao'>>(() => {
+    try {
+      const saved = localStorage.getItem(INVENTARIO_STORAGE_KEY);
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
+  const setInventarioChecked: typeof setInventarioCheckedState = (value) => {
+    setInventarioCheckedState(prev => {
+      const next = typeof value === 'function' ? (value as (p: Record<string, 'sim' | 'nao'>) => Record<string, 'sim' | 'nao'>)(prev) : value;
+      try { localStorage.setItem(INVENTARIO_STORAGE_KEY, JSON.stringify(next)); } catch {}
+      return next;
+    });
+  };
   const [inventarioProcessing, setInventarioProcessing] = useState<string | null>(null);
   const [inventarioSearch, setInventarioSearch] = useState('');
   const [inventarioConfirm, setInventarioConfirm] = useState<{ type: 'sim' | 'nao'; product: MtdProduct } | null>(null);
