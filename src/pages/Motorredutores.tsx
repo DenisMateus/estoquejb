@@ -933,17 +933,32 @@ const Motorredutores = () => {
               <table className="w-full text-sm table-auto">
                 <thead>
                   <tr className="border-b bg-muted/50">
-                    <th className="text-left px-2 py-2 font-medium text-muted-foreground whitespace-nowrap">Data</th>
-                    <th className="text-left px-2 py-2 font-medium text-muted-foreground whitespace-nowrap">Tipo</th>
-                    <th className="text-left px-2 py-2 font-medium text-muted-foreground whitespace-nowrap">Código</th>
-                    <th className="text-left px-2 py-2 font-medium text-muted-foreground">Descrição</th>
-                    <th className="text-center px-2 py-2 font-medium text-muted-foreground whitespace-nowrap">Qtd</th>
-                    <th className="text-left px-2 py-2 font-medium text-muted-foreground whitespace-nowrap">Cliente Origem</th>
-                    <th className="text-left px-2 py-2 font-medium text-muted-foreground whitespace-nowrap">Cliente Destino</th>
-                    <th className="text-left px-2 py-2 font-medium text-muted-foreground whitespace-nowrap">NF</th>
-                    <th className="text-left px-2 py-2 font-medium text-muted-foreground whitespace-nowrap">OF</th>
-                    <th className="text-center px-2 py-2 font-medium text-muted-foreground whitespace-nowrap">Inventário</th>
-                    <th className="text-left px-2 py-2 font-medium text-muted-foreground">Observação</th>
+                    {([
+                      { key: 'data', label: 'Data', sortable: true, align: 'left' as const },
+                      { key: null, label: 'Tipo', align: 'left' as const },
+                      { key: 'codigo', label: 'Código', sortable: true, align: 'left' as const },
+                      { key: null, label: 'Descrição', align: 'left' as const, nowrap: false },
+                      { key: null, label: 'Qtd', align: 'center' as const },
+                      { key: 'origem', label: 'Cliente Origem', sortable: true, align: 'left' as const },
+                      { key: 'destino', label: 'Cliente Destino', sortable: true, align: 'left' as const },
+                      { key: null, label: 'NF', align: 'left' as const },
+                      { key: null, label: 'OF', align: 'left' as const },
+                      { key: null, label: 'Inventário', align: 'center' as const },
+                      { key: null, label: 'Observação', align: 'left' as const, nowrap: false },
+                    ] as const).map((h, i) => {
+                      const isActive = h.sortable && movSortKey === h.key;
+                      return (
+                        <th key={i} className={`px-2 py-2 font-medium text-muted-foreground ${h.align === 'center' ? 'text-center' : 'text-left'} ${('nowrap' in h && h.nowrap === false) ? '' : 'whitespace-nowrap'}`}>
+                          {h.sortable ? (
+                            <button type="button" onClick={() => toggleSort(h.key as 'data' | 'codigo' | 'origem' | 'destino')}
+                              className={`inline-flex items-center gap-1 hover:text-foreground transition-colors ${isActive ? 'text-foreground' : ''}`}>
+                              {h.label}
+                              {isActive ? (movSortDir === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
+                            </button>
+                          ) : h.label}
+                        </th>
+                      );
+                    })}
                   </tr>
                 </thead>
                 <tbody>
@@ -960,11 +975,12 @@ const Motorredutores = () => {
                       const nf = m.notaFiscal || prod?.notaFiscal || '—';
                       const of = prod?.ofNumber || '—';
                       const trocouCliente = m.type === 'saida' && !isInventario && clienteOrigem !== '—' && clienteDestino !== '—' && clienteOrigem !== clienteDestino;
-                      const tooltipTroca = trocouCliente
-                        ? `Baixa com troca de cliente: este motor era do cliente "${clienteOrigem}" e foi destinado para "${clienteDestino}".`
-                        : undefined;
+                      const isExpanded = !!expandedDesc[m.id];
+                      const desc = m.mtdProductDescription || '';
+                      const longDesc = desc.length > 80;
+                      const tipoLabel = isInventario ? 'Saída por inventário' : (m.type === 'entrada' ? 'Entrada' : 'Saída por transferência');
                       return (
-                        <tr key={m.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors align-middle">
+                        <tr key={m.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors align-top">
                           <td className="px-2 py-1.5 font-mono text-xs whitespace-nowrap">{formatDateBR(m.date)}</td>
                           <td className="px-2 py-1.5 whitespace-nowrap">
                             <span className={`inline-flex px-1.5 py-0.5 rounded text-xs font-semibold ${m.type === 'entrada' ? 'bg-success/15 text-success' : 'bg-destructive/15 text-destructive'}`}>
@@ -972,19 +988,38 @@ const Motorredutores = () => {
                             </span>
                           </td>
                           <td className="px-2 py-1.5 font-mono font-semibold text-primary whitespace-nowrap">{m.mtdProductCode}</td>
-                          <td className="px-2 py-1.5 text-xs leading-snug">{m.mtdProductDescription}</td>
+                          <td className="px-2 py-1.5 text-xs leading-snug max-w-[260px]">
+                            <div className={isExpanded ? '' : 'line-clamp-2'}>{desc}</div>
+                            {longDesc && (
+                              <button type="button" onClick={() => setExpandedDesc(s => ({ ...s, [m.id]: !s[m.id] }))}
+                                className="mt-0.5 text-[11px] text-primary hover:underline">
+                                {isExpanded ? 'ver menos' : 'ver mais'}
+                              </button>
+                            )}
+                          </td>
                           <td className="px-2 py-1.5 text-center font-bold whitespace-nowrap">{formatQuantity(m.quantity)}</td>
                           <td className="px-2 py-1.5 text-xs whitespace-nowrap">{clienteOrigem}</td>
-                          <td className="px-2 py-1.5 text-xs whitespace-nowrap" title={tooltipTroca}>
+                          <td className="px-2 py-1.5 text-xs whitespace-nowrap">
                             {isInventario ? (
                               <span className="text-muted-foreground">—</span>
                             ) : trocouCliente ? (
-                              <span className="inline-flex items-center gap-1 cursor-help">
-                                <span className="text-muted-foreground line-through">{clienteOrigem}</span>
-                                <ArrowLeftRight className="w-3 h-3 text-primary" />
-                                <span className="font-semibold">{clienteDestino}</span>
-                                <span className="ml-1 text-[10px] px-1 rounded bg-primary/15 text-primary border border-primary/30">troca</span>
-                              </span>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span className="inline-flex items-center gap-1 cursor-help">
+                                    <span className="text-muted-foreground line-through">{clienteOrigem}</span>
+                                    <ArrowLeftRight className="w-3 h-3 text-primary" />
+                                    <span className="font-semibold">{clienteDestino}</span>
+                                    <span className="ml-1 text-[10px] font-bold px-1 rounded bg-primary/15 text-primary border border-primary/30">TROCA</span>
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="max-w-xs text-xs">
+                                  <div className="font-semibold mb-1">Baixa com troca de cliente</div>
+                                  <div>De: <strong>{clienteOrigem}</strong></div>
+                                  <div>Para: <strong>{clienteDestino}</strong></div>
+                                  <div className="mt-1 text-muted-foreground">Data: {formatDateBR(m.date)}</div>
+                                  <div className="text-muted-foreground">Tipo: {tipoLabel}</div>
+                                </TooltipContent>
+                              </Tooltip>
                             ) : (
                               <span>{clienteDestino}</span>
                             )}
@@ -1000,7 +1035,7 @@ const Motorredutores = () => {
                               <span className="text-muted-foreground text-xs">—</span>
                             )}
                           </td>
-                          <td className="px-2 py-1.5 text-xs text-muted-foreground">{m.observacao || '—'}</td>
+                          <td className="px-2 py-1.5 text-xs text-muted-foreground max-w-[200px]">{m.observacao || '—'}</td>
                         </tr>
                       );
                     })
