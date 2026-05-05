@@ -193,6 +193,13 @@ const Motorredutores = () => {
       });
   }, [movements, monthKey, movSearch, movSearchType, movTypeFilter]);
 
+  // Map product id -> product (for enriching movement rows with NF/OF/Cliente original)
+  const productById = useMemo(() => {
+    const map: Record<string, MtdProduct> = {};
+    products.forEach(p => { map[p.id] = p; });
+    return map;
+  }, [products]);
+
   // Last "saida" date per product (used to display "Data Baixa" in stock list)
   const lastExitByProduct = useMemo(() => {
     const map: Record<string, string> = {};
