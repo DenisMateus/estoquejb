@@ -193,6 +193,13 @@ const Motorredutores = () => {
       });
   }, [movements, monthKey, movSearch, movSearchType, movTypeFilter]);
 
+  // Map product id -> product (for enriching movement rows with NF/OF/Cliente original)
+  const productById = useMemo(() => {
+    const map: Record<string, MtdProduct> = {};
+    products.forEach(p => { map[p.id] = p; });
+    return map;
+  }, [products]);
+
   // Last "saida" date per product (used to display "Data Baixa" in stock list)
   const lastExitByProduct = useMemo(() => {
     const map: Record<string, string> = {};
@@ -900,31 +907,67 @@ const Motorredutores = () => {
                     <th className="text-left px-4 py-3 font-medium text-muted-foreground">Código</th>
                     <th className="text-left px-4 py-3 font-medium text-muted-foreground">Descrição</th>
                     <th className="text-center px-4 py-3 font-medium text-muted-foreground">Qtd</th>
-                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">Cliente</th>
+                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">Cliente Origem</th>
+                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">Cliente Destino</th>
                     <th className="text-left px-4 py-3 font-medium text-muted-foreground">NF</th>
+                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">OF</th>
+                    <th className="text-center px-4 py-3 font-medium text-muted-foreground">Inventário</th>
                     <th className="text-left px-4 py-3 font-medium text-muted-foreground">Observação</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredMovements.length === 0 ? (
-                    <tr><td colSpan={8} className="px-5 py-8 text-center text-muted-foreground">Nenhuma movimentação neste mês</td></tr>
+                    <tr><td colSpan={11} className="px-5 py-8 text-center text-muted-foreground">Nenhuma movimentação neste mês</td></tr>
                   ) : (
-                    filteredMovements.map(m => (
-                      <tr key={m.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
-                        <td className="px-4 py-2.5 font-mono text-xs">{formatDateBR(m.date)}</td>
-                        <td className="px-4 py-2.5">
-                          <span className={`inline-flex px-2 py-0.5 rounded text-xs font-semibold ${m.type === 'entrada' ? 'bg-success/15 text-success' : 'bg-destructive/15 text-destructive'}`}>
-                            {m.type === 'entrada' ? 'Entrada' : 'Saída'}
-                          </span>
-                        </td>
-                        <td className="px-4 py-2.5 font-mono font-semibold text-primary">{m.mtdProductCode}</td>
-                        <td className="px-4 py-2.5">{m.mtdProductDescription}</td>
-                        <td className="px-4 py-2.5 text-center font-bold">{formatQuantity(m.quantity)}</td>
-                        <td className="px-4 py-2.5 text-xs">{m.clienteDestino || '—'}</td>
-                        <td className="px-4 py-2.5 text-xs font-mono">{m.notaFiscal || '—'}</td>
-                        <td className="px-4 py-2.5 text-xs text-muted-foreground">{m.observacao || '—'}</td>
-                      </tr>
-                    ))
+                    filteredMovements.map(m => {
+                      const prod = productById[m.mtdProductId];
+                      const clienteOrigem = prod?.cliente || '—';
+                      const isInventario = (m.clienteDestino || '').startsWith('INVENTÁRIO') || (m.observacao || '').toLowerCase().includes('inventário');
+                      const clienteDestino = isInventario
+                        ? '—'
+                        : (m.type === 'entrada' ? (prod?.cliente || m.clienteDestino || '—') : (m.clienteDestino || '—'));
+                      const nf = m.notaFiscal || prod?.notaFiscal || '—';
+                      const of = prod?.ofNumber || '—';
+                      return (
+                        <tr key={m.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
+                          <td className="px-4 py-2.5 font-mono text-xs">{formatDateBR(m.date)}</td>
+                          <td className="px-4 py-2.5">
+                            <span className={`inline-flex px-2 py-0.5 rounded text-xs font-semibold ${m.type === 'entrada' ? 'bg-success/15 text-success' : 'bg-destructive/15 text-destructive'}`}>
+                              {m.type === 'entrada' ? 'Entrada' : 'Saída'}
+                            </span>
+                          </td>
+                          <td className="px-4 py-2.5 font-mono font-semibold text-primary">{m.mtdProductCode}</td>
+                          <td className="px-4 py-2.5">{m.mtdProductDescription}</td>
+                          <td className="px-4 py-2.5 text-center font-bold">{formatQuantity(m.quantity)}</td>
+                          <td className="px-4 py-2.5 text-xs">{clienteOrigem}</td>
+                          <td className="px-4 py-2.5 text-xs">
+                            {isInventario ? (
+                              <span className="text-muted-foreground">—</span>
+                            ) : m.type === 'saida' && clienteOrigem !== '—' && clienteDestino !== '—' && clienteOrigem !== clienteDestino ? (
+                              <span className="inline-flex items-center gap-1">
+                                <span className="text-muted-foreground line-through">{clienteOrigem}</span>
+                                <ArrowLeftRight className="w-3 h-3 text-primary" />
+                                <span className="font-semibold">{clienteDestino}</span>
+                              </span>
+                            ) : (
+                              <span>{clienteDestino}</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-2.5 text-xs font-mono">{nf}</td>
+                          <td className="px-4 py-2.5 text-xs font-mono">{of}</td>
+                          <td className="px-4 py-2.5 text-center">
+                            {isInventario ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-accent/15 text-accent border border-accent/30">
+                                <ClipboardCheck className="w-3 h-3" /> Baixa Inventário
+                              </span>
+                            ) : (
+                              <span className="text-muted-foreground text-xs">—</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-2.5 text-xs text-muted-foreground">{m.observacao || '—'}</td>
+                        </tr>
+                      );
+                    })
                   )}
                 </tbody>
               </table>
