@@ -899,20 +899,20 @@ const Motorredutores = () => {
 
             {/* Movements table */}
             <div className="bg-card rounded-lg border overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full text-sm table-auto">
                 <thead>
                   <tr className="border-b bg-muted/50">
-                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">Data</th>
-                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">Tipo</th>
-                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">Código</th>
-                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">Descrição</th>
-                    <th className="text-center px-4 py-3 font-medium text-muted-foreground">Qtd</th>
-                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">Cliente Origem</th>
-                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">Cliente Destino</th>
-                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">NF</th>
-                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">OF</th>
-                    <th className="text-center px-4 py-3 font-medium text-muted-foreground">Inventário</th>
-                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">Observação</th>
+                    <th className="text-left px-2 py-2 font-medium text-muted-foreground whitespace-nowrap">Data</th>
+                    <th className="text-left px-2 py-2 font-medium text-muted-foreground whitespace-nowrap">Tipo</th>
+                    <th className="text-left px-2 py-2 font-medium text-muted-foreground whitespace-nowrap">Código</th>
+                    <th className="text-left px-2 py-2 font-medium text-muted-foreground">Descrição</th>
+                    <th className="text-center px-2 py-2 font-medium text-muted-foreground whitespace-nowrap">Qtd</th>
+                    <th className="text-left px-2 py-2 font-medium text-muted-foreground whitespace-nowrap">Cliente Origem</th>
+                    <th className="text-left px-2 py-2 font-medium text-muted-foreground whitespace-nowrap">Cliente Destino</th>
+                    <th className="text-left px-2 py-2 font-medium text-muted-foreground whitespace-nowrap">NF</th>
+                    <th className="text-left px-2 py-2 font-medium text-muted-foreground whitespace-nowrap">OF</th>
+                    <th className="text-center px-2 py-2 font-medium text-muted-foreground whitespace-nowrap">Inventário</th>
+                    <th className="text-left px-2 py-2 font-medium text-muted-foreground">Observação</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -928,43 +928,48 @@ const Motorredutores = () => {
                         : (m.type === 'entrada' ? (prod?.cliente || m.clienteDestino || '—') : (m.clienteDestino || '—'));
                       const nf = m.notaFiscal || prod?.notaFiscal || '—';
                       const of = prod?.ofNumber || '—';
+                      const trocouCliente = m.type === 'saida' && !isInventario && clienteOrigem !== '—' && clienteDestino !== '—' && clienteOrigem !== clienteDestino;
+                      const tooltipTroca = trocouCliente
+                        ? `Baixa com troca de cliente: este motor era do cliente "${clienteOrigem}" e foi destinado para "${clienteDestino}".`
+                        : undefined;
                       return (
-                        <tr key={m.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
-                          <td className="px-4 py-2.5 font-mono text-xs">{formatDateBR(m.date)}</td>
-                          <td className="px-4 py-2.5">
-                            <span className={`inline-flex px-2 py-0.5 rounded text-xs font-semibold ${m.type === 'entrada' ? 'bg-success/15 text-success' : 'bg-destructive/15 text-destructive'}`}>
+                        <tr key={m.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors align-middle">
+                          <td className="px-2 py-1.5 font-mono text-xs whitespace-nowrap">{formatDateBR(m.date)}</td>
+                          <td className="px-2 py-1.5 whitespace-nowrap">
+                            <span className={`inline-flex px-1.5 py-0.5 rounded text-xs font-semibold ${m.type === 'entrada' ? 'bg-success/15 text-success' : 'bg-destructive/15 text-destructive'}`}>
                               {m.type === 'entrada' ? 'Entrada' : 'Saída'}
                             </span>
                           </td>
-                          <td className="px-4 py-2.5 font-mono font-semibold text-primary">{m.mtdProductCode}</td>
-                          <td className="px-4 py-2.5">{m.mtdProductDescription}</td>
-                          <td className="px-4 py-2.5 text-center font-bold">{formatQuantity(m.quantity)}</td>
-                          <td className="px-4 py-2.5 text-xs">{clienteOrigem}</td>
-                          <td className="px-4 py-2.5 text-xs">
+                          <td className="px-2 py-1.5 font-mono font-semibold text-primary whitespace-nowrap">{m.mtdProductCode}</td>
+                          <td className="px-2 py-1.5 text-xs leading-snug">{m.mtdProductDescription}</td>
+                          <td className="px-2 py-1.5 text-center font-bold whitespace-nowrap">{formatQuantity(m.quantity)}</td>
+                          <td className="px-2 py-1.5 text-xs whitespace-nowrap">{clienteOrigem}</td>
+                          <td className="px-2 py-1.5 text-xs whitespace-nowrap" title={tooltipTroca}>
                             {isInventario ? (
                               <span className="text-muted-foreground">—</span>
-                            ) : m.type === 'saida' && clienteOrigem !== '—' && clienteDestino !== '—' && clienteOrigem !== clienteDestino ? (
-                              <span className="inline-flex items-center gap-1">
+                            ) : trocouCliente ? (
+                              <span className="inline-flex items-center gap-1 cursor-help">
                                 <span className="text-muted-foreground line-through">{clienteOrigem}</span>
                                 <ArrowLeftRight className="w-3 h-3 text-primary" />
                                 <span className="font-semibold">{clienteDestino}</span>
+                                <span className="ml-1 text-[10px] px-1 rounded bg-primary/15 text-primary border border-primary/30">troca</span>
                               </span>
                             ) : (
                               <span>{clienteDestino}</span>
                             )}
                           </td>
-                          <td className="px-4 py-2.5 text-xs font-mono">{nf}</td>
-                          <td className="px-4 py-2.5 text-xs font-mono">{of}</td>
-                          <td className="px-4 py-2.5 text-center">
+                          <td className="px-2 py-1.5 text-xs font-mono whitespace-nowrap">{nf}</td>
+                          <td className="px-2 py-1.5 text-xs font-mono whitespace-nowrap">{of}</td>
+                          <td className="px-2 py-1.5 text-center whitespace-nowrap">
                             {isInventario ? (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-accent/15 text-accent border border-accent/30">
-                                <ClipboardCheck className="w-3 h-3" /> Baixa Inventário
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-semibold bg-accent/15 text-accent border border-accent/30">
+                                <ClipboardCheck className="w-3 h-3" /> Inventário
                               </span>
                             ) : (
                               <span className="text-muted-foreground text-xs">—</span>
                             )}
                           </td>
-                          <td className="px-4 py-2.5 text-xs text-muted-foreground">{m.observacao || '—'}</td>
+                          <td className="px-2 py-1.5 text-xs text-muted-foreground">{m.observacao || '—'}</td>
                         </tr>
                       );
                     })
