@@ -934,22 +934,22 @@ const Motorredutores = () => {
                 <thead>
                   <tr className="border-b bg-muted/50">
                     {([
-                      { key: 'data', label: 'Data', sortable: true, align: 'left' as const },
-                      { key: null, label: 'Tipo', align: 'left' as const },
-                      { key: 'codigo', label: 'Código', sortable: true, align: 'left' as const },
-                      { key: null, label: 'Descrição', align: 'left' as const, nowrap: false },
-                      { key: null, label: 'Qtd', align: 'center' as const },
-                      { key: 'origem', label: 'Cliente Origem', sortable: true, align: 'left' as const },
-                      { key: 'destino', label: 'Cliente Destino', sortable: true, align: 'left' as const },
-                      { key: null, label: 'NF', align: 'left' as const },
-                      { key: null, label: 'OF', align: 'left' as const },
-                      { key: null, label: 'Inventário', align: 'center' as const },
-                      { key: null, label: 'Observação', align: 'left' as const, nowrap: false },
-                    ] as const).map((h, i) => {
+                      { key: 'data', label: 'Data', sortable: true, align: 'left', nowrap: true },
+                      { key: null, label: 'Tipo', sortable: false, align: 'left', nowrap: true },
+                      { key: 'codigo', label: 'Código', sortable: true, align: 'left', nowrap: true },
+                      { key: null, label: 'Descrição', sortable: false, align: 'left', nowrap: false },
+                      { key: null, label: 'Qtd', sortable: false, align: 'center', nowrap: true },
+                      { key: 'origem', label: 'Cliente Origem', sortable: true, align: 'left', nowrap: true },
+                      { key: 'destino', label: 'Cliente Destino', sortable: true, align: 'left', nowrap: true },
+                      { key: null, label: 'NF', sortable: false, align: 'left', nowrap: true },
+                      { key: null, label: 'OF', sortable: false, align: 'left', nowrap: true },
+                      { key: null, label: 'Inventário', sortable: false, align: 'center', nowrap: true },
+                      { key: null, label: 'Observação', sortable: false, align: 'left', nowrap: false },
+                    ] as Array<{ key: 'data' | 'codigo' | 'origem' | 'destino' | null; label: string; sortable: boolean; align: 'left' | 'center'; nowrap: boolean }>).map((h, i) => {
                       const isActive = h.sortable && movSortKey === h.key;
                       return (
-                        <th key={i} className={`px-2 py-2 font-medium text-muted-foreground ${h.align === 'center' ? 'text-center' : 'text-left'} ${('nowrap' in h && h.nowrap === false) ? '' : 'whitespace-nowrap'}`}>
-                          {h.sortable ? (
+                        <th key={i} className={`px-2 py-2 font-medium text-muted-foreground ${h.align === 'center' ? 'text-center' : 'text-left'} ${h.nowrap ? 'whitespace-nowrap' : ''}`}>
+                          {h.sortable && h.key ? (
                             <button type="button" onClick={() => toggleSort(h.key as 'data' | 'codigo' | 'origem' | 'destino')}
                               className={`inline-flex items-center gap-1 hover:text-foreground transition-colors ${isActive ? 'text-foreground' : ''}`}>
                               {h.label}
