@@ -957,7 +957,7 @@ const Motorredutores = () => {
                           <td className="px-4 py-2.5 text-xs font-mono">{of}</td>
                           <td className="px-4 py-2.5 text-center">
                             {isInventario ? (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-warning/15 text-warning border border-warning/30">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-accent/15 text-accent border border-accent/30">
                                 <ClipboardCheck className="w-3 h-3" /> Baixa Inventário
                               </span>
                             ) : (
