@@ -894,22 +894,39 @@ const Motorredutores = () => {
 
             {/* Search & filter movements */}
             <div className="flex flex-wrap gap-2 items-center print:hidden">
-              <div className="flex gap-1">
-                <button onClick={() => setMovSearchType('codigo')}
-                  className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${movSearchType === 'codigo' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
-                  Por Código
-                </button>
-                <button onClick={() => setMovSearchType('nf')}
-                  className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${movSearchType === 'nf' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
-                  Por NF
-                </button>
+              <div className="flex gap-1 flex-wrap">
+                {([
+                  { k: 'codigo', label: 'Por Código' },
+                  { k: 'nf', label: 'Por NF' },
+                  { k: 'origem', label: 'Por Cliente Origem' },
+                  { k: 'destino', label: 'Por Cliente Destino' },
+                ] as const).map(o => (
+                  <button key={o.k} onClick={() => setMovSearchType(o.k)}
+                    className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${movSearchType === o.k ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
+                    {o.label}
+                  </button>
+                ))}
               </div>
               <div className="relative flex-1 min-w-[220px]">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <input value={movSearch} onChange={e => setMovSearch(e.target.value)}
                   className="input-steel pl-10 w-full"
-                  placeholder={movSearchType === 'nf' ? 'Pesquisar movimentação por NF...' : 'Pesquisar movimentação por código/descrição...'} />
+                  placeholder={
+                    movSearchType === 'nf' ? 'Pesquisar por NF...' :
+                    movSearchType === 'origem' ? 'Pesquisar por cliente origem...' :
+                    movSearchType === 'destino' ? 'Pesquisar por cliente destino...' :
+                    'Pesquisar por código/descrição...'
+                  } />
               </div>
+              <div className="flex gap-1">
+                {(['todos', 'entrada', 'saida'] as const).map(f => (
+                  <button key={f} onClick={() => setMovTypeFilter(f)}
+                    className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${movTypeFilter === f ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
+                    {f === 'todos' ? 'Todos' : f === 'entrada' ? 'Entradas' : 'Saídas'}
+                  </button>
+                ))}
+              </div>
+            </div>
               <div className="flex gap-1">
                 {(['todos', 'entrada', 'saida'] as const).map(f => (
                   <button key={f} onClick={() => setMovTypeFilter(f)}
