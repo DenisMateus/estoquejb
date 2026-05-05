@@ -927,15 +927,6 @@ const Motorredutores = () => {
                 ))}
               </div>
             </div>
-              <div className="flex gap-1">
-                {(['todos', 'entrada', 'saida'] as const).map(f => (
-                  <button key={f} onClick={() => setMovTypeFilter(f)}
-                    className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${movTypeFilter === f ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
-                    {f === 'todos' ? 'Todos' : f === 'entrada' ? 'Entradas' : 'Saídas'}
-                  </button>
-                ))}
-              </div>
-            </div>
 
             {/* Movements table */}
             <div className="bg-card rounded-lg border overflow-x-auto">
