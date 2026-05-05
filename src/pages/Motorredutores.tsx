@@ -6,7 +6,8 @@ import {
 } from '@/lib/mtd';
 import { formatQuantity } from '@/lib/inventory';
 import AppLayout from '@/components/AppLayout';
-import { Plus, Trash2, Search, Pencil, X, ArrowLeftRight, Printer, ChevronLeft, ChevronRight, ArrowDown, ArrowUp, ClipboardCheck, Check, XCircle, Undo2 } from 'lucide-react';
+import { Plus, Trash2, Search, Pencil, X, ArrowLeftRight, Printer, ChevronLeft, ChevronRight, ArrowDown, ArrowUp, ArrowUpDown, ClipboardCheck, Check, XCircle, Undo2 } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
 import logoHeader from '@/assets/logo_header.png';
 
@@ -170,28 +171,20 @@ const Motorredutores = () => {
 
   // Search in movements tab
   const [movSearch, setMovSearch] = useState('');
-  const [movSearchType, setMovSearchType] = useState<'codigo' | 'nf'>('codigo');
+  const [movSearchType, setMovSearchType] = useState<'codigo' | 'nf' | 'origem' | 'destino'>('codigo');
   const [movTypeFilter, setMovTypeFilter] = useState<'todos' | 'entrada' | 'saida'>('todos');
+  const [movSortKey, setMovSortKey] = useState<'data' | 'codigo' | 'origem' | 'destino'>('data');
+  const [movSortDir, setMovSortDir] = useState<'asc' | 'desc'>('desc');
+  const [expandedDesc, setExpandedDesc] = useState<Record<string, boolean>>({});
 
-  const filteredMovements = useMemo(() => {
-    return movements
-      .filter(m => m.date.startsWith(monthKey))
-      .filter(m => movTypeFilter === 'todos' || m.type === movTypeFilter)
-      .filter(m => {
-        if (!movSearch.trim()) return true;
-        const term = movSearch.toLowerCase().trim();
-        if (movSearchType === 'nf') {
-          return (m.notaFiscal || '').toLowerCase().includes(term);
-        }
-        return m.mtdProductCode.toLowerCase().includes(term) ||
-               m.mtdProductDescription.toLowerCase().includes(term);
-      })
-      .sort((a, b) => {
-        // Mais recentes primeiro (por data e, em empate, por created_at)
-        if (a.date !== b.date) return b.date.localeCompare(a.date);
-        return (b.createdAt || '').localeCompare(a.createdAt || '');
-      });
-  }, [movements, monthKey, movSearch, movSearchType, movTypeFilter]);
+  const toggleSort = (key: 'data' | 'codigo' | 'origem' | 'destino') => {
+    if (movSortKey === key) {
+      setMovSortDir(d => (d === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setMovSortKey(key);
+      setMovSortDir(key === 'data' ? 'desc' : 'asc');
+    }
+  };
 
   // Map product id -> product (for enriching movement rows with NF/OF/Cliente original)
   const productById = useMemo(() => {
@@ -199,6 +192,36 @@ const Motorredutores = () => {
     products.forEach(p => { map[p.id] = p; });
     return map;
   }, [products]);
+
+  const filteredMovements = useMemo(() => {
+    const getOrigem = (m: MtdMovement) => productById[m.mtdProductId]?.cliente || '';
+    const getDestino = (m: MtdMovement) => {
+      const isInv = (m.clienteDestino || '').startsWith('INVENTÁRIO') || (m.observacao || '').toLowerCase().includes('inventário');
+      if (isInv) return '';
+      return m.type === 'entrada' ? (productById[m.mtdProductId]?.cliente || m.clienteDestino || '') : (m.clienteDestino || '');
+    };
+    return movements
+      .filter(m => m.date.startsWith(monthKey))
+      .filter(m => movTypeFilter === 'todos' || m.type === movTypeFilter)
+      .filter(m => {
+        if (!movSearch.trim()) return true;
+        const term = movSearch.toLowerCase().trim();
+        if (movSearchType === 'nf') return (m.notaFiscal || '').toLowerCase().includes(term);
+        if (movSearchType === 'origem') return getOrigem(m).toLowerCase().includes(term);
+        if (movSearchType === 'destino') return getDestino(m).toLowerCase().includes(term);
+        return m.mtdProductCode.toLowerCase().includes(term) ||
+               m.mtdProductDescription.toLowerCase().includes(term);
+      })
+      .sort((a, b) => {
+        const dir = movSortDir === 'asc' ? 1 : -1;
+        if (movSortKey === 'codigo') return a.mtdProductCode.localeCompare(b.mtdProductCode, 'pt-BR', { numeric: true }) * dir;
+        if (movSortKey === 'origem') return getOrigem(a).localeCompare(getOrigem(b), 'pt-BR') * dir;
+        if (movSortKey === 'destino') return getDestino(a).localeCompare(getDestino(b), 'pt-BR') * dir;
+        // data
+        if (a.date !== b.date) return a.date.localeCompare(b.date) * dir;
+        return (a.createdAt || '').localeCompare(b.createdAt || '') * dir;
+      });
+  }, [movements, monthKey, movSearch, movSearchType, movTypeFilter, movSortKey, movSortDir, productById]);
 
   // Last "saida" date per product (used to display "Data Baixa" in stock list)
   const lastExitByProduct = useMemo(() => {
@@ -871,21 +894,29 @@ const Motorredutores = () => {
 
             {/* Search & filter movements */}
             <div className="flex flex-wrap gap-2 items-center print:hidden">
-              <div className="flex gap-1">
-                <button onClick={() => setMovSearchType('codigo')}
-                  className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${movSearchType === 'codigo' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
-                  Por Código
-                </button>
-                <button onClick={() => setMovSearchType('nf')}
-                  className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${movSearchType === 'nf' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
-                  Por NF
-                </button>
+              <div className="flex gap-1 flex-wrap">
+                {([
+                  { k: 'codigo', label: 'Por Código' },
+                  { k: 'nf', label: 'Por NF' },
+                  { k: 'origem', label: 'Por Cliente Origem' },
+                  { k: 'destino', label: 'Por Cliente Destino' },
+                ] as const).map(o => (
+                  <button key={o.k} onClick={() => setMovSearchType(o.k)}
+                    className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${movSearchType === o.k ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
+                    {o.label}
+                  </button>
+                ))}
               </div>
               <div className="relative flex-1 min-w-[220px]">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <input value={movSearch} onChange={e => setMovSearch(e.target.value)}
                   className="input-steel pl-10 w-full"
-                  placeholder={movSearchType === 'nf' ? 'Pesquisar movimentação por NF...' : 'Pesquisar movimentação por código/descrição...'} />
+                  placeholder={
+                    movSearchType === 'nf' ? 'Pesquisar por NF...' :
+                    movSearchType === 'origem' ? 'Pesquisar por cliente origem...' :
+                    movSearchType === 'destino' ? 'Pesquisar por cliente destino...' :
+                    'Pesquisar por código/descrição...'
+                  } />
               </div>
               <div className="flex gap-1">
                 {(['todos', 'entrada', 'saida'] as const).map(f => (
@@ -902,17 +933,32 @@ const Motorredutores = () => {
               <table className="w-full text-sm table-auto">
                 <thead>
                   <tr className="border-b bg-muted/50">
-                    <th className="text-left px-2 py-2 font-medium text-muted-foreground whitespace-nowrap">Data</th>
-                    <th className="text-left px-2 py-2 font-medium text-muted-foreground whitespace-nowrap">Tipo</th>
-                    <th className="text-left px-2 py-2 font-medium text-muted-foreground whitespace-nowrap">Código</th>
-                    <th className="text-left px-2 py-2 font-medium text-muted-foreground">Descrição</th>
-                    <th className="text-center px-2 py-2 font-medium text-muted-foreground whitespace-nowrap">Qtd</th>
-                    <th className="text-left px-2 py-2 font-medium text-muted-foreground whitespace-nowrap">Cliente Origem</th>
-                    <th className="text-left px-2 py-2 font-medium text-muted-foreground whitespace-nowrap">Cliente Destino</th>
-                    <th className="text-left px-2 py-2 font-medium text-muted-foreground whitespace-nowrap">NF</th>
-                    <th className="text-left px-2 py-2 font-medium text-muted-foreground whitespace-nowrap">OF</th>
-                    <th className="text-center px-2 py-2 font-medium text-muted-foreground whitespace-nowrap">Inventário</th>
-                    <th className="text-left px-2 py-2 font-medium text-muted-foreground">Observação</th>
+                    {([
+                      { key: 'data', label: 'Data', sortable: true, align: 'left', nowrap: true },
+                      { key: null, label: 'Tipo', sortable: false, align: 'left', nowrap: true },
+                      { key: 'codigo', label: 'Código', sortable: true, align: 'left', nowrap: true },
+                      { key: null, label: 'Descrição', sortable: false, align: 'left', nowrap: false },
+                      { key: null, label: 'Qtd', sortable: false, align: 'center', nowrap: true },
+                      { key: 'origem', label: 'Cliente Origem', sortable: true, align: 'left', nowrap: true },
+                      { key: 'destino', label: 'Cliente Destino', sortable: true, align: 'left', nowrap: true },
+                      { key: null, label: 'NF', sortable: false, align: 'left', nowrap: true },
+                      { key: null, label: 'OF', sortable: false, align: 'left', nowrap: true },
+                      { key: null, label: 'Inventário', sortable: false, align: 'center', nowrap: true },
+                      { key: null, label: 'Observação', sortable: false, align: 'left', nowrap: false },
+                    ] as Array<{ key: 'data' | 'codigo' | 'origem' | 'destino' | null; label: string; sortable: boolean; align: 'left' | 'center'; nowrap: boolean }>).map((h, i) => {
+                      const isActive = h.sortable && movSortKey === h.key;
+                      return (
+                        <th key={i} className={`px-2 py-2 font-medium text-muted-foreground ${h.align === 'center' ? 'text-center' : 'text-left'} ${h.nowrap ? 'whitespace-nowrap' : ''}`}>
+                          {h.sortable && h.key ? (
+                            <button type="button" onClick={() => toggleSort(h.key as 'data' | 'codigo' | 'origem' | 'destino')}
+                              className={`inline-flex items-center gap-1 hover:text-foreground transition-colors ${isActive ? 'text-foreground' : ''}`}>
+                              {h.label}
+                              {isActive ? (movSortDir === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
+                            </button>
+                          ) : h.label}
+                        </th>
+                      );
+                    })}
                   </tr>
                 </thead>
                 <tbody>
@@ -929,11 +975,12 @@ const Motorredutores = () => {
                       const nf = m.notaFiscal || prod?.notaFiscal || '—';
                       const of = prod?.ofNumber || '—';
                       const trocouCliente = m.type === 'saida' && !isInventario && clienteOrigem !== '—' && clienteDestino !== '—' && clienteOrigem !== clienteDestino;
-                      const tooltipTroca = trocouCliente
-                        ? `Baixa com troca de cliente: este motor era do cliente "${clienteOrigem}" e foi destinado para "${clienteDestino}".`
-                        : undefined;
+                      const isExpanded = !!expandedDesc[m.id];
+                      const desc = m.mtdProductDescription || '';
+                      const longDesc = desc.length > 80;
+                      const tipoLabel = isInventario ? 'Saída por inventário' : (m.type === 'entrada' ? 'Entrada' : 'Saída por transferência');
                       return (
-                        <tr key={m.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors align-middle">
+                        <tr key={m.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors align-top">
                           <td className="px-2 py-1.5 font-mono text-xs whitespace-nowrap">{formatDateBR(m.date)}</td>
                           <td className="px-2 py-1.5 whitespace-nowrap">
                             <span className={`inline-flex px-1.5 py-0.5 rounded text-xs font-semibold ${m.type === 'entrada' ? 'bg-success/15 text-success' : 'bg-destructive/15 text-destructive'}`}>
@@ -941,19 +988,38 @@ const Motorredutores = () => {
                             </span>
                           </td>
                           <td className="px-2 py-1.5 font-mono font-semibold text-primary whitespace-nowrap">{m.mtdProductCode}</td>
-                          <td className="px-2 py-1.5 text-xs leading-snug">{m.mtdProductDescription}</td>
+                          <td className="px-2 py-1.5 text-xs leading-snug max-w-[260px]">
+                            <div className={isExpanded ? '' : 'line-clamp-2'}>{desc}</div>
+                            {longDesc && (
+                              <button type="button" onClick={() => setExpandedDesc(s => ({ ...s, [m.id]: !s[m.id] }))}
+                                className="mt-0.5 text-[11px] text-primary hover:underline">
+                                {isExpanded ? 'ver menos' : 'ver mais'}
+                              </button>
+                            )}
+                          </td>
                           <td className="px-2 py-1.5 text-center font-bold whitespace-nowrap">{formatQuantity(m.quantity)}</td>
                           <td className="px-2 py-1.5 text-xs whitespace-nowrap">{clienteOrigem}</td>
-                          <td className="px-2 py-1.5 text-xs whitespace-nowrap" title={tooltipTroca}>
+                          <td className="px-2 py-1.5 text-xs whitespace-nowrap">
                             {isInventario ? (
                               <span className="text-muted-foreground">—</span>
                             ) : trocouCliente ? (
-                              <span className="inline-flex items-center gap-1 cursor-help">
-                                <span className="text-muted-foreground line-through">{clienteOrigem}</span>
-                                <ArrowLeftRight className="w-3 h-3 text-primary" />
-                                <span className="font-semibold">{clienteDestino}</span>
-                                <span className="ml-1 text-[10px] px-1 rounded bg-primary/15 text-primary border border-primary/30">troca</span>
-                              </span>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span className="inline-flex items-center gap-1 cursor-help">
+                                    <span className="text-muted-foreground line-through">{clienteOrigem}</span>
+                                    <ArrowLeftRight className="w-3 h-3 text-primary" />
+                                    <span className="font-semibold">{clienteDestino}</span>
+                                    <span className="ml-1 text-[10px] font-bold px-1 rounded bg-primary/15 text-primary border border-primary/30">TROCA</span>
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="max-w-xs text-xs">
+                                  <div className="font-semibold mb-1">Baixa com troca de cliente</div>
+                                  <div>De: <strong>{clienteOrigem}</strong></div>
+                                  <div>Para: <strong>{clienteDestino}</strong></div>
+                                  <div className="mt-1 text-muted-foreground">Data: {formatDateBR(m.date)}</div>
+                                  <div className="text-muted-foreground">Tipo: {tipoLabel}</div>
+                                </TooltipContent>
+                              </Tooltip>
                             ) : (
                               <span>{clienteDestino}</span>
                             )}
@@ -969,7 +1035,7 @@ const Motorredutores = () => {
                               <span className="text-muted-foreground text-xs">—</span>
                             )}
                           </td>
-                          <td className="px-2 py-1.5 text-xs text-muted-foreground">{m.observacao || '—'}</td>
+                          <td className="px-2 py-1.5 text-xs text-muted-foreground max-w-[200px]">{m.observacao || '—'}</td>
                         </tr>
                       );
                     })
