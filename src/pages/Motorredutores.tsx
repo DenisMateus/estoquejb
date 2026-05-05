@@ -170,28 +170,20 @@ const Motorredutores = () => {
 
   // Search in movements tab
   const [movSearch, setMovSearch] = useState('');
-  const [movSearchType, setMovSearchType] = useState<'codigo' | 'nf'>('codigo');
+  const [movSearchType, setMovSearchType] = useState<'codigo' | 'nf' | 'origem' | 'destino'>('codigo');
   const [movTypeFilter, setMovTypeFilter] = useState<'todos' | 'entrada' | 'saida'>('todos');
+  const [movSortKey, setMovSortKey] = useState<'data' | 'codigo' | 'origem' | 'destino'>('data');
+  const [movSortDir, setMovSortDir] = useState<'asc' | 'desc'>('desc');
+  const [expandedDesc, setExpandedDesc] = useState<Record<string, boolean>>({});
 
-  const filteredMovements = useMemo(() => {
-    return movements
-      .filter(m => m.date.startsWith(monthKey))
-      .filter(m => movTypeFilter === 'todos' || m.type === movTypeFilter)
-      .filter(m => {
-        if (!movSearch.trim()) return true;
-        const term = movSearch.toLowerCase().trim();
-        if (movSearchType === 'nf') {
-          return (m.notaFiscal || '').toLowerCase().includes(term);
-        }
-        return m.mtdProductCode.toLowerCase().includes(term) ||
-               m.mtdProductDescription.toLowerCase().includes(term);
-      })
-      .sort((a, b) => {
-        // Mais recentes primeiro (por data e, em empate, por created_at)
-        if (a.date !== b.date) return b.date.localeCompare(a.date);
-        return (b.createdAt || '').localeCompare(a.createdAt || '');
-      });
-  }, [movements, monthKey, movSearch, movSearchType, movTypeFilter]);
+  const toggleSort = (key: 'data' | 'codigo' | 'origem' | 'destino') => {
+    if (movSortKey === key) {
+      setMovSortDir(d => (d === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setMovSortKey(key);
+      setMovSortDir(key === 'data' ? 'desc' : 'asc');
+    }
+  };
 
   // Map product id -> product (for enriching movement rows with NF/OF/Cliente original)
   const productById = useMemo(() => {
@@ -199,6 +191,36 @@ const Motorredutores = () => {
     products.forEach(p => { map[p.id] = p; });
     return map;
   }, [products]);
+
+  const filteredMovements = useMemo(() => {
+    const getOrigem = (m: MtdMovement) => productById[m.mtdProductId]?.cliente || '';
+    const getDestino = (m: MtdMovement) => {
+      const isInv = (m.clienteDestino || '').startsWith('INVENTÁRIO') || (m.observacao || '').toLowerCase().includes('inventário');
+      if (isInv) return '';
+      return m.type === 'entrada' ? (productById[m.mtdProductId]?.cliente || m.clienteDestino || '') : (m.clienteDestino || '');
+    };
+    return movements
+      .filter(m => m.date.startsWith(monthKey))
+      .filter(m => movTypeFilter === 'todos' || m.type === movTypeFilter)
+      .filter(m => {
+        if (!movSearch.trim()) return true;
+        const term = movSearch.toLowerCase().trim();
+        if (movSearchType === 'nf') return (m.notaFiscal || '').toLowerCase().includes(term);
+        if (movSearchType === 'origem') return getOrigem(m).toLowerCase().includes(term);
+        if (movSearchType === 'destino') return getDestino(m).toLowerCase().includes(term);
+        return m.mtdProductCode.toLowerCase().includes(term) ||
+               m.mtdProductDescription.toLowerCase().includes(term);
+      })
+      .sort((a, b) => {
+        const dir = movSortDir === 'asc' ? 1 : -1;
+        if (movSortKey === 'codigo') return a.mtdProductCode.localeCompare(b.mtdProductCode, 'pt-BR', { numeric: true }) * dir;
+        if (movSortKey === 'origem') return getOrigem(a).localeCompare(getOrigem(b), 'pt-BR') * dir;
+        if (movSortKey === 'destino') return getDestino(a).localeCompare(getDestino(b), 'pt-BR') * dir;
+        // data
+        if (a.date !== b.date) return a.date.localeCompare(b.date) * dir;
+        return (a.createdAt || '').localeCompare(b.createdAt || '') * dir;
+      });
+  }, [movements, monthKey, movSearch, movSearchType, movTypeFilter, movSortKey, movSortDir, productById]);
 
   // Last "saida" date per product (used to display "Data Baixa" in stock list)
   const lastExitByProduct = useMemo(() => {
