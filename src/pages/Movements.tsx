@@ -60,6 +60,21 @@ const Movements = () => {
   };
   useEffect(() => { reload(); }, []);
 
+  // Persist inventory state
+  useEffect(() => { localStorage.setItem('inv_sector', invSector); }, [invSector]);
+  useEffect(() => { localStorage.setItem('inv_date', invDate); }, [invDate]);
+  useEffect(() => {
+    localStorage.setItem(`inv_counts_${invSector}`, JSON.stringify(invCounts));
+  }, [invCounts, invSector]);
+
+  const switchInvSector = (s: SectorType) => {
+    setInvSector(s);
+    try {
+      const raw = localStorage.getItem(`inv_counts_${s}`);
+      setInvCounts(raw ? JSON.parse(raw) : {});
+    } catch { setInvCounts({}); }
+  };
+
   const selectedProduct = products.find(p => p.id === productId);
 
   const isBarraProduct = selectedProduct?.unit === 'barra';
