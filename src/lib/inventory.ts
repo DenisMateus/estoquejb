@@ -32,6 +32,8 @@ export interface Product {
   createdAt: string;
 }
 
+export type OrigemType = 'manual' | 'inventario';
+
 export interface Movement {
   id: string;
   productId: string;
@@ -42,6 +44,7 @@ export interface Movement {
   unit: UnitType;
   date: string;
   createdAt: string;
+  origem: OrigemType;
 }
 
 function mapProduct(row: any): Product {
