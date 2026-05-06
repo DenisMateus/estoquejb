@@ -375,7 +375,7 @@ const Movements = () => {
                     <label className="text-sm font-medium text-foreground block mb-1">Setor</label>
                     <div className="flex gap-1">
                       {(['usinagem', 'guilhotina'] as SectorType[]).map(s => (
-                        <button key={s} type="button" onClick={() => { setInvSector(s); setInvCounts({}); }}
+                        <button key={s} type="button" onClick={() => switchInvSector(s)}
                           className={`px-3 py-2 rounded text-xs font-semibold transition-colors capitalize ${invSector === s ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
                           {s}
                         </button>
