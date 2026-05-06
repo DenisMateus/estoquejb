@@ -32,6 +32,8 @@ export interface Product {
   createdAt: string;
 }
 
+export type OrigemType = 'manual' | 'inventario';
+
 export interface Movement {
   id: string;
   productId: string;
@@ -42,6 +44,7 @@ export interface Movement {
   unit: UnitType;
   date: string;
   createdAt: string;
+  origem: OrigemType;
 }
 
 function mapProduct(row: any): Product {
@@ -69,6 +72,7 @@ function mapMovement(row: any): Movement {
     unit: row.unit as UnitType,
     date: row.date,
     createdAt: row.created_at,
+    origem: (row.origem || 'manual') as OrigemType,
   };
 }
 
@@ -120,7 +124,7 @@ export async function getMovements(): Promise<Movement[]> {
   return (data || []).map(mapMovement);
 }
 
-export async function addMovement(mov: Omit<Movement, 'id' | 'createdAt'>): Promise<Movement> {
+export async function addMovement(mov: Omit<Movement, 'id' | 'createdAt' | 'origem'> & { origem?: OrigemType }): Promise<Movement> {
   // Get current product
   const { data: product, error: pErr } = await supabase.from('products').select('*').eq('id', mov.productId).single();
   if (pErr || !product) throw new Error('Produto não encontrado');
@@ -145,9 +149,34 @@ export async function addMovement(mov: Omit<Movement, 'id' | 'createdAt'>): Prom
     quantity: mov.quantity,
     unit: mov.unit,
     date: mov.date,
-  }).select().single();
+    origem: mov.origem || 'manual',
+  } as any).select().single();
   if (error) throw error;
   return mapMovement(data);
+}
+
+export async function applyInventoryCount(
+  items: Array<{ product: Product; countedQty: number }>,
+  date: string,
+): Promise<number> {
+  let count = 0;
+  for (const { product, countedQty } of items) {
+    const diff = countedQty - product.quantity;
+    if (diff === 0) continue;
+    const type: MovementType = diff > 0 ? 'entrada' : 'saida';
+    await addMovement({
+      productId: product.id,
+      productCode: product.code,
+      productDescription: product.description,
+      type,
+      quantity: Math.abs(diff),
+      unit: product.unit,
+      date,
+      origem: 'inventario',
+    });
+    count++;
+  }
+  return count;
 }
 
 // Auth kept as localStorage (simple shared login)

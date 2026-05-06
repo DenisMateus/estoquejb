@@ -1,8 +1,9 @@
 import { useEffect, useState, useMemo } from 'react';
-import { getProducts, addMovement, getMovements, Product, Movement, formatQuantity } from '@/lib/inventory';
+import { getProducts, addMovement, getMovements, applyInventoryCount, Product, Movement, formatQuantity, SectorType } from '@/lib/inventory';
 import AppLayout from '@/components/AppLayout';
-import { ArrowDownCircle, ArrowUpCircle, ShieldCheck, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowDownCircle, ArrowUpCircle, ShieldCheck, X, ChevronLeft, ChevronRight, ClipboardList, ClipboardCheck } from 'lucide-react';
 import { toast } from 'sonner';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
 function generateCaptcha() {
   const a = Math.floor(Math.random() * 20) + 1;
@@ -26,8 +27,16 @@ const Movements = () => {
   const [quantity, setQuantity] = useState('');
   const [inputMode, setInputMode] = useState<'barra' | 'peso'>('barra');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-  const [filterType, setFilterType] = useState<'todos' | 'entrada' | 'saida'>('todos');
+  const [filterType, setFilterType] = useState<'todos' | 'entrada' | 'saida' | 'inventario'>('todos');
   const [selectedMonth, setSelectedMonth] = useState(new Date());
+
+  // Inventory tab state
+  const [invSector, setInvSector] = useState<SectorType>('usinagem');
+  const [invDate, setInvDate] = useState(new Date().toISOString().split('T')[0]);
+  const [invCounts, setInvCounts] = useState<Record<string, string>>({});
+  const [invSearch, setInvSearch] = useState('');
+  const [invSubmitting, setInvSubmitting] = useState(false);
+  const [invConfirm, setInvConfirm] = useState(false);
 
   // CAPTCHA state
   const [showCaptcha, setShowCaptcha] = useState(false);
@@ -70,7 +79,6 @@ const Movements = () => {
       toast.error('Produto não possui peso unitário cadastrado'); return;
     }
 
-    // Show CAPTCHA instead of submitting directly
     setCaptcha(generateCaptcha());
     setCaptchaInput('');
     setCaptchaError(false);
@@ -78,7 +86,6 @@ const Movements = () => {
   };
 
   const confirmMovement = async () => {
-
     setShowCaptcha(false);
     if (!selectedProduct) return;
     const finalQty = computedBarras;
@@ -107,7 +114,11 @@ const Movements = () => {
   const filteredMovements = useMemo(() => {
     return movements
       .filter(m => m.date.startsWith(monthKey))
-      .filter(m => filterType === 'todos' || m.type === filterType);
+      .filter(m => {
+        if (filterType === 'todos') return true;
+        if (filterType === 'inventario') return m.origem === 'inventario';
+        return m.type === filterType;
+      });
   }, [movements, monthKey, filterType]);
 
   const monthEntries = filteredMovements.filter(m => m.type === 'entrada').reduce((s, m) => s + m.quantity, 0);
@@ -128,11 +139,66 @@ const Movements = () => {
     });
   };
 
+  // ====== Inventory tab ======
+  const sectorProducts = useMemo(
+    () => products.filter(p => p.sector === invSector)
+      .filter(p => {
+        if (!invSearch.trim()) return true;
+        const q = invSearch.toLowerCase();
+        return p.code.toLowerCase().includes(q) || p.description.toLowerCase().includes(q);
+      }),
+    [products, invSector, invSearch]
+  );
+
+  const invDiffs = useMemo(() => {
+    return sectorProducts
+      .map(p => {
+        const raw = invCounts[p.id];
+        if (raw === undefined || raw === '') return null;
+        const counted = parseFloat(raw);
+        if (isNaN(counted) || counted < 0) return null;
+        const diff = counted - p.quantity;
+        return { product: p, counted, diff };
+      })
+      .filter((x): x is { product: Product; counted: number; diff: number } => x !== null && x.diff !== 0);
+  }, [sectorProducts, invCounts]);
+
+  const handleConcludeInventory = async () => {
+    if (invDiffs.length === 0) {
+      toast.error('Nenhuma diferença para registrar');
+      return;
+    }
+    setInvSubmitting(true);
+    try {
+      const n = await applyInventoryCount(
+        invDiffs.map(d => ({ product: d.product, countedQty: d.counted })),
+        invDate,
+      );
+      toast.success(`Inventário concluído: ${n} ajuste(s) registrado(s)`);
+      setInvCounts({});
+      setInvConfirm(false);
+      reload();
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao concluir inventário');
+    } finally {
+      setInvSubmitting(false);
+    }
+  };
+
   return (
     <AppLayout>
       <div className="space-y-6">
         <h2 className="text-xl font-bold text-foreground">Movimentações de Estoque</h2>
 
+        <Tabs defaultValue="movimentacoes" className="w-full">
+          <TabsList>
+            <TabsTrigger value="movimentacoes">Movimentações</TabsTrigger>
+            <TabsTrigger value="inventario" className="gap-2">
+              <ClipboardList className="w-4 h-4" /> Inventário
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="movimentacoes" className="space-y-6">
         <form onSubmit={handleSubmit} className="bg-card border rounded-lg p-5 space-y-4">
           <div className="flex gap-2 mb-2">
             <button type="button" onClick={() => setType('entrada')}
@@ -199,17 +265,16 @@ const Movements = () => {
           <div className="px-5 py-4 border-b space-y-3">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <h3 className="font-semibold text-foreground">Histórico de Movimentações</h3>
-              <div className="flex gap-1">
-                {(['todos', 'entrada', 'saida'] as const).map(f => (
+              <div className="flex gap-1 flex-wrap">
+                {(['todos', 'entrada', 'saida', 'inventario'] as const).map(f => (
                   <button key={f} onClick={() => setFilterType(f)}
                     className={`px-3 py-1 rounded text-xs font-medium transition-colors
                       ${filterType === f ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
-                    {f === 'todos' ? 'Todos' : f === 'entrada' ? 'Entradas' : 'Saídas'}
+                    {f === 'todos' ? 'Todos' : f === 'entrada' ? 'Entradas' : f === 'saida' ? 'Saídas' : 'Inventário'}
                   </button>
                 ))}
               </div>
             </div>
-            {/* Month navigator */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <button onClick={prevMonth} className="p-1 rounded hover:bg-muted transition-colors">
@@ -237,6 +302,7 @@ const Movements = () => {
                   <th className="text-left px-5 py-3 font-medium text-muted-foreground">Código</th>
                   <th className="text-left px-5 py-3 font-medium text-muted-foreground">Descrição</th>
                   <th className="text-left px-5 py-3 font-medium text-muted-foreground">Tipo</th>
+                  <th className="text-left px-5 py-3 font-medium text-muted-foreground">Origem</th>
                   <th className="text-right px-5 py-3 font-medium text-muted-foreground">Qtd</th>
                   <th className="text-left px-5 py-3 font-medium text-muted-foreground">Un</th>
                 </tr>
@@ -244,7 +310,7 @@ const Movements = () => {
               <tbody>
                 {filteredMovements.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-5 py-8 text-center text-muted-foreground">
+                    <td colSpan={7} className="px-5 py-8 text-center text-muted-foreground">
                       Nenhuma movimentação encontrada
                     </td>
                   </tr>
@@ -260,6 +326,15 @@ const Movements = () => {
                           {m.type === 'entrada' ? '▼ Entrada' : '▲ Saída'}
                         </span>
                       </td>
+                      <td className="px-5 py-3">
+                        {m.origem === 'inventario' ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold bg-primary/10 text-primary border border-primary/30">
+                            <ClipboardCheck className="w-3 h-3" /> Inventário
+                          </span>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">Manual</span>
+                        )}
+                      </td>
                       <td className="px-5 py-3 text-right font-mono font-bold">{formatQuantity(m.quantity)}</td>
                       <td className="px-5 py-3 uppercase font-mono text-xs">{m.unit}</td>
                     </tr>
@@ -269,9 +344,101 @@ const Movements = () => {
             </table>
           </div>
         </div>
+          </TabsContent>
+
+          {/* ===== Inventory tab ===== */}
+          <TabsContent value="inventario" className="space-y-4">
+            <div className="bg-card border rounded-lg p-5 space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-end gap-3 justify-between">
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <div>
+                    <label className="text-sm font-medium text-foreground block mb-1">Setor</label>
+                    <div className="flex gap-1">
+                      {(['usinagem', 'guilhotina'] as SectorType[]).map(s => (
+                        <button key={s} type="button" onClick={() => { setInvSector(s); setInvCounts({}); }}
+                          className={`px-3 py-2 rounded text-xs font-semibold transition-colors capitalize ${invSector === s ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
+                          {s}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-foreground block mb-1">Data do Inventário</label>
+                    <input type="date" value={invDate} onChange={e => setInvDate(e.target.value)} className="input-steel font-mono" />
+                  </div>
+                  <div className="flex-1 min-w-[200px]">
+                    <label className="text-sm font-medium text-foreground block mb-1">Buscar</label>
+                    <input type="text" value={invSearch} onChange={e => setInvSearch(e.target.value)}
+                      placeholder="Código ou descrição..." className="input-steel w-full" />
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setInvConfirm(true)}
+                  disabled={invDiffs.length === 0 || invSubmitting}
+                  className="bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed font-semibold px-6 py-2 rounded-md text-sm transition-colors inline-flex items-center gap-2"
+                >
+                  <ClipboardCheck className="w-4 h-4" />
+                  Concluir Inventário ({invDiffs.length})
+                </button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Informe a quantidade contada de cada item. Ao concluir, as diferenças serão registradas como movimentações de <strong>entrada</strong> ou <strong>saída</strong> com origem <strong>Inventário</strong>. Itens em branco serão ignorados.
+              </p>
+            </div>
+
+            <div className="bg-card rounded-lg border overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b bg-muted/50">
+                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">Código</th>
+                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">Descrição</th>
+                    <th className="text-right px-4 py-3 font-medium text-muted-foreground">Estoque Atual</th>
+                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">Un</th>
+                    <th className="text-right px-4 py-3 font-medium text-muted-foreground">Qtd Contada</th>
+                    <th className="text-right px-4 py-3 font-medium text-muted-foreground">Diferença</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sectorProducts.length === 0 ? (
+                    <tr><td colSpan={6} className="px-5 py-8 text-center text-muted-foreground">Nenhum produto neste setor</td></tr>
+                  ) : sectorProducts.map(p => {
+                    const raw = invCounts[p.id] ?? '';
+                    const counted = raw === '' ? null : parseFloat(raw);
+                    const diff = counted !== null && !isNaN(counted) ? counted - p.quantity : null;
+                    return (
+                      <tr key={p.id} className="border-b last:border-0 table-row-alt">
+                        <td className="px-4 py-2 font-mono font-medium">{p.code}</td>
+                        <td className="px-4 py-2">{p.description}</td>
+                        <td className="px-4 py-2 text-right font-mono">{formatQuantity(p.quantity)}</td>
+                        <td className="px-4 py-2 uppercase font-mono text-xs">{p.unit}</td>
+                        <td className="px-4 py-2 text-right">
+                          <input type="number" step="0.01" min="0" value={raw}
+                            onChange={e => setInvCounts(s => ({ ...s, [p.id]: e.target.value }))}
+                            className="input-steel w-28 font-mono text-right" placeholder="—" />
+                        </td>
+                        <td className="px-4 py-2 text-right font-mono font-bold">
+                          {diff === null || isNaN(diff) ? (
+                            <span className="text-muted-foreground">—</span>
+                          ) : diff === 0 ? (
+                            <span className="text-muted-foreground">0</span>
+                          ) : diff > 0 ? (
+                            <span className="text-success">+{formatQuantity(diff)}</span>
+                          ) : (
+                            <span className="text-destructive">{formatQuantity(diff)}</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
 
-      {/* Confirmation Modal */}
+      {/* Confirmation Modal (movement) */}
       {showCaptcha && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowCaptcha(false)}>
           <div className="bg-card border rounded-lg p-6 w-full max-w-sm space-y-4" onClick={e => e.stopPropagation()}>
@@ -305,6 +472,46 @@ const Movements = () => {
               </button>
               <button onClick={confirmMovement} className="px-4 py-2 rounded-md text-sm font-semibold bg-success text-success-foreground hover:bg-success/90 transition-colors">
                 Confirmar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation Modal (inventory) */}
+      {invConfirm && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => !invSubmitting && setInvConfirm(false)}>
+          <div className="bg-card border rounded-lg p-6 w-full max-w-lg space-y-4" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <ClipboardCheck className="w-5 h-5 text-primary" />
+                <h3 className="font-semibold text-foreground text-lg">Concluir Inventário</h3>
+              </div>
+              <button onClick={() => !invSubmitting && setInvConfirm(false)} className="text-muted-foreground hover:text-foreground">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Serão registrados <strong className="text-foreground">{invDiffs.length}</strong> ajuste(s) de inventário no setor <strong className="capitalize text-foreground">{invSector}</strong>:
+            </p>
+            <div className="max-h-64 overflow-y-auto border rounded-md divide-y">
+              {invDiffs.map(d => (
+                <div key={d.product.id} className="flex justify-between items-center px-3 py-2 text-sm">
+                  <span className="font-mono">{d.product.code} <span className="text-muted-foreground">— {d.product.description}</span></span>
+                  <span className={`font-mono font-bold ${d.diff > 0 ? 'text-success' : 'text-destructive'}`}>
+                    {d.diff > 0 ? '+' : ''}{formatQuantity(d.diff)} {d.product.unit}
+                  </span>
+                </div>
+              ))}
+            </div>
+            <div className="flex gap-2 justify-end">
+              <button onClick={() => setInvConfirm(false)} disabled={invSubmitting}
+                className="px-4 py-2 rounded-md text-sm font-semibold bg-muted text-foreground hover:bg-muted/80 transition-colors disabled:opacity-50">
+                Cancelar
+              </button>
+              <button onClick={handleConcludeInventory} disabled={invSubmitting}
+                className="px-4 py-2 rounded-md text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50">
+                {invSubmitting ? 'Registrando...' : 'Confirmar e Concluir'}
               </button>
             </div>
           </div>

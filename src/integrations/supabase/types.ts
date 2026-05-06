@@ -19,6 +19,7 @@ export type Database = {
           created_at: string
           date: string
           id: string
+          origem: string
           product_code: string
           product_description: string
           product_id: string
@@ -30,6 +31,7 @@ export type Database = {
           created_at?: string
           date: string
           id?: string
+          origem?: string
           product_code: string
           product_description: string
           product_id: string
@@ -41,6 +43,7 @@ export type Database = {
           created_at?: string
           date?: string
           id?: string
+          origem?: string
           product_code?: string
           product_description?: string
           product_id?: string
