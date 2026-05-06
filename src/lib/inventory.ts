@@ -72,6 +72,7 @@ function mapMovement(row: any): Movement {
     unit: row.unit as UnitType,
     date: row.date,
     createdAt: row.created_at,
+    origem: (row.origem || 'manual') as OrigemType,
   };
 }
 
