@@ -31,9 +31,14 @@ const Movements = () => {
   const [selectedMonth, setSelectedMonth] = useState(new Date());
 
   // Inventory tab state
-  const [invSector, setInvSector] = useState<SectorType>('usinagem');
-  const [invDate, setInvDate] = useState(new Date().toISOString().split('T')[0]);
-  const [invCounts, setInvCounts] = useState<Record<string, string>>({});
+  const [invSector, setInvSector] = useState<SectorType>(() => (localStorage.getItem('inv_sector') as SectorType) || 'usinagem');
+  const [invDate, setInvDate] = useState(() => localStorage.getItem('inv_date') || new Date().toISOString().split('T')[0]);
+  const [invCounts, setInvCounts] = useState<Record<string, string>>(() => {
+    try {
+      const raw = localStorage.getItem(`inv_counts_${localStorage.getItem('inv_sector') || 'usinagem'}`);
+      return raw ? JSON.parse(raw) : {};
+    } catch { return {}; }
+  });
   const [invSearch, setInvSearch] = useState('');
   const [invSubmitting, setInvSubmitting] = useState(false);
   const [invConfirm, setInvConfirm] = useState(false);
