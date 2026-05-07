@@ -556,7 +556,9 @@ const Movements = () => {
                 <div key={d.product.id} className="flex justify-between items-center px-3 py-2 text-sm">
                   <span className="font-mono">{d.product.code} <span className="text-muted-foreground">— {d.product.description}</span></span>
                   <span className={`font-mono font-bold ${d.diff > 0 ? 'text-success' : 'text-destructive'}`}>
-                    {d.diff > 0 ? '+' : ''}{formatQuantity(d.diff)} {d.product.unit}
+                    {d.countedKg.toFixed(2)} kg
+                    {d.product.unit === 'barra' && <span className="text-muted-foreground font-normal"> ({d.counted.toFixed(2)} barra)</span>}
+                    <span className="ml-2">({d.diff > 0 ? '+' : ''}{formatQuantity(d.diff)} {d.product.unit})</span>
                   </span>
                 </div>
               ))}
