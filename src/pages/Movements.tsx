@@ -392,15 +392,31 @@ const Movements = () => {
                       placeholder="Código ou descrição..." className="input-steel w-full" />
                   </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setInvConfirm(true)}
-                  disabled={invDiffs.length === 0 || invSubmitting}
-                  className="bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed font-semibold px-6 py-2 rounded-md text-sm transition-colors inline-flex items-center gap-2"
-                >
-                  <ClipboardCheck className="w-4 h-4" />
-                  Concluir Inventário ({invDiffs.length})
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (Object.keys(invCounts).length === 0) return;
+                      if (confirm('Deseja realmente limpar todas as quantidades contadas deste setor?')) {
+                        setInvCounts({});
+                        try { localStorage.removeItem(`inv_counts_${invSector}`); } catch {}
+                      }
+                    }}
+                    disabled={Object.keys(invCounts).length === 0 || invSubmitting}
+                    className="bg-muted text-foreground hover:bg-muted/80 disabled:opacity-50 disabled:cursor-not-allowed font-semibold px-4 py-2 rounded-md text-sm transition-colors inline-flex items-center gap-2"
+                  >
+                    Limpar tudo
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setInvConfirm(true)}
+                    disabled={invDiffs.length === 0 || invSubmitting}
+                    className="bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed font-semibold px-6 py-2 rounded-md text-sm transition-colors inline-flex items-center gap-2"
+                  >
+                    <ClipboardCheck className="w-4 h-4" />
+                    Concluir Inventário ({invDiffs.length})
+                  </button>
+                </div>
               </div>
               <p className="text-xs text-muted-foreground">
                 Informe a quantidade contada de cada item. Ao concluir, as diferenças serão registradas como movimentações de <strong>entrada</strong> ou <strong>saída</strong> com origem <strong>Inventário</strong>. Itens em branco serão ignorados.
