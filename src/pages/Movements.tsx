@@ -425,7 +425,7 @@ const Movements = () => {
                 </div>
               </div>
               <p className="text-xs text-muted-foreground">
-                Informe a quantidade contada de cada item. Ao concluir, as diferenças serão registradas como movimentações de <strong>entrada</strong> ou <strong>saída</strong> com origem <strong>Inventário</strong>. Itens em branco serão ignorados.
+                Informe a quantidade contada de cada item <strong>em KG (peso total)</strong>. Conforme o sistema KSI, todas as matérias-primas (tubo, ferro redondo, ferro chato, cantoneira) são controladas em KG. Para itens em <strong>barra</strong>, o sistema converte automaticamente dividindo o peso total pelo peso unitário. Ao concluir, as diferenças serão registradas como movimentações de <strong>entrada</strong> ou <strong>saída</strong> com origem <strong>Inventário</strong>. Itens em branco serão ignorados.
               </p>
             </div>
 
