@@ -170,17 +170,25 @@ const Movements = () => {
     [products, invSector, invSearch]
   );
 
+  // Inventário é sempre informado em KG (peso total). Para produtos em "barra",
+  // converte-se o peso total para barras dividindo pelo peso unitário.
   const invDiffs = useMemo(() => {
     return sectorProducts
       .map(p => {
         const raw = invCounts[p.id];
         if (raw === undefined || raw === '') return null;
-        const counted = parseFloat(raw);
-        if (isNaN(counted) || counted < 0) return null;
+        const countedKg = parseFloat(raw);
+        if (isNaN(countedKg) || countedKg < 0) return null;
+        let counted = countedKg;
+        if (p.unit === 'barra') {
+          const wpu = p.weightPerUnit || 0;
+          if (wpu <= 0) return null;
+          counted = countedKg / wpu;
+        }
         const diff = counted - p.quantity;
-        return { product: p, counted, diff };
+        return { product: p, counted, countedKg, diff };
       })
-      .filter((x): x is { product: Product; counted: number; diff: number } => x !== null && x.diff !== 0);
+      .filter((x): x is { product: Product; counted: number; countedKg: number; diff: number } => x !== null && x.diff !== 0);
   }, [sectorProducts, invCounts]);
 
   const handleConcludeInventory = async () => {
