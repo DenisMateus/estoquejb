@@ -397,10 +397,8 @@ const Movements = () => {
                     type="button"
                     onClick={() => {
                       if (Object.keys(invCounts).length === 0) return;
-                      if (confirm('Deseja realmente limpar todas as quantidades contadas deste setor?')) {
-                        setInvCounts({});
-                        try { localStorage.removeItem(`inv_counts_${invSector}`); } catch {}
-                      }
+                      setInvCounts({});
+                      try { localStorage.removeItem(`inv_counts_${invSector}`); } catch {}
                     }}
                     disabled={Object.keys(invCounts).length === 0 || invSubmitting}
                     className="bg-muted text-foreground hover:bg-muted/80 disabled:opacity-50 disabled:cursor-not-allowed font-semibold px-4 py-2 rounded-md text-sm transition-colors inline-flex items-center gap-2"
