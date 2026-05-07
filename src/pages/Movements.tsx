@@ -437,7 +437,7 @@ const Movements = () => {
                     <th className="text-left px-4 py-3 font-medium text-muted-foreground">Descrição</th>
                     <th className="text-right px-4 py-3 font-medium text-muted-foreground">Estoque Atual</th>
                     <th className="text-left px-4 py-3 font-medium text-muted-foreground">Un</th>
-                    <th className="text-right px-4 py-3 font-medium text-muted-foreground">Qtd Contada</th>
+                    <th className="text-right px-4 py-3 font-medium text-muted-foreground">Qtd Contada (kg)</th>
                     <th className="text-right px-4 py-3 font-medium text-muted-foreground">Diferença</th>
                   </tr>
                 </thead>
@@ -446,8 +446,13 @@ const Movements = () => {
                     <tr><td colSpan={6} className="px-5 py-8 text-center text-muted-foreground">Nenhum produto neste setor</td></tr>
                   ) : sectorProducts.map(p => {
                     const raw = invCounts[p.id] ?? '';
-                    const counted = raw === '' ? null : parseFloat(raw);
-                    const diff = counted !== null && !isNaN(counted) ? counted - p.quantity : null;
+                    const countedKg = raw === '' ? null : parseFloat(raw);
+                    let counted: number | null = countedKg;
+                    if (p.unit === 'barra' && counted !== null && !isNaN(counted)) {
+                      const wpu = p.weightPerUnit || 0;
+                      counted = wpu > 0 ? counted / wpu : null;
+                    }
+                    const diff = counted !== null && !isNaN(counted as number) ? (counted as number) - p.quantity : null;
                     return (
                       <tr key={p.id} className="border-b last:border-0 table-row-alt">
                         <td className="px-4 py-2 font-mono font-medium">{p.code}</td>
@@ -457,7 +462,17 @@ const Movements = () => {
                         <td className="px-4 py-2 text-right">
                           <input type="number" step="0.01" min="0" value={raw}
                             onChange={e => setInvCounts(s => ({ ...s, [p.id]: e.target.value }))}
-                            className="input-steel w-28 font-mono text-right" placeholder="—" />
+                            className="input-steel w-28 font-mono text-right" placeholder="kg" />
+                          {p.unit === 'barra' && countedKg !== null && !isNaN(countedKg) && counted !== null && (
+                            <div className="text-[10px] text-muted-foreground font-mono mt-0.5">
+                              ≈ {(counted as number).toFixed(2)} barra(s)
+                            </div>
+                          )}
+                          {p.unit === 'barra' && countedKg !== null && !isNaN(countedKg) && counted === null && (
+                            <div className="text-[10px] text-destructive font-mono mt-0.5">
+                              Sem peso unit.
+                            </div>
+                          )}
                         </td>
                         <td className="px-4 py-2 text-right font-mono font-bold">
                           {diff === null || isNaN(diff) ? (
