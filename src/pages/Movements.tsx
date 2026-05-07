@@ -170,17 +170,25 @@ const Movements = () => {
     [products, invSector, invSearch]
   );
 
+  // Inventário é sempre informado em KG (peso total). Para produtos em "barra",
+  // converte-se o peso total para barras dividindo pelo peso unitário.
   const invDiffs = useMemo(() => {
     return sectorProducts
       .map(p => {
         const raw = invCounts[p.id];
         if (raw === undefined || raw === '') return null;
-        const counted = parseFloat(raw);
-        if (isNaN(counted) || counted < 0) return null;
+        const countedKg = parseFloat(raw);
+        if (isNaN(countedKg) || countedKg < 0) return null;
+        let counted = countedKg;
+        if (p.unit === 'barra') {
+          const wpu = p.weightPerUnit || 0;
+          if (wpu <= 0) return null;
+          counted = countedKg / wpu;
+        }
         const diff = counted - p.quantity;
-        return { product: p, counted, diff };
+        return { product: p, counted, countedKg, diff };
       })
-      .filter((x): x is { product: Product; counted: number; diff: number } => x !== null && x.diff !== 0);
+      .filter((x): x is { product: Product; counted: number; countedKg: number; diff: number } => x !== null && x.diff !== 0);
   }, [sectorProducts, invCounts]);
 
   const handleConcludeInventory = async () => {
@@ -417,7 +425,7 @@ const Movements = () => {
                 </div>
               </div>
               <p className="text-xs text-muted-foreground">
-                Informe a quantidade contada de cada item. Ao concluir, as diferenças serão registradas como movimentações de <strong>entrada</strong> ou <strong>saída</strong> com origem <strong>Inventário</strong>. Itens em branco serão ignorados.
+                Informe a quantidade contada de cada item <strong>em KG (peso total)</strong>. Conforme o sistema KSI, todas as matérias-primas (tubo, ferro redondo, ferro chato, cantoneira) são controladas em KG. Para itens em <strong>barra</strong>, o sistema converte automaticamente dividindo o peso total pelo peso unitário. Ao concluir, as diferenças serão registradas como movimentações de <strong>entrada</strong> ou <strong>saída</strong> com origem <strong>Inventário</strong>. Itens em branco serão ignorados.
               </p>
             </div>
 
@@ -429,7 +437,7 @@ const Movements = () => {
                     <th className="text-left px-4 py-3 font-medium text-muted-foreground">Descrição</th>
                     <th className="text-right px-4 py-3 font-medium text-muted-foreground">Estoque Atual</th>
                     <th className="text-left px-4 py-3 font-medium text-muted-foreground">Un</th>
-                    <th className="text-right px-4 py-3 font-medium text-muted-foreground">Qtd Contada</th>
+                    <th className="text-right px-4 py-3 font-medium text-muted-foreground">Qtd Contada (kg)</th>
                     <th className="text-right px-4 py-3 font-medium text-muted-foreground">Diferença</th>
                   </tr>
                 </thead>
@@ -438,8 +446,13 @@ const Movements = () => {
                     <tr><td colSpan={6} className="px-5 py-8 text-center text-muted-foreground">Nenhum produto neste setor</td></tr>
                   ) : sectorProducts.map(p => {
                     const raw = invCounts[p.id] ?? '';
-                    const counted = raw === '' ? null : parseFloat(raw);
-                    const diff = counted !== null && !isNaN(counted) ? counted - p.quantity : null;
+                    const countedKg = raw === '' ? null : parseFloat(raw);
+                    let counted: number | null = countedKg;
+                    if (p.unit === 'barra' && counted !== null && !isNaN(counted)) {
+                      const wpu = p.weightPerUnit || 0;
+                      counted = wpu > 0 ? counted / wpu : null;
+                    }
+                    const diff = counted !== null && !isNaN(counted as number) ? (counted as number) - p.quantity : null;
                     return (
                       <tr key={p.id} className="border-b last:border-0 table-row-alt">
                         <td className="px-4 py-2 font-mono font-medium">{p.code}</td>
@@ -449,7 +462,17 @@ const Movements = () => {
                         <td className="px-4 py-2 text-right">
                           <input type="number" step="0.01" min="0" value={raw}
                             onChange={e => setInvCounts(s => ({ ...s, [p.id]: e.target.value }))}
-                            className="input-steel w-28 font-mono text-right" placeholder="—" />
+                            className="input-steel w-28 font-mono text-right" placeholder="kg" />
+                          {p.unit === 'barra' && countedKg !== null && !isNaN(countedKg) && counted !== null && (
+                            <div className="text-[10px] text-muted-foreground font-mono mt-0.5">
+                              ≈ {(counted as number).toFixed(2)} barra(s)
+                            </div>
+                          )}
+                          {p.unit === 'barra' && countedKg !== null && !isNaN(countedKg) && counted === null && (
+                            <div className="text-[10px] text-destructive font-mono mt-0.5">
+                              Sem peso unit.
+                            </div>
+                          )}
                         </td>
                         <td className="px-4 py-2 text-right font-mono font-bold">
                           {diff === null || isNaN(diff) ? (
@@ -533,7 +556,9 @@ const Movements = () => {
                 <div key={d.product.id} className="flex justify-between items-center px-3 py-2 text-sm">
                   <span className="font-mono">{d.product.code} <span className="text-muted-foreground">— {d.product.description}</span></span>
                   <span className={`font-mono font-bold ${d.diff > 0 ? 'text-success' : 'text-destructive'}`}>
-                    {d.diff > 0 ? '+' : ''}{formatQuantity(d.diff)} {d.product.unit}
+                    {d.countedKg.toFixed(2)} kg
+                    {d.product.unit === 'barra' && <span className="text-muted-foreground font-normal"> ({d.counted.toFixed(2)} barra)</span>}
+                    <span className="ml-2">({d.diff > 0 ? '+' : ''}{formatQuantity(d.diff)} {d.product.unit})</span>
                   </span>
                 </div>
               ))}
