@@ -1269,17 +1269,17 @@ const Motorredutores = () => {
                   ) : (
                     <>
                       <h3 className="text-lg font-bold text-destructive flex items-center gap-2">
-                        <XCircle className="w-5 h-5" /> Dar Baixa no Estoque
+                        <XCircle className="w-5 h-5" /> Marcar como NÃO encontrado
                       </h3>
                       <p className="text-sm text-muted-foreground">
-                        Tem certeza que o motor <strong className="text-foreground">{inventarioConfirm.product.code}</strong> <strong className="text-destructive">NÃO</strong> foi encontrado no estoque físico?
+                        Marcar o motor <strong className="text-foreground">{inventarioConfirm.product.code}</strong> como <strong className="text-destructive">NÃO</strong> encontrado no estoque físico?
                       </p>
                       <div className="text-xs space-y-1 bg-muted/50 rounded p-3">
                         <p><strong>Descrição:</strong> {inventarioConfirm.product.description}</p>
                         <p><strong>NF:</strong> {inventarioConfirm.product.notaFiscal || '—'} | <strong>OF:</strong> {inventarioConfirm.product.ofNumber || '—'}</p>
                         <p><strong>Cliente:</strong> {inventarioConfirm.product.cliente || '—'}</p>
                       </div>
-                      <p className="text-xs text-destructive font-semibold">⚠️ Esta ação vai dar baixa automática deste motor no sistema. Você pode reverter pelo Histórico de Inventário.</p>
+                      <p className="text-xs text-muted-foreground">A baixa só será efetivada ao clicar em <strong>Finalizar Inventário</strong>. Até lá você pode alterar a marcação.</p>
                       <div className="flex gap-3 justify-end pt-2">
                         <button onClick={() => setInventarioConfirm(null)}
                           className="px-4 py-2 rounded text-sm font-medium bg-muted text-muted-foreground hover:bg-muted/80 transition-colors">
@@ -1287,7 +1287,7 @@ const Motorredutores = () => {
                         </button>
                         <button onClick={() => handleInventarioNao(inventarioConfirm.product)}
                           className="px-4 py-2 rounded text-sm font-bold bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors">
-                          Sim, dar baixa
+                          Confirmar marcação
                         </button>
                       </div>
                     </>
