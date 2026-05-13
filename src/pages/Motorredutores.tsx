@@ -393,34 +393,51 @@ const Motorredutores = () => {
 
   const handlePrint = () => window.print();
 
-  const handleInventarioNao = async (product: MtdProduct) => {
+  const handleInventarioNao = (product: MtdProduct) => {
     setInventarioConfirm(null);
-    setInventarioProcessing(product.id);
-    try {
-      await addMtdMovement({
-        mtdProductId: product.id,
-        mtdProductCode: product.code,
-        mtdProductDescription: product.description,
-        type: 'saida',
-        quantity: product.quantity,
-        clienteDestino: 'INVENTÁRIO - Baixa automática',
-        notaFiscal: '',
-        date: todayLocalISO(),
-        observacao: 'Baixa por inventário - motor não encontrado no estoque físico',
-      });
-      setInventarioChecked(prev => ({ ...prev, [product.id]: 'nao' }));
-      toast.success(`Motor ${product.code} baixado do estoque (inventário)`);
-      await reload();
-    } catch (err: any) {
-      toast.error(err.message);
-    }
-    setInventarioProcessing(null);
+    setInventarioChecked(prev => ({ ...prev, [product.id]: 'nao' }));
+    toast.success(`Motor ${product.code} marcado como NÃO encontrado`);
   };
 
   const handleInventarioSim = (product: MtdProduct) => {
     setInventarioConfirm(null);
     setInventarioChecked(prev => ({ ...prev, [product.id]: 'sim' }));
     toast.success('Motor confirmado no inventário!');
+  };
+
+  const [finalizarConfirmOpen, setFinalizarConfirmOpen] = useState(false);
+  const [finalizandoInventario, setFinalizandoInventario] = useState(false);
+
+  const handleFinalizarInventario = async () => {
+    const naoIds = Object.entries(inventarioChecked)
+      .filter(([, v]) => v === 'nao')
+      .map(([id]) => id);
+    const toBaixar = products.filter(p => naoIds.includes(p.id) && p.quantity > 0);
+    setFinalizandoInventario(true);
+    try {
+      for (const product of toBaixar) {
+        await addMtdMovement({
+          mtdProductId: product.id,
+          mtdProductCode: product.code,
+          mtdProductDescription: product.description,
+          type: 'saida',
+          quantity: product.quantity,
+          clienteDestino: 'INVENTÁRIO - Baixa automática',
+          notaFiscal: '',
+          date: todayLocalISO(),
+          observacao: 'Baixa por inventário - motor não encontrado no estoque físico',
+        });
+      }
+      setInventarioChecked({});
+      try { localStorage.removeItem(INVENTARIO_STORAGE_KEY); } catch {}
+      toast.success(`Inventário finalizado! ${toBaixar.length} motor(es) baixado(s).`);
+      await reload();
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao finalizar inventário');
+      await reload();
+    }
+    setFinalizandoInventario(false);
+    setFinalizarConfirmOpen(false);
   };
 
   const handleInventarioRetornar = async (product: MtdProduct) => {
