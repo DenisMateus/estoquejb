@@ -1035,7 +1035,7 @@ const Motorredutores = () => {
                             ) : trocouCliente ? (
                               <Tooltip>
                                 <TooltipTrigger asChild>
-                                  <span className="inline-flex items-center gap-1 cursor-help">
+                                  <span className="inline-flex flex-wrap items-center gap-1 cursor-help">
                                     <span className="text-muted-foreground line-through">{clienteOrigem}</span>
                                     <ArrowLeftRight className="w-3 h-3 text-primary" />
                                     <span className="font-semibold">{clienteDestino}</span>
