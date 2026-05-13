@@ -1018,7 +1018,7 @@ const Motorredutores = () => {
                             </span>
                           </td>
                           <td className="px-2 py-1.5 font-mono font-semibold text-primary whitespace-nowrap">{m.mtdProductCode}</td>
-                          <td className="px-2 py-1.5 text-xs leading-snug max-w-[260px]">
+                          <td className="px-2 py-1.5 text-xs leading-snug">
                             <div className={isExpanded ? '' : 'line-clamp-2'}>{desc}</div>
                             {longDesc && (
                               <button type="button" onClick={() => setExpandedDesc(s => ({ ...s, [m.id]: !s[m.id] }))}
