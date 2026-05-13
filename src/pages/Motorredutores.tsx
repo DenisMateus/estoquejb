@@ -1028,8 +1028,8 @@ const Motorredutores = () => {
                             )}
                           </td>
                           <td className="px-2 py-1.5 text-center font-bold whitespace-nowrap">{formatQuantity(m.quantity)}</td>
-                          <td className="px-2 py-1.5 text-xs whitespace-nowrap">{clienteOrigem}</td>
-                          <td className="px-2 py-1.5 text-xs whitespace-nowrap">
+                          <td className="px-2 py-1.5 text-xs break-words">{clienteOrigem}</td>
+                          <td className="px-2 py-1.5 text-xs break-words">
                             {isInventario ? (
                               <span className="text-muted-foreground">—</span>
                             ) : trocouCliente ? (
