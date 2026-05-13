@@ -1067,16 +1067,27 @@ const Motorredutores = () => {
         {tab === 'inventario' && (
           <>
             <div className="bg-card border rounded-lg p-4 space-y-1">
-              <h3 className="font-semibold text-foreground flex items-center gap-2">
-                <ClipboardCheck className="w-5 h-5 text-primary" /> Inventário de Motorredutores
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                Confira cada motor no estoque físico. Clique <strong className="text-success">SIM</strong> se o motor está presente ou <strong className="text-destructive">NÃO</strong> para dar baixa automática.
-              </p>
-              <div className="flex gap-4 pt-2">
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                <div className="space-y-1">
+                  <h3 className="font-semibold text-foreground flex items-center gap-2">
+                    <ClipboardCheck className="w-5 h-5 text-primary" /> Inventário de Motorredutores
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Confira cada motor no estoque físico. Marque <strong className="text-success">SIM</strong> se está presente ou <strong className="text-destructive">NÃO</strong> caso contrário. Ao final, clique em <strong>Finalizar Inventário</strong> para dar baixa em todos os marcados como NÃO.
+                  </p>
+                </div>
+                <button
+                  onClick={() => setFinalizarConfirmOpen(true)}
+                  disabled={Object.keys(inventarioChecked).length === 0 || finalizandoInventario}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                >
+                  <ClipboardCheck className="w-4 h-4" /> Finalizar Inventário
+                </button>
+              </div>
+              <div className="flex flex-wrap gap-4 pt-2">
                 <span className="text-sm">Total: <strong>{inventarioTotal}</strong></span>
-                <span className="text-sm text-success">Confirmados: <strong>{inventarioProducts.filter(p => inventarioChecked[p.id] === 'sim').length}</strong></span>
-                <span className="text-sm text-destructive">Baixados: <strong>{inventarioProducts.filter(p => inventarioChecked[p.id] === 'nao').length}</strong></span>
+                <span className="text-sm text-success">Confirmados (SIM): <strong>{inventarioProducts.filter(p => inventarioChecked[p.id] === 'sim').length}</strong></span>
+                <span className="text-sm text-destructive">Marcados p/ baixa (NÃO): <strong>{inventarioProducts.filter(p => inventarioChecked[p.id] === 'nao').length}</strong></span>
                 <span className="text-sm text-muted-foreground">Pendentes: <strong>{inventarioPendingCount}</strong></span>
               </div>
             </div>
