@@ -1349,6 +1349,46 @@ const Motorredutores = () => {
                 </div>
               </div>
             )}
+
+            {/* Finalizar Inventário modal */}
+            {finalizarConfirmOpen && (() => {
+              const naoIds = Object.entries(inventarioChecked).filter(([, v]) => v === 'nao').map(([id]) => id);
+              const simCount = Object.values(inventarioChecked).filter(v => v === 'sim').length;
+              const toBaixar = products.filter(p => naoIds.includes(p.id) && p.quantity > 0);
+              return (
+                <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                  <div className="bg-card border rounded-lg p-6 max-w-lg w-full space-y-4 shadow-2xl">
+                    <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
+                      <ClipboardCheck className="w-5 h-5 text-primary" /> Finalizar Inventário
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      Esta ação irá <strong className="text-destructive">dar baixa</strong> em todos os motores marcados como <strong>NÃO</strong>. Os marcados como <strong className="text-success">SIM</strong> permanecem no estoque sem alteração.
+                    </p>
+                    <div className="text-sm space-y-1 bg-muted/50 rounded p-3">
+                      <p>Motores confirmados (SIM): <strong className="text-success">{simCount}</strong></p>
+                      <p>Motores a serem baixados (NÃO): <strong className="text-destructive">{toBaixar.length}</strong></p>
+                    </div>
+                    <p className="text-xs text-muted-foreground">Após finalizar, todas as marcações serão limpas para permitir uma nova contagem.</p>
+                    <div className="flex gap-3 justify-end pt-2">
+                      <button
+                        onClick={() => setFinalizarConfirmOpen(false)}
+                        disabled={finalizandoInventario}
+                        className="px-4 py-2 rounded text-sm font-medium bg-muted text-muted-foreground hover:bg-muted/80 transition-colors disabled:opacity-50"
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        onClick={handleFinalizarInventario}
+                        disabled={finalizandoInventario}
+                        className="px-4 py-2 rounded text-sm font-bold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+                      >
+                        {finalizandoInventario ? 'Finalizando...' : 'Confirmar e Finalizar'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
           </>
         )}
 
