@@ -947,7 +947,20 @@ const Motorredutores = () => {
 
             {/* Movements table */}
             <div className="bg-card rounded-lg border overflow-x-auto">
-              <table className="w-full text-sm table-auto">
+              <table className="w-full text-sm table-fixed">
+                <colgroup>
+                  <col style={{ width: '88px' }} />
+                  <col style={{ width: '74px' }} />
+                  <col style={{ width: '96px' }} />
+                  <col style={{ width: '22%' }} />
+                  <col style={{ width: '48px' }} />
+                  <col style={{ width: '13%' }} />
+                  <col style={{ width: '20%' }} />
+                  <col style={{ width: '72px' }} />
+                  <col style={{ width: '64px' }} />
+                  <col style={{ width: '110px' }} />
+                  <col style={{ width: 'auto' }} />
+                </colgroup>
                 <thead>
                   <tr className="border-b bg-muted/50">
                     {([
@@ -1005,7 +1018,7 @@ const Motorredutores = () => {
                             </span>
                           </td>
                           <td className="px-2 py-1.5 font-mono font-semibold text-primary whitespace-nowrap">{m.mtdProductCode}</td>
-                          <td className="px-2 py-1.5 text-xs leading-snug max-w-[260px]">
+                          <td className="px-2 py-1.5 text-xs leading-snug">
                             <div className={isExpanded ? '' : 'line-clamp-2'}>{desc}</div>
                             {longDesc && (
                               <button type="button" onClick={() => setExpandedDesc(s => ({ ...s, [m.id]: !s[m.id] }))}
@@ -1015,14 +1028,14 @@ const Motorredutores = () => {
                             )}
                           </td>
                           <td className="px-2 py-1.5 text-center font-bold whitespace-nowrap">{formatQuantity(m.quantity)}</td>
-                          <td className="px-2 py-1.5 text-xs whitespace-nowrap">{clienteOrigem}</td>
-                          <td className="px-2 py-1.5 text-xs whitespace-nowrap">
+                          <td className="px-2 py-1.5 text-xs break-words">{clienteOrigem}</td>
+                          <td className="px-2 py-1.5 text-xs break-words">
                             {isInventario ? (
                               <span className="text-muted-foreground">—</span>
                             ) : trocouCliente ? (
                               <Tooltip>
                                 <TooltipTrigger asChild>
-                                  <span className="inline-flex items-center gap-1 cursor-help">
+                                  <span className="inline-flex flex-wrap items-center gap-1 cursor-help">
                                     <span className="text-muted-foreground line-through">{clienteOrigem}</span>
                                     <ArrowLeftRight className="w-3 h-3 text-primary" />
                                     <span className="font-semibold">{clienteDestino}</span>
