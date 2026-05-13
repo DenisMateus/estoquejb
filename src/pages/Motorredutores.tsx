@@ -1160,8 +1160,15 @@ const Motorredutores = () => {
                                   </div>
                                 )}
                                 {isProcessing && <span className="text-xs text-muted-foreground">Processando...</span>}
-                                {status === 'sim' && !isProcessing && <span className="text-xs text-muted-foreground">—</span>}
-                                {status === 'nao' && !isProcessing && <span className="text-xs text-muted-foreground">Baixado</span>}
+                                {status && !isProcessing && (
+                                  <button
+                                    onClick={() => setInventarioChecked(prev => { const c = { ...prev }; delete c[p.id]; return c; })}
+                                    className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-muted text-muted-foreground hover:bg-muted/80 transition-colors"
+                                    title="Desfazer marcação"
+                                  >
+                                    <Undo2 className="w-3.5 h-3.5" /> Alterar
+                                  </button>
+                                )}
                               </td>
                             </tr>
                           );
