@@ -393,34 +393,51 @@ const Motorredutores = () => {
 
   const handlePrint = () => window.print();
 
-  const handleInventarioNao = async (product: MtdProduct) => {
+  const handleInventarioNao = (product: MtdProduct) => {
     setInventarioConfirm(null);
-    setInventarioProcessing(product.id);
-    try {
-      await addMtdMovement({
-        mtdProductId: product.id,
-        mtdProductCode: product.code,
-        mtdProductDescription: product.description,
-        type: 'saida',
-        quantity: product.quantity,
-        clienteDestino: 'INVENTÁRIO - Baixa automática',
-        notaFiscal: '',
-        date: todayLocalISO(),
-        observacao: 'Baixa por inventário - motor não encontrado no estoque físico',
-      });
-      setInventarioChecked(prev => ({ ...prev, [product.id]: 'nao' }));
-      toast.success(`Motor ${product.code} baixado do estoque (inventário)`);
-      await reload();
-    } catch (err: any) {
-      toast.error(err.message);
-    }
-    setInventarioProcessing(null);
+    setInventarioChecked(prev => ({ ...prev, [product.id]: 'nao' }));
+    toast.success(`Motor ${product.code} marcado como NÃO encontrado`);
   };
 
   const handleInventarioSim = (product: MtdProduct) => {
     setInventarioConfirm(null);
     setInventarioChecked(prev => ({ ...prev, [product.id]: 'sim' }));
     toast.success('Motor confirmado no inventário!');
+  };
+
+  const [finalizarConfirmOpen, setFinalizarConfirmOpen] = useState(false);
+  const [finalizandoInventario, setFinalizandoInventario] = useState(false);
+
+  const handleFinalizarInventario = async () => {
+    const naoIds = Object.entries(inventarioChecked)
+      .filter(([, v]) => v === 'nao')
+      .map(([id]) => id);
+    const toBaixar = products.filter(p => naoIds.includes(p.id) && p.quantity > 0);
+    setFinalizandoInventario(true);
+    try {
+      for (const product of toBaixar) {
+        await addMtdMovement({
+          mtdProductId: product.id,
+          mtdProductCode: product.code,
+          mtdProductDescription: product.description,
+          type: 'saida',
+          quantity: product.quantity,
+          clienteDestino: 'INVENTÁRIO - Baixa automática',
+          notaFiscal: '',
+          date: todayLocalISO(),
+          observacao: 'Baixa por inventário - motor não encontrado no estoque físico',
+        });
+      }
+      setInventarioChecked({});
+      try { localStorage.removeItem(INVENTARIO_STORAGE_KEY); } catch {}
+      toast.success(`Inventário finalizado! ${toBaixar.length} motor(es) baixado(s).`);
+      await reload();
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao finalizar inventário');
+      await reload();
+    }
+    setFinalizandoInventario(false);
+    setFinalizarConfirmOpen(false);
   };
 
   const handleInventarioRetornar = async (product: MtdProduct) => {
@@ -1050,16 +1067,27 @@ const Motorredutores = () => {
         {tab === 'inventario' && (
           <>
             <div className="bg-card border rounded-lg p-4 space-y-1">
-              <h3 className="font-semibold text-foreground flex items-center gap-2">
-                <ClipboardCheck className="w-5 h-5 text-primary" /> Inventário de Motorredutores
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                Confira cada motor no estoque físico. Clique <strong className="text-success">SIM</strong> se o motor está presente ou <strong className="text-destructive">NÃO</strong> para dar baixa automática.
-              </p>
-              <div className="flex gap-4 pt-2">
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                <div className="space-y-1">
+                  <h3 className="font-semibold text-foreground flex items-center gap-2">
+                    <ClipboardCheck className="w-5 h-5 text-primary" /> Inventário de Motorredutores
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Confira cada motor no estoque físico. Marque <strong className="text-success">SIM</strong> se está presente ou <strong className="text-destructive">NÃO</strong> caso contrário. Ao final, clique em <strong>Finalizar Inventário</strong> para dar baixa em todos os marcados como NÃO.
+                  </p>
+                </div>
+                <button
+                  onClick={() => setFinalizarConfirmOpen(true)}
+                  disabled={Object.keys(inventarioChecked).length === 0 || finalizandoInventario}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                >
+                  <ClipboardCheck className="w-4 h-4" /> Finalizar Inventário
+                </button>
+              </div>
+              <div className="flex flex-wrap gap-4 pt-2">
                 <span className="text-sm">Total: <strong>{inventarioTotal}</strong></span>
-                <span className="text-sm text-success">Confirmados: <strong>{inventarioProducts.filter(p => inventarioChecked[p.id] === 'sim').length}</strong></span>
-                <span className="text-sm text-destructive">Baixados: <strong>{inventarioProducts.filter(p => inventarioChecked[p.id] === 'nao').length}</strong></span>
+                <span className="text-sm text-success">Confirmados (SIM): <strong>{inventarioProducts.filter(p => inventarioChecked[p.id] === 'sim').length}</strong></span>
+                <span className="text-sm text-destructive">Marcados p/ baixa (NÃO): <strong>{inventarioProducts.filter(p => inventarioChecked[p.id] === 'nao').length}</strong></span>
                 <span className="text-sm text-muted-foreground">Pendentes: <strong>{inventarioPendingCount}</strong></span>
               </div>
             </div>
@@ -1143,8 +1171,15 @@ const Motorredutores = () => {
                                   </div>
                                 )}
                                 {isProcessing && <span className="text-xs text-muted-foreground">Processando...</span>}
-                                {status === 'sim' && !isProcessing && <span className="text-xs text-muted-foreground">—</span>}
-                                {status === 'nao' && !isProcessing && <span className="text-xs text-muted-foreground">Baixado</span>}
+                                {status && !isProcessing && (
+                                  <button
+                                    onClick={() => setInventarioChecked(prev => { const c = { ...prev }; delete c[p.id]; return c; })}
+                                    className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-muted text-muted-foreground hover:bg-muted/80 transition-colors"
+                                    title="Desfazer marcação"
+                                  >
+                                    <Undo2 className="w-3.5 h-3.5" /> Alterar
+                                  </button>
+                                )}
                               </td>
                             </tr>
                           );
@@ -1252,17 +1287,17 @@ const Motorredutores = () => {
                   ) : (
                     <>
                       <h3 className="text-lg font-bold text-destructive flex items-center gap-2">
-                        <XCircle className="w-5 h-5" /> Dar Baixa no Estoque
+                        <XCircle className="w-5 h-5" /> Marcar como NÃO encontrado
                       </h3>
                       <p className="text-sm text-muted-foreground">
-                        Tem certeza que o motor <strong className="text-foreground">{inventarioConfirm.product.code}</strong> <strong className="text-destructive">NÃO</strong> foi encontrado no estoque físico?
+                        Marcar o motor <strong className="text-foreground">{inventarioConfirm.product.code}</strong> como <strong className="text-destructive">NÃO</strong> encontrado no estoque físico?
                       </p>
                       <div className="text-xs space-y-1 bg-muted/50 rounded p-3">
                         <p><strong>Descrição:</strong> {inventarioConfirm.product.description}</p>
                         <p><strong>NF:</strong> {inventarioConfirm.product.notaFiscal || '—'} | <strong>OF:</strong> {inventarioConfirm.product.ofNumber || '—'}</p>
                         <p><strong>Cliente:</strong> {inventarioConfirm.product.cliente || '—'}</p>
                       </div>
-                      <p className="text-xs text-destructive font-semibold">⚠️ Esta ação vai dar baixa automática deste motor no sistema. Você pode reverter pelo Histórico de Inventário.</p>
+                      <p className="text-xs text-muted-foreground">A baixa só será efetivada ao clicar em <strong>Finalizar Inventário</strong>. Até lá você pode alterar a marcação.</p>
                       <div className="flex gap-3 justify-end pt-2">
                         <button onClick={() => setInventarioConfirm(null)}
                           className="px-4 py-2 rounded text-sm font-medium bg-muted text-muted-foreground hover:bg-muted/80 transition-colors">
@@ -1270,7 +1305,7 @@ const Motorredutores = () => {
                         </button>
                         <button onClick={() => handleInventarioNao(inventarioConfirm.product)}
                           className="px-4 py-2 rounded text-sm font-bold bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors">
-                          Sim, dar baixa
+                          Confirmar marcação
                         </button>
                       </div>
                     </>
@@ -1314,6 +1349,46 @@ const Motorredutores = () => {
                 </div>
               </div>
             )}
+
+            {/* Finalizar Inventário modal */}
+            {finalizarConfirmOpen && (() => {
+              const naoIds = Object.entries(inventarioChecked).filter(([, v]) => v === 'nao').map(([id]) => id);
+              const simCount = Object.values(inventarioChecked).filter(v => v === 'sim').length;
+              const toBaixar = products.filter(p => naoIds.includes(p.id) && p.quantity > 0);
+              return (
+                <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                  <div className="bg-card border rounded-lg p-6 max-w-lg w-full space-y-4 shadow-2xl">
+                    <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
+                      <ClipboardCheck className="w-5 h-5 text-primary" /> Finalizar Inventário
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      Esta ação irá <strong className="text-destructive">dar baixa</strong> em todos os motores marcados como <strong>NÃO</strong>. Os marcados como <strong className="text-success">SIM</strong> permanecem no estoque sem alteração.
+                    </p>
+                    <div className="text-sm space-y-1 bg-muted/50 rounded p-3">
+                      <p>Motores confirmados (SIM): <strong className="text-success">{simCount}</strong></p>
+                      <p>Motores a serem baixados (NÃO): <strong className="text-destructive">{toBaixar.length}</strong></p>
+                    </div>
+                    <p className="text-xs text-muted-foreground">Após finalizar, todas as marcações serão limpas para permitir uma nova contagem.</p>
+                    <div className="flex gap-3 justify-end pt-2">
+                      <button
+                        onClick={() => setFinalizarConfirmOpen(false)}
+                        disabled={finalizandoInventario}
+                        className="px-4 py-2 rounded text-sm font-medium bg-muted text-muted-foreground hover:bg-muted/80 transition-colors disabled:opacity-50"
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        onClick={handleFinalizarInventario}
+                        disabled={finalizandoInventario}
+                        className="px-4 py-2 rounded text-sm font-bold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+                      >
+                        {finalizandoInventario ? 'Finalizando...' : 'Confirmar e Finalizar'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
           </>
         )}
 
