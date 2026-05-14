@@ -946,20 +946,20 @@ const Motorredutores = () => {
             </div>
 
             {/* Movements table */}
-            <div className="bg-card rounded-lg border overflow-x-auto">
-              <table className="w-full text-sm table-fixed">
+            <div className="bg-card rounded-lg border overflow-hidden">
+              <table className="w-full text-xs table-fixed">
                 <colgroup>
-                  <col style={{ width: '88px' }} />
-                  <col style={{ width: '74px' }} />
-                  <col style={{ width: '96px' }} />
-                  <col style={{ width: '22%' }} />
-                  <col style={{ width: '48px' }} />
-                  <col style={{ width: '13%' }} />
-                  <col style={{ width: '20%' }} />
-                  <col style={{ width: '72px' }} />
-                  <col style={{ width: '64px' }} />
-                  <col style={{ width: '110px' }} />
-                  <col style={{ width: 'auto' }} />
+                  <col style={{ width: '7%' }} />
+                  <col style={{ width: '5%' }} />
+                  <col style={{ width: '7%' }} />
+                  <col style={{ width: '19%' }} />
+                  <col style={{ width: '4%' }} />
+                  <col style={{ width: '11%' }} />
+                  <col style={{ width: '17%' }} />
+                  <col style={{ width: '6%' }} />
+                  <col style={{ width: '5%' }} />
+                  <col style={{ width: '8%' }} />
+                  <col style={{ width: '11%' }} />
                 </colgroup>
                 <thead>
                   <tr className="border-b bg-muted/50">
