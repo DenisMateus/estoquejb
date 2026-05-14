@@ -1483,9 +1483,9 @@ const Motorredutores = () => {
                   </tbody>
                 </table>
               </div>
-            </div>
-            <div className="text-sm text-muted-foreground text-right">
-              Total em estoque: <span className="font-bold">{printProducts.reduce((s, p) => s + p.quantity, 0)}</span> motor(es) em <span className="font-bold">{printProducts.length}</span> registro(s)
+              <div className="mtd-print-total text-sm text-muted-foreground text-right">
+                Total em estoque: <span className="font-bold">{printProducts.reduce((s, p) => s + p.quantity, 0)}</span> motor(es) em <span className="font-bold">{printProducts.length}</span> registro(s)
+              </div>
             </div>
           </>
         )}
