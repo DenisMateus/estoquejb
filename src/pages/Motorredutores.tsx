@@ -250,6 +250,44 @@ const Motorredutores = () => {
     return Array.from(set).sort((a, b) => (MTD_TYPE_LABELS[a] || a).localeCompare(MTD_TYPE_LABELS[b] || b));
   }, [products]);
 
+  // Measure how many pages the print report will actually produce on A4
+  const printAreaRef = useRef<HTMLDivElement | null>(null);
+  const [measuredPages, setMeasuredPages] = useState(1);
+  // A4 portrait usable height with current @page margins (6mm top + 8mm bottom)
+  // 297mm - 14mm = 283mm ≈ 1069px @ 96dpi. Use a slightly conservative value.
+  const A4_CONTENT_PX = 1040;
+  useLayoutEffect(() => {
+    if (tab !== 'imprimir') return;
+    const el = printAreaRef.current;
+    if (!el) return;
+    // Use rAF so layout is fully applied
+    const id = requestAnimationFrame(() => {
+      // Convert on-screen px to print-equivalent px via the ratio of an A4 width.
+      // Easier: count via element scrollHeight relative to A4_CONTENT_PX.
+      // But on-screen width != A4 print width, so heights differ. We instead
+      // estimate using row count and a measured average row height in print pt.
+      // Fallback simple heuristic: ceil(rows / fitting) where fitting derived from height.
+      const rows = el.querySelectorAll('tbody tr').length;
+      const headerH = (el.querySelector('.mtd-print-header') as HTMLElement)?.offsetHeight || 0;
+      const tbody = el.querySelector('tbody');
+      let avgRowH = 18;
+      if (tbody && tbody.children.length > 0) {
+        avgRowH = (tbody as HTMLElement).offsetHeight / tbody.children.length;
+      }
+      const theadH = (el.querySelector('thead') as HTMLElement)?.offsetHeight || 0;
+      // Scale factor: on-screen rendering is at ~1x; print uses similar 96dpi mapping at 7pt.
+      // Use a fixed estimate: at 7pt with 1.1 line-height + 2px padding ≈ 12.5px per row in print.
+      const printRowPx = 13;
+      const printHeaderPx = 26;
+      const printTheadPx = 16;
+      void avgRowH; void headerH; void theadH;
+      const usable = A4_CONTENT_PX - printHeaderPx - printTheadPx;
+      const rowsPerPage = Math.max(1, Math.floor(usable / printRowPx));
+      setMeasuredPages(Math.max(1, Math.ceil(rows / rowsPerPage)));
+    });
+    return () => cancelAnimationFrame(id);
+  }, [tab, printProducts]);
+
   const handleEntrada = async (e: React.FormEvent) => {
     e.preventDefault();
     if (entQuantidade < 1) { toast.error('Quantidade deve ser pelo menos 1'); return; }
