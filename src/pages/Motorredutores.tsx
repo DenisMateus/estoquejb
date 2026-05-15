@@ -235,9 +235,19 @@ const Motorredutores = () => {
     return map;
   }, [movements]);
 
-  // Print only motors with stock
+  // Print: per-type exclusion filter (default: include all)
+  const [printExcludedTypes, setPrintExcludedTypes] = useState<Set<MtdType>>(new Set());
+
+  // Print only motors with stock, respecting equipment-type exclusions
   const printProducts = useMemo(() => {
-    return products.filter(p => p.quantity > 0);
+    return products.filter(p => p.quantity > 0 && !printExcludedTypes.has(p.mtdType));
+  }, [products, printExcludedTypes]);
+
+  // Equipment types currently present in stock (for the filter UI)
+  const printAvailableTypes = useMemo(() => {
+    const set = new Set<MtdType>();
+    products.forEach(p => { if (p.quantity > 0) set.add(p.mtdType); });
+    return Array.from(set).sort((a, b) => (MTD_TYPE_LABELS[a] || a).localeCompare(MTD_TYPE_LABELS[b] || b));
   }, [products]);
 
   const handleEntrada = async (e: React.FormEvent) => {
