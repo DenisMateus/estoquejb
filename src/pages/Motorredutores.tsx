@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef, useLayoutEffect } from 'react';
 import {
   getMtdProducts, addMtdProduct, updateMtdProduct, deleteMtdProduct,
   getMtdMovements, addMtdMovement,
@@ -235,10 +235,40 @@ const Motorredutores = () => {
     return map;
   }, [movements]);
 
-  // Print only motors with stock
+  // Print: per-type exclusion filter (default: include all)
+  const [printExcludedTypes, setPrintExcludedTypes] = useState<Set<MtdType>>(new Set());
+
+  // Print only motors with stock, respecting equipment-type exclusions
   const printProducts = useMemo(() => {
-    return products.filter(p => p.quantity > 0);
+    return products.filter(p => p.quantity > 0 && !printExcludedTypes.has(p.mtdType));
+  }, [products, printExcludedTypes]);
+
+  // Equipment types currently present in stock (for the filter UI)
+  const printAvailableTypes = useMemo(() => {
+    const set = new Set<MtdType>();
+    products.forEach(p => { if (p.quantity > 0) set.add(p.mtdType); });
+    return Array.from(set).sort((a, b) => (MTD_TYPE_LABELS[a] || a).localeCompare(MTD_TYPE_LABELS[b] || b));
   }, [products]);
+
+  // Measure how many A4 pages the print area will actually use, by rendering
+  // it at real A4 width on-screen and dividing its height by A4 content height.
+  const printAreaRef = useRef<HTMLDivElement | null>(null);
+  const [measuredPages, setMeasuredPages] = useState(1);
+  // A4 portrait content area: 297mm tall - top/bottom margins (6mm + 8mm = 14mm) = 283mm
+  const A4_CONTENT_MM = 283;
+  useLayoutEffect(() => {
+    if (tab !== 'imprimir') return;
+    const el = printAreaRef.current;
+    if (!el) { setMeasuredPages(1); return; }
+    const id = requestAnimationFrame(() => {
+      // 1mm = 96/25.4 px in CSS
+      const mmToPx = 96 / 25.4;
+      const pageContentPx = A4_CONTENT_MM * mmToPx;
+      const totalPx = el.scrollHeight;
+      setMeasuredPages(Math.max(1, Math.ceil(totalPx / pageContentPx)));
+    });
+    return () => cancelAnimationFrame(id);
+  }, [tab, printProducts]);
 
   const handleEntrada = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1408,6 +1438,51 @@ const Motorredutores = () => {
         {/* ===== IMPRIMIR TAB ===== */}
         {tab === 'imprimir' && (
           <>
+            {/* Equipment-type filter (multi-select via exclusion) */}
+            <div className="print:hidden bg-muted/40 border rounded-lg p-3 space-y-2">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div className="text-sm font-semibold">Equipamentos a incluir no relatório</div>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setPrintExcludedTypes(new Set())}
+                    className="text-xs px-2 py-1 rounded border bg-background hover:bg-muted">
+                    Marcar todos
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPrintExcludedTypes(new Set(printAvailableTypes))}
+                    className="text-xs px-2 py-1 rounded border bg-background hover:bg-muted">
+                    Desmarcar todos
+                  </button>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {printAvailableTypes.length === 0 && (
+                  <span className="text-xs text-muted-foreground">Nenhum equipamento em estoque.</span>
+                )}
+                {printAvailableTypes.map(t => {
+                  const checked = !printExcludedTypes.has(t);
+                  return (
+                    <label key={t} className={`flex items-center gap-2 px-3 py-1.5 rounded border cursor-pointer text-sm transition-colors ${checked ? 'bg-primary/10 border-primary/40' : 'bg-background border-border'}`}>
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => {
+                          setPrintExcludedTypes(prev => {
+                            const next = new Set(prev);
+                            if (next.has(t)) next.delete(t); else next.add(t);
+                            return next;
+                          });
+                        }}
+                      />
+                      <span>{MTD_TYPE_LABELS[t] || t}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+
             <div className="print:hidden flex justify-end">
               <button onClick={handlePrint}
                 className="inline-flex items-center gap-2 bg-primary text-primary-foreground font-semibold px-4 py-2 rounded-md hover:bg-primary/90 transition-colors text-sm">
@@ -1417,86 +1492,51 @@ const Motorredutores = () => {
 
             {/* Print-specific styles: ultra-compact A4 layout for inventory counting */}
             <style>{`
+              .mtd-print-area { font-size: 7.5pt; color: #000; background: #fff; }
+              .mtd-print-area .mtd-print-header { padding: 3px 5px; margin-bottom: 3px; border: 1px solid #000; border-radius: 0; background: #fff; }
+              .mtd-print-area .mtd-print-header h1 { font-size: 11pt; line-height: 1.05; margin: 0; color: #000; font-weight: 700; }
+              .mtd-print-area .mtd-print-header p { font-size: 7pt; line-height: 1.05; margin: 0; color: #000; }
+              .mtd-print-area .mtd-print-header img { height: 22px; }
+              .mtd-print-area table { font-size: 7pt; border-collapse: collapse; width: 100%; table-layout: fixed; }
+              .mtd-print-area thead { display: table-header-group; }
+              .mtd-print-area thead th { background: #e5e5e5; color: #000; font-weight: 700; padding: 2px 3px; border: 1px solid #000; font-size: 6.8pt; line-height: 1.05; text-align: left; }
+              .mtd-print-area thead th.center { text-align: center; }
+              .mtd-print-area tbody td { padding: 1px 3px; border: 1px solid #000; line-height: 1.1; color: #000; word-break: break-word; overflow-wrap: break-word; }
+              .mtd-print-area tbody tr { page-break-inside: avoid; break-inside: avoid; }
+              .mtd-print-area .mtd-print-table-wrap { border: 0; border-radius: 0; background: #fff; }
+
+              /* Render at exact A4 width on screen so preview = print */
+              .mtd-print-frame {
+                width: 210mm;
+                margin: 0 auto;
+                padding: 6mm 6mm 8mm 6mm;
+                background: #fff;
+                border: 1px solid hsl(var(--border));
+                box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+                color: #000;
+              }
+              .mtd-page-rule {
+                position: relative;
+                border-top: 1px dashed hsl(var(--muted-foreground));
+                margin: 4px 0;
+                color: hsl(var(--muted-foreground));
+                font-size: 11px;
+                text-align: center;
+              }
+              .mtd-page-rule span { background: hsl(var(--background)); padding: 0 8px; position: relative; top: -8px; }
+
               @media print {
                 @page { size: A4 portrait; margin: 6mm 6mm 8mm 6mm; }
                 html, body { background: #fff !important; }
-                .mtd-print-area { font-size: 7.5pt !important; color: #000 !important; }
-                .mtd-print-area .mtd-print-header { padding: 3px 5px !important; margin-bottom: 3px !important; border: 1px solid #000 !important; border-radius: 0 !important; background: #fff !important; }
-                .mtd-print-area .mtd-print-header h1 { font-size: 11pt !important; line-height: 1.05 !important; margin: 0 !important; }
-                .mtd-print-area .mtd-print-header p { font-size: 7pt !important; line-height: 1.05 !important; margin: 0 !important; }
-                .mtd-print-area .mtd-print-header img { height: 22px !important; }
-                .mtd-print-area table { font-size: 7pt !important; border-collapse: collapse !important; width: 100% !important; table-layout: fixed !important; }
-                .mtd-print-area thead { display: table-header-group; }
-                .mtd-print-area thead th { background: #e5e5e5 !important; color: #000 !important; font-weight: 700 !important; padding: 2px 3px !important; border: 1px solid #000 !important; font-size: 6.8pt !important; line-height: 1.05 !important; }
-                .mtd-print-area tbody td { padding: 1px 3px !important; border: 1px solid #000 !important; line-height: 1.1 !important; color: #000 !important; word-break: break-word; overflow-wrap: break-word; }
-                .mtd-print-area tbody tr { page-break-inside: avoid; break-inside: avoid; }
-                .mtd-print-area .mtd-print-total { font-size: 7.5pt !important; margin-top: 3px !important; color: #000 !important; }
-                .mtd-print-area { border-radius: 0 !important; }
-                .mtd-print-area .mtd-print-table-wrap { border: 0 !important; border-radius: 0 !important; background: #fff !important; }
-                .mtd-print-page { page-break-after: always; break-after: page; }
-                .mtd-print-page:last-child { page-break-after: auto; break-after: auto; }
                 .mtd-print-no-print { display: none !important; }
+                .mtd-print-frame { width: auto !important; margin: 0 !important; padding: 0 !important; border: 0 !important; box-shadow: none !important; }
+                .mtd-page-rule { display: none !important; }
               }
             `}</style>
 
             {(() => {
-              const ROWS_PER_PAGE = 42;
               const totalRows = printProducts.length;
-              const totalPages = Math.max(1, Math.ceil(totalRows / ROWS_PER_PAGE));
-              const pages: typeof printProducts[] = [];
-              for (let i = 0; i < totalPages; i++) {
-                pages.push(printProducts.slice(i * ROWS_PER_PAGE, (i + 1) * ROWS_PER_PAGE));
-              }
-
-              const renderTable = (rows: typeof printProducts) => (
-                <div className="mtd-print-table-wrap bg-card rounded-lg border overflow-hidden">
-                  <table className="w-full text-xs table-fixed">
-                    <colgroup>
-                      <col style={{ width: '8%' }} />
-                      <col style={{ width: '20%' }} />
-                      <col style={{ width: '14%' }} />
-                      <col style={{ width: '9%' }} />
-                      <col style={{ width: '5%' }} />
-                      <col style={{ width: '9%' }} />
-                      <col style={{ width: '9%' }} />
-                      <col style={{ width: '9%' }} />
-                      <col style={{ width: '17%' }} />
-                    </colgroup>
-                    <thead>
-                      <tr className="border-b bg-muted/50">
-                        <th className="text-left px-2 py-1.5 font-medium text-muted-foreground">Código</th>
-                        <th className="text-left px-2 py-1.5 font-medium text-muted-foreground">Descrição</th>
-                        <th className="text-left px-2 py-1.5 font-medium text-muted-foreground">Equipamento</th>
-                        <th className="text-left px-2 py-1.5 font-medium text-muted-foreground">Condição</th>
-                        <th className="text-center px-2 py-1.5 font-medium text-muted-foreground">Qtd</th>
-                        <th className="text-left px-2 py-1.5 font-medium text-muted-foreground">Portaria</th>
-                        <th className="text-left px-2 py-1.5 font-medium text-muted-foreground">NF</th>
-                        <th className="text-left px-2 py-1.5 font-medium text-muted-foreground">OF</th>
-                        <th className="text-left px-2 py-1.5 font-medium text-muted-foreground">Cliente</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {rows.length === 0 ? (
-                        <tr><td colSpan={9} className="px-3 py-6 text-center text-muted-foreground">Nenhum motorredutor em estoque</td></tr>
-                      ) : (
-                        rows.map(p => (
-                          <tr key={p.id} className="border-b last:border-0">
-                            <td className="px-2 py-1 font-mono font-semibold break-words">{p.code}</td>
-                            <td className="px-2 py-1 break-words">{p.description}</td>
-                            <td className="px-2 py-1 break-words">{MTD_TYPE_LABELS[p.mtdType] || p.mtdType}</td>
-                            <td className="px-2 py-1 break-words">{p.condicao || '—'}</td>
-                            <td className="px-2 py-1 text-center font-bold">{formatQuantity(p.quantity)}</td>
-                            <td className="px-2 py-1 font-mono break-words">{p.portaria || '—'}</td>
-                            <td className="px-2 py-1 font-mono break-words">{p.notaFiscal || '—'}</td>
-                            <td className="px-2 py-1 font-mono break-words">{p.ofNumber || '—'}</td>
-                            <td className="px-2 py-1 break-words">{p.cliente || '—'}</td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              );
+              const totalStockUnits = printProducts.reduce((s, p) => s + p.quantity, 0);
 
               return (
                 <>
@@ -1504,28 +1544,71 @@ const Motorredutores = () => {
                   <div className="mtd-print-no-print bg-muted/40 border rounded-lg px-4 py-3 flex flex-wrap items-center gap-4 text-sm">
                     <span><strong>Pré-visualização do relatório</strong></span>
                     <span>Total de linhas: <strong className="font-mono">{totalRows}</strong></span>
-                    <span>Linhas por página: <strong className="font-mono">{ROWS_PER_PAGE}</strong></span>
-                    <span>Páginas a imprimir: <strong className="font-mono">{totalPages}</strong></span>
-                    <span className="text-xs text-muted-foreground ml-auto">Cada bloco abaixo representa uma folha A4</span>
+                    <span>Páginas a imprimir: <strong className="font-mono">{measuredPages}</strong></span>
+                    <span className="text-xs text-muted-foreground ml-auto">A área abaixo está em escala A4 real — quebras tracejadas indicam fim de página</span>
                   </div>
 
-                  <div className="mtd-print-area space-y-4">
-                    {pages.map((rows, idx) => (
-                      <div key={idx} className="mtd-print-page space-y-2">
-                        <div className="mtd-print-header flex px-4 py-2 items-center gap-3 border bg-card rounded-lg">
-                          <img src={logoHeader} alt="Jhonrob" className="h-8" />
-                          <div className="flex-1">
-                            <h1 className="text-base font-bold leading-tight">Relatório de Estoque — Motorredutores</h1>
-                            <p className="text-xs text-muted-foreground leading-tight">
-                              Data: {new Date().toLocaleDateString('pt-BR')} — Apenas motores em estoque — Página {idx + 1} de {totalPages}
-                            </p>
-                          </div>
+                  <div className="mtd-print-frame">
+                    <div ref={printAreaRef} className="mtd-print-area">
+                      <div className="mtd-print-header flex items-center gap-3">
+                        <img src={logoHeader} alt="Jhonrob" />
+                        <div className="flex-1">
+                          <h1>Relatório de Estoque — Motorredutores</h1>
+                          <p>
+                            Data: {new Date().toLocaleDateString('pt-BR')} — Apenas motores em estoque — {totalRows} registro(s) — {measuredPages} página(s)
+                          </p>
                         </div>
-                        {renderTable(rows)}
                       </div>
-                    ))}
-                    <div className="mtd-print-total text-sm text-muted-foreground text-right">
-                      Total em estoque: <span className="font-bold">{printProducts.reduce((s, p) => s + p.quantity, 0)}</span> motor(es) em <span className="font-bold">{printProducts.length}</span> registro(s) — <span className="font-bold">{totalPages}</span> página(s)
+                      <div className="mtd-print-table-wrap">
+                        <table>
+                          <colgroup>
+                            <col style={{ width: '8%' }} />
+                            <col style={{ width: '20%' }} />
+                            <col style={{ width: '14%' }} />
+                            <col style={{ width: '9%' }} />
+                            <col style={{ width: '5%' }} />
+                            <col style={{ width: '9%' }} />
+                            <col style={{ width: '9%' }} />
+                            <col style={{ width: '9%' }} />
+                            <col style={{ width: '17%' }} />
+                          </colgroup>
+                          <thead>
+                            <tr>
+                              <th>Código</th>
+                              <th>Descrição</th>
+                              <th>Equipamento</th>
+                              <th>Condição</th>
+                              <th className="center">Qtd</th>
+                              <th>Portaria</th>
+                              <th>NF</th>
+                              <th>OF</th>
+                              <th>Cliente</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {printProducts.length === 0 ? (
+                              <tr><td colSpan={9} style={{ textAlign: 'center', padding: '12px' }}>Nenhum motorredutor em estoque</td></tr>
+                            ) : (
+                              printProducts.map(p => (
+                                <tr key={p.id}>
+                                  <td style={{ fontFamily: 'monospace', fontWeight: 600 }}>{p.code}</td>
+                                  <td>{p.description}</td>
+                                  <td>{MTD_TYPE_LABELS[p.mtdType] || p.mtdType}</td>
+                                  <td>{p.condicao || '—'}</td>
+                                  <td style={{ textAlign: 'center', fontWeight: 700 }}>{formatQuantity(p.quantity)}</td>
+                                  <td style={{ fontFamily: 'monospace' }}>{p.portaria || '—'}</td>
+                                  <td style={{ fontFamily: 'monospace' }}>{p.notaFiscal || '—'}</td>
+                                  <td style={{ fontFamily: 'monospace' }}>{p.ofNumber || '—'}</td>
+                                  <td>{p.cliente || '—'}</td>
+                                </tr>
+                              ))
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                      <div style={{ marginTop: 4, fontSize: '7.5pt', textAlign: 'right', color: '#000' }}>
+                        Total em estoque: <strong>{totalStockUnits}</strong> motor(es) em <strong>{totalRows}</strong> registro(s)
+                      </div>
                     </div>
                   </div>
                 </>
