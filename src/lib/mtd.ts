@@ -1,18 +1,19 @@
 import { supabase } from '@/integrations/supabase/client';
 
-export type MtdType = 'REDLER' | 'ELEVADOR' | 'THV' | 'CT' | 'MPL' | 'CAVACO' | 'TRIPPER' | 'TH' | 'VALVULA_ROTATIVA' | 'TORRADOR';
+export type MtdType = 'REDLER' | 'ELEVADOR' | 'THV' | 'CT' | 'MPL' | 'CAVACO' | 'TRIPPER' | 'TH' | 'VALVULA_ROTATIVA' | 'TORRADOR' | 'ESPALHADOR';
 
 export const MTD_TYPE_LABELS: Record<MtdType, string> = {
-  REDLER: 'Redler',
-  ELEVADOR: 'Elevador',
-  THV: 'THV',
-  CT: 'CT',
-  MPL: 'MPL',
   CAVACO: 'Cavaco',
-  TRIPPER: 'Tripper',
+  CT: 'CT',
+  ELEVADOR: 'Elevador',
+  ESPALHADOR: 'Espalhador',
+  MPL: 'MPL',
+  REDLER: 'Redler',
   TH: 'TH',
-  VALVULA_ROTATIVA: 'Válvula Rotativa',
+  THV: 'THV',
   TORRADOR: 'Torrador',
+  TRIPPER: 'Tripper',
+  VALVULA_ROTATIVA: 'Válvula Rotativa',
 };
 
 export interface MtdProduct {
