@@ -43,6 +43,12 @@ const Motorredutores = () => {
   const [deleteCode, setDeleteCode] = useState('');
   const [deleteStep, setDeleteStep] = useState<'confirm' | 'code'>('confirm');
 
+  // Bulk delete
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [bulkDeleteStep, setBulkDeleteStep] = useState<'confirm' | 'code'>('confirm');
+  const [bulkDeleteCode, setBulkDeleteCode] = useState('');
+
   // Movement form
   const [showMovForm, setShowMovForm] = useState(false);
   const [movFormType, setMovFormType] = useState<'entrada' | 'saida'>('entrada');
