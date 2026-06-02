@@ -439,6 +439,9 @@ const Motorredutores = () => {
     setBulkDeleteOpen(false);
     setBulkDeleteCode('');
     setBulkDeleteStep('confirm');
+  };
+
+
 
   const openEdit = (p: MtdProduct) => {
     setEditProduct(p); setEditCode(p.code); setEditDescription(p.description);
