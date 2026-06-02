@@ -673,6 +673,28 @@ const Motorredutores = () => {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b bg-muted/50">
+                    <th className="px-3 py-3 w-10 print:hidden">
+                      <input
+                        type="checkbox"
+                        className="w-4 h-4 cursor-pointer accent-primary"
+                        checked={filteredProducts.length > 0 && filteredProducts.every(p => selectedIds.has(p.id))}
+                        onChange={e => {
+                          if (e.target.checked) {
+                            setSelectedIds(prev => {
+                              const next = new Set(prev);
+                              filteredProducts.forEach(p => next.add(p.id));
+                              return next;
+                            });
+                          } else {
+                            setSelectedIds(prev => {
+                              const next = new Set(prev);
+                              filteredProducts.forEach(p => next.delete(p.id));
+                              return next;
+                            });
+                          }
+                        }}
+                      />
+                    </th>
                     <th className="text-left px-4 py-3 font-medium text-muted-foreground">Código</th>
                     <th className="text-left px-4 py-3 font-medium text-muted-foreground">Descrição</th>
                     <th className="text-left px-4 py-3 font-medium text-muted-foreground">Equipamento</th>
@@ -690,12 +712,21 @@ const Motorredutores = () => {
                 </thead>
                 <tbody>
                   {filteredProducts.length === 0 ? (
-                    <tr><td colSpan={stockFilter === 'sem_estoque' ? 11 : 10} className="px-5 py-8 text-center text-muted-foreground">Nenhum motorredutor encontrado</td></tr>
+                    <tr><td colSpan={stockFilter === 'sem_estoque' ? 12 : 11} className="px-5 py-8 text-center text-muted-foreground">Nenhum motorredutor encontrado</td></tr>
                   ) : (
                     filteredProducts.map(p => (
-                      <tr key={p.id} className={`border-b last:border-0 hover:bg-muted/30 transition-colors ${p.quantity === 0 ? 'opacity-50' : ''}`}>
+                      <tr key={p.id} className={`border-b last:border-0 hover:bg-muted/30 transition-colors ${p.quantity === 0 ? 'opacity-50' : ''} ${selectedIds.has(p.id) ? 'bg-primary/5' : ''}`}>
+                        <td className="px-3 py-2.5 print:hidden">
+                          <input
+                            type="checkbox"
+                            className="w-4 h-4 cursor-pointer accent-primary"
+                            checked={selectedIds.has(p.id)}
+                            onChange={() => toggleSelect(p.id)}
+                          />
+                        </td>
                         <td className="px-4 py-2.5 font-mono font-semibold text-primary">{p.code}</td>
                         <td className="px-4 py-2.5">{p.description}</td>
+
                         <td className="px-4 py-2.5">
                           <span className="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-primary/10 text-primary">
                             {MTD_TYPE_LABELS[p.mtdType] || p.mtdType}
