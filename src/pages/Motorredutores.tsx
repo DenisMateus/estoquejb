@@ -43,6 +43,12 @@ const Motorredutores = () => {
   const [deleteCode, setDeleteCode] = useState('');
   const [deleteStep, setDeleteStep] = useState<'confirm' | 'code'>('confirm');
 
+  // Bulk delete
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [bulkDeleteStep, setBulkDeleteStep] = useState<'confirm' | 'code'>('confirm');
+  const [bulkDeleteCode, setBulkDeleteCode] = useState('');
+
   // Movement form
   const [showMovForm, setShowMovForm] = useState(false);
   const [movFormType, setMovFormType] = useState<'entrada' | 'saida'>('entrada');
@@ -402,6 +408,41 @@ const Motorredutores = () => {
     setDeleteCode('');
   };
 
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const handleBulkDeleteConfirm = async () => {
+    if (bulkDeleteStep === 'confirm') {
+      setBulkDeleteStep('code');
+      return;
+    }
+    if (bulkDeleteCode !== DELETE_SECRET_CODE) {
+      toast.error('Código incorreto!');
+      return;
+    }
+    const ids = Array.from(selectedIds);
+    try {
+      for (const id of ids) {
+        await deleteMtdProduct(id);
+      }
+      toast.success(`${ids.length} excluído(s)`);
+      setSelectedIds(new Set());
+      reload();
+    } catch (err: any) {
+      toast.error(err.message);
+    }
+    setBulkDeleteOpen(false);
+    setBulkDeleteCode('');
+    setBulkDeleteStep('confirm');
+  };
+
+
+
   const openEdit = (p: MtdProduct) => {
     setEditProduct(p); setEditCode(p.code); setEditDescription(p.description);
     setEditMtdType(p.mtdType); setEditPortaria(p.portaria); setEditNotaFiscal(p.notaFiscal);
@@ -598,20 +639,62 @@ const Motorredutores = () => {
             </div>
 
             {/* Summary */}
-            <div className="flex gap-4 print:hidden">
+            <div className="flex flex-wrap items-center gap-4 print:hidden">
               <div className="bg-card border rounded-lg px-4 py-2 text-sm">
                 Total exibido: <span className="font-bold">{filteredProducts.length}</span> registro(s)
               </div>
               <div className="bg-card border rounded-lg px-4 py-2 text-sm">
                 Total de motores em estoque: <span className="font-bold text-success">{productsWithStock.reduce((s, p) => s + p.quantity, 0)}</span>
               </div>
+              {selectedIds.size > 0 && (
+                <>
+                  <div className="bg-card border rounded-lg px-4 py-2 text-sm">
+                    Selecionados: <span className="font-bold text-primary">{selectedIds.size}</span>
+                  </div>
+                  <button
+                    onClick={() => { setBulkDeleteStep('confirm'); setBulkDeleteCode(''); setBulkDeleteOpen(true); }}
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-destructive text-destructive-foreground text-sm font-medium hover:bg-destructive/90"
+                  >
+                    <Trash2 className="w-4 h-4" /> Excluir selecionados ({selectedIds.size})
+                  </button>
+                  <button
+                    onClick={() => setSelectedIds(new Set())}
+                    className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border text-sm hover:bg-muted"
+                  >
+                    Limpar seleção
+                  </button>
+                </>
+              )}
             </div>
+
 
             {/* Table */}
             <div className="bg-card rounded-lg border overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b bg-muted/50">
+                    <th className="px-3 py-3 w-10 print:hidden">
+                      <input
+                        type="checkbox"
+                        className="w-4 h-4 cursor-pointer accent-primary"
+                        checked={filteredProducts.length > 0 && filteredProducts.every(p => selectedIds.has(p.id))}
+                        onChange={e => {
+                          if (e.target.checked) {
+                            setSelectedIds(prev => {
+                              const next = new Set(prev);
+                              filteredProducts.forEach(p => next.add(p.id));
+                              return next;
+                            });
+                          } else {
+                            setSelectedIds(prev => {
+                              const next = new Set(prev);
+                              filteredProducts.forEach(p => next.delete(p.id));
+                              return next;
+                            });
+                          }
+                        }}
+                      />
+                    </th>
                     <th className="text-left px-4 py-3 font-medium text-muted-foreground">Código</th>
                     <th className="text-left px-4 py-3 font-medium text-muted-foreground">Descrição</th>
                     <th className="text-left px-4 py-3 font-medium text-muted-foreground">Equipamento</th>
@@ -629,12 +712,21 @@ const Motorredutores = () => {
                 </thead>
                 <tbody>
                   {filteredProducts.length === 0 ? (
-                    <tr><td colSpan={stockFilter === 'sem_estoque' ? 11 : 10} className="px-5 py-8 text-center text-muted-foreground">Nenhum motorredutor encontrado</td></tr>
+                    <tr><td colSpan={stockFilter === 'sem_estoque' ? 12 : 11} className="px-5 py-8 text-center text-muted-foreground">Nenhum motorredutor encontrado</td></tr>
                   ) : (
                     filteredProducts.map(p => (
-                      <tr key={p.id} className={`border-b last:border-0 hover:bg-muted/30 transition-colors ${p.quantity === 0 ? 'opacity-50' : ''}`}>
+                      <tr key={p.id} className={`border-b last:border-0 hover:bg-muted/30 transition-colors ${p.quantity === 0 ? 'opacity-50' : ''} ${selectedIds.has(p.id) ? 'bg-primary/5' : ''}`}>
+                        <td className="px-3 py-2.5 print:hidden">
+                          <input
+                            type="checkbox"
+                            className="w-4 h-4 cursor-pointer accent-primary"
+                            checked={selectedIds.has(p.id)}
+                            onChange={() => toggleSelect(p.id)}
+                          />
+                        </td>
                         <td className="px-4 py-2.5 font-mono font-semibold text-primary">{p.code}</td>
                         <td className="px-4 py-2.5">{p.description}</td>
+
                         <td className="px-4 py-2.5">
                           <span className="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-primary/10 text-primary">
                             {MTD_TYPE_LABELS[p.mtdType] || p.mtdType}
@@ -1710,6 +1802,44 @@ const Motorredutores = () => {
                 <div className="flex justify-end gap-3">
                   <button onClick={() => setDeleteTarget(null)} className="px-4 py-2 rounded-md bg-destructive text-destructive-foreground font-medium hover:bg-destructive/90">Cancelar</button>
                   <button onClick={handleDeleteConfirm} className="px-4 py-2 rounded-md bg-green-600 text-white font-medium hover:bg-green-700">Excluir</button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Bulk delete dialog */}
+      {bulkDeleteOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+          <div className="bg-background rounded-lg shadow-xl p-6 w-full max-w-md mx-4 border">
+            {bulkDeleteStep === 'confirm' ? (
+              <>
+                <h3 className="text-lg font-bold mb-3 text-foreground">Excluir Selecionados</h3>
+                <p className="text-muted-foreground mb-5">
+                  Deseja realmente excluir <strong className="text-foreground">{selectedIds.size}</strong> motorredutor(es)? Esta ação não pode ser desfeita.
+                </p>
+                <div className="flex justify-end gap-3">
+                  <button onClick={() => setBulkDeleteOpen(false)} className="px-4 py-2 rounded-md bg-muted text-foreground font-medium hover:bg-muted/80">Cancelar</button>
+                  <button onClick={handleBulkDeleteConfirm} className="px-4 py-2 rounded-md bg-destructive text-destructive-foreground font-medium hover:bg-destructive/90">Confirmar</button>
+                </div>
+              </>
+            ) : (
+              <>
+                <h3 className="text-lg font-bold mb-3 text-foreground">Digite o código de segurança</h3>
+                <p className="text-muted-foreground mb-4">Para excluir os {selectedIds.size} selecionados, insira o código de autorização:</p>
+                <input
+                  type="password"
+                  value={bulkDeleteCode}
+                  onChange={e => setBulkDeleteCode(e.target.value)}
+                  placeholder="Código de segurança"
+                  className="w-full border rounded-md px-3 py-2 mb-5 bg-background text-foreground"
+                  autoFocus
+                  onKeyDown={e => e.key === 'Enter' && handleBulkDeleteConfirm()}
+                />
+                <div className="flex justify-end gap-3">
+                  <button onClick={() => setBulkDeleteOpen(false)} className="px-4 py-2 rounded-md bg-muted text-foreground font-medium hover:bg-muted/80">Cancelar</button>
+                  <button onClick={handleBulkDeleteConfirm} className="px-4 py-2 rounded-md bg-destructive text-destructive-foreground font-medium hover:bg-destructive/90">Excluir</button>
                 </div>
               </>
             )}
