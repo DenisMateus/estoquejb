@@ -639,14 +639,34 @@ const Motorredutores = () => {
             </div>
 
             {/* Summary */}
-            <div className="flex gap-4 print:hidden">
+            <div className="flex flex-wrap items-center gap-4 print:hidden">
               <div className="bg-card border rounded-lg px-4 py-2 text-sm">
                 Total exibido: <span className="font-bold">{filteredProducts.length}</span> registro(s)
               </div>
               <div className="bg-card border rounded-lg px-4 py-2 text-sm">
                 Total de motores em estoque: <span className="font-bold text-success">{productsWithStock.reduce((s, p) => s + p.quantity, 0)}</span>
               </div>
+              {selectedIds.size > 0 && (
+                <>
+                  <div className="bg-card border rounded-lg px-4 py-2 text-sm">
+                    Selecionados: <span className="font-bold text-primary">{selectedIds.size}</span>
+                  </div>
+                  <button
+                    onClick={() => { setBulkDeleteStep('confirm'); setBulkDeleteCode(''); setBulkDeleteOpen(true); }}
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-destructive text-destructive-foreground text-sm font-medium hover:bg-destructive/90"
+                  >
+                    <Trash2 className="w-4 h-4" /> Excluir selecionados ({selectedIds.size})
+                  </button>
+                  <button
+                    onClick={() => setSelectedIds(new Set())}
+                    className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border text-sm hover:bg-muted"
+                  >
+                    Limpar seleção
+                  </button>
+                </>
+              )}
             </div>
+
 
             {/* Table */}
             <div className="bg-card rounded-lg border overflow-x-auto">
