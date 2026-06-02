@@ -408,6 +408,38 @@ const Motorredutores = () => {
     setDeleteCode('');
   };
 
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const handleBulkDeleteConfirm = async () => {
+    if (bulkDeleteStep === 'confirm') {
+      setBulkDeleteStep('code');
+      return;
+    }
+    if (bulkDeleteCode !== DELETE_SECRET_CODE) {
+      toast.error('Código incorreto!');
+      return;
+    }
+    const ids = Array.from(selectedIds);
+    try {
+      for (const id of ids) {
+        await deleteMtdProduct(id);
+      }
+      toast.success(`${ids.length} excluído(s)`);
+      setSelectedIds(new Set());
+      reload();
+    } catch (err: any) {
+      toast.error(err.message);
+    }
+    setBulkDeleteOpen(false);
+    setBulkDeleteCode('');
+    setBulkDeleteStep('confirm');
+
   const openEdit = (p: MtdProduct) => {
     setEditProduct(p); setEditCode(p.code); setEditDescription(p.description);
     setEditMtdType(p.mtdType); setEditPortaria(p.portaria); setEditNotaFiscal(p.notaFiscal);
