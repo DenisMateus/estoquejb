@@ -1808,6 +1808,44 @@ const Motorredutores = () => {
           </div>
         </div>
       )}
+
+      {/* Bulk delete dialog */}
+      {bulkDeleteOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+          <div className="bg-background rounded-lg shadow-xl p-6 w-full max-w-md mx-4 border">
+            {bulkDeleteStep === 'confirm' ? (
+              <>
+                <h3 className="text-lg font-bold mb-3 text-foreground">Excluir Selecionados</h3>
+                <p className="text-muted-foreground mb-5">
+                  Deseja realmente excluir <strong className="text-foreground">{selectedIds.size}</strong> motorredutor(es)? Esta ação não pode ser desfeita.
+                </p>
+                <div className="flex justify-end gap-3">
+                  <button onClick={() => setBulkDeleteOpen(false)} className="px-4 py-2 rounded-md bg-muted text-foreground font-medium hover:bg-muted/80">Cancelar</button>
+                  <button onClick={handleBulkDeleteConfirm} className="px-4 py-2 rounded-md bg-destructive text-destructive-foreground font-medium hover:bg-destructive/90">Confirmar</button>
+                </div>
+              </>
+            ) : (
+              <>
+                <h3 className="text-lg font-bold mb-3 text-foreground">Digite o código de segurança</h3>
+                <p className="text-muted-foreground mb-4">Para excluir os {selectedIds.size} selecionados, insira o código de autorização:</p>
+                <input
+                  type="password"
+                  value={bulkDeleteCode}
+                  onChange={e => setBulkDeleteCode(e.target.value)}
+                  placeholder="Código de segurança"
+                  className="w-full border rounded-md px-3 py-2 mb-5 bg-background text-foreground"
+                  autoFocus
+                  onKeyDown={e => e.key === 'Enter' && handleBulkDeleteConfirm()}
+                />
+                <div className="flex justify-end gap-3">
+                  <button onClick={() => setBulkDeleteOpen(false)} className="px-4 py-2 rounded-md bg-muted text-foreground font-medium hover:bg-muted/80">Cancelar</button>
+                  <button onClick={handleBulkDeleteConfirm} className="px-4 py-2 rounded-md bg-destructive text-destructive-foreground font-medium hover:bg-destructive/90">Excluir</button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </AppLayout>
   );
 };
