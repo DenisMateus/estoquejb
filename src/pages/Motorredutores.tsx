@@ -280,28 +280,30 @@ const Motorredutores = () => {
     e.preventDefault();
     if (entQuantidade < 1) { toast.error('Quantidade deve ser pelo menos 1'); return; }
     try {
-      const newProduct = await addMtdProduct({
-        code: entCode.trim(),
-        description: entDescription.trim(),
-        mtdType: entMtdType,
-        quantity: entQuantidade,
-        portaria: entPortaria.trim(),
-        notaFiscal: entNotaFiscal.trim(),
-        ofNumber: entOfNumber.trim(),
-        cliente: entCliente.trim(),
-        condicao: entCondicao.trim(),
-      });
-      await addMtdMovement({
-        mtdProductId: newProduct.id,
-        mtdProductCode: newProduct.code,
-        mtdProductDescription: newProduct.description,
-        type: 'entrada',
-        quantity: entQuantidade,
-        clienteDestino: entCliente.trim(),
-        notaFiscal: entNotaFiscal.trim(),
-        date: entDate,
-        observacao: `OF: ${entOfNumber.trim()}`,
-      }, true);
+      for (let i = 0; i < entQuantidade; i++) {
+        const newProduct = await addMtdProduct({
+          code: entCode.trim(),
+          description: entDescription.trim(),
+          mtdType: entMtdType,
+          quantity: 1,
+          portaria: entPortaria.trim(),
+          notaFiscal: entNotaFiscal.trim(),
+          ofNumber: entOfNumber.trim(),
+          cliente: entCliente.trim(),
+          condicao: entCondicao.trim(),
+        });
+        await addMtdMovement({
+          mtdProductId: newProduct.id,
+          mtdProductCode: newProduct.code,
+          mtdProductDescription: newProduct.description,
+          type: 'entrada',
+          quantity: 1,
+          clienteDestino: entCliente.trim(),
+          notaFiscal: entNotaFiscal.trim(),
+          date: entDate,
+          observacao: `OF: ${entOfNumber.trim()}`,
+        }, true);
+      }
       toast.success(`${entQuantidade} motor(es) cadastrado(s)!`);
       setEntCode(''); setEntDescription(''); setEntPortaria('');
       setEntNotaFiscal(''); setEntOfNumber(''); setEntCliente('');
