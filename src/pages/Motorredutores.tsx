@@ -776,6 +776,22 @@ const Motorredutores = () => {
                         <td className="px-4 py-2.5 text-xs font-mono">{p.notaFiscal || '—'}</td>
                         <td className="px-4 py-2.5 text-xs font-mono">{p.ofNumber || '—'}</td>
                         <td className="px-4 py-2.5 text-xs">{p.cliente || '—'}</td>
+                        <td className="px-4 py-2.5 text-xs">
+                          <select
+                            value={p.status}
+                            onChange={e => handleStatusChange(p, e.target.value as MtdStatus)}
+                            className={`text-xs font-semibold rounded px-2 py-1 border cursor-pointer outline-none ${
+                              p.status === 'disponivel' ? 'bg-success/15 text-success border-success/30' :
+                              p.status === 'reservado' ? 'bg-yellow-500/15 text-yellow-700 dark:text-yellow-400 border-yellow-500/30' :
+                              'bg-destructive/15 text-destructive border-destructive/30'
+                            }`}
+                            title={p.status === 'reservado' ? `Reservado para ${p.cliente || '—'} — não disponível` : ''}
+                          >
+                            {(Object.keys(MTD_STATUS_LABELS) as MtdStatus[]).map(s => (
+                              <option key={s} value={s}>{MTD_STATUS_LABELS[s]}</option>
+                            ))}
+                          </select>
+                        </td>
                         {stockFilter === 'sem_estoque' && (
                           <td className="px-4 py-2.5 text-xs font-mono">
                             {lastExitByProduct[p.id]
