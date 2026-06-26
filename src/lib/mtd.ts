@@ -102,7 +102,7 @@ export async function getMtdProducts(): Promise<MtdProduct[]> {
   return (data || []).map(mapMtdProduct);
 }
 
-export async function addMtdProduct(product: Omit<MtdProduct, 'id' | 'createdAt' | 'quantity'> & { quantity?: number }): Promise<MtdProduct> {
+export async function addMtdProduct(product: Omit<MtdProduct, 'id' | 'createdAt' | 'quantity' | 'status'> & { quantity?: number; status?: MtdStatus }): Promise<MtdProduct> {
   const { data, error } = await supabase.from('mtd_products').insert({
     code: product.code,
     description: product.description,
@@ -113,6 +113,7 @@ export async function addMtdProduct(product: Omit<MtdProduct, 'id' | 'createdAt'
     of_number: product.ofNumber,
     cliente: product.cliente,
     condicao: product.condicao,
+    status: product.status ?? 'disponivel',
   }).select().single();
   if (error) throw error;
   return mapMtdProduct(data);
