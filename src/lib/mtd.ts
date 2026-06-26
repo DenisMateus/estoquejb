@@ -75,6 +75,7 @@ function mapMtdProduct(row: any): MtdProduct {
     ofNumber: row.of_number || '',
     cliente: row.cliente || '',
     condicao: row.condicao || '',
+    status: (row.status as MtdStatus) || 'disponivel',
     createdAt: row.created_at,
   };
 }
