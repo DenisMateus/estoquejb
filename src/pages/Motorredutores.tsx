@@ -728,20 +728,20 @@ const Motorredutores = () => {
                         }}
                       />
                     </th>
-                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">Código</th>
-                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">Descrição</th>
-                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">Equipamento</th>
-                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">Condição</th>
-                    <th className="text-center px-4 py-3 font-medium text-muted-foreground">Qtd</th>
-                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">Portaria</th>
-                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">NF</th>
-                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">OF</th>
-                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">Cliente</th>
-                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">Status</th>
+                    <th className="text-left px-2 py-2 font-medium text-muted-foreground">Código</th>
+                    <th className="text-left px-2 py-2 font-medium text-muted-foreground">Descrição</th>
+                    <th className="text-left px-2 py-2 font-medium text-muted-foreground">Equipamento</th>
+                    <th className="text-left px-2 py-2 font-medium text-muted-foreground">Condição</th>
+                    <th className="text-center px-2 py-2 font-medium text-muted-foreground">Qtd</th>
+                    <th className="text-left px-2 py-2 font-medium text-muted-foreground">Portaria</th>
+                    <th className="text-left px-2 py-2 font-medium text-muted-foreground">NF</th>
+                    <th className="text-left px-2 py-2 font-medium text-muted-foreground">OF</th>
+                    <th className="text-left px-2 py-2 font-medium text-muted-foreground">Cliente</th>
+                    <th className="text-left px-2 py-2 font-medium text-muted-foreground">Status</th>
                     {stockFilter === 'sem_estoque' && (
-                      <th className="text-left px-4 py-3 font-medium text-muted-foreground">Data Baixa</th>
+                      <th className="text-left px-2 py-2 font-medium text-muted-foreground">Data Baixa</th>
                     )}
-                    <th className="px-4 py-3 print:hidden"></th>
+                    <th className="px-2 py-2 print:hidden"></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -758,25 +758,25 @@ const Motorredutores = () => {
                             onChange={() => toggleSelect(p.id)}
                           />
                         </td>
-                        <td className="px-4 py-2.5 font-mono font-semibold text-primary">{p.code}</td>
-                        <td className="px-4 py-2.5">{p.description}</td>
+                        <td className="px-2 py-2 font-mono font-semibold text-primary">{p.code}</td>
+                        <td className="px-2 py-2">{p.description}</td>
 
-                        <td className="px-4 py-2.5">
+                        <td className="px-2 py-2">
                           <span className="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-primary/10 text-primary">
                             {MTD_TYPE_LABELS[p.mtdType] || p.mtdType}
                           </span>
                         </td>
-                        <td className="px-4 py-2.5 text-xs">{p.condicao || '—'}</td>
-                        <td className="px-4 py-2.5 text-center font-bold">
+                        <td className="px-2 py-2 text-xs">{p.condicao || '—'}</td>
+                        <td className="px-2 py-2 text-center font-bold">
                           <span className={`inline-flex px-2 py-0.5 rounded text-xs font-bold ${p.quantity > 0 ? 'bg-success/15 text-success' : 'bg-destructive/15 text-destructive'}`}>
                             {formatQuantity(p.quantity)}
                           </span>
                         </td>
-                        <td className="px-4 py-2.5 text-xs font-mono">{p.portaria || '—'}</td>
-                        <td className="px-4 py-2.5 text-xs font-mono">{p.notaFiscal || '—'}</td>
-                        <td className="px-4 py-2.5 text-xs font-mono">{p.ofNumber || '—'}</td>
-                        <td className="px-4 py-2.5 text-xs">{p.cliente || '—'}</td>
-                        <td className="px-4 py-2.5 text-xs">
+                        <td className="px-2 py-2 text-xs font-mono">{p.portaria || '—'}</td>
+                        <td className="px-2 py-2 text-xs font-mono">{p.notaFiscal || '—'}</td>
+                        <td className="px-2 py-2 text-xs font-mono">{p.ofNumber || '—'}</td>
+                        <td className="px-2 py-2 text-xs">{p.cliente || '—'}</td>
+                        <td className="px-2 py-2 text-xs">
                           <select
                             value={p.status}
                             onChange={e => handleStatusChange(p, e.target.value as MtdStatus)}
@@ -793,13 +793,13 @@ const Motorredutores = () => {
                           </select>
                         </td>
                         {stockFilter === 'sem_estoque' && (
-                          <td className="px-4 py-2.5 text-xs font-mono">
+                          <td className="px-2 py-2 text-xs font-mono">
                             {lastExitByProduct[p.id]
                               ? formatDateBR(lastExitByProduct[p.id])
                               : '—'}
                           </td>
                         )}
-                        <td className="px-4 py-2.5 print:hidden">
+                        <td className="px-2 py-2 print:hidden">
                           <div className="flex items-center gap-1">
                             <button onClick={() => openEdit(p)} className="text-muted-foreground hover:text-primary transition-colors"><Pencil className="w-4 h-4" /></button>
                             <button onClick={() => handleDeleteClick(p.id, p.description)} className="text-destructive hover:text-destructive/80 transition-colors"><Trash2 className="w-4 h-4" /></button>
