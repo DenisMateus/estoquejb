@@ -124,6 +124,7 @@ export type Database = {
           of_number: string | null
           portaria: string | null
           quantity: number
+          status: string
         }
         Insert: {
           cliente?: string | null
@@ -137,6 +138,7 @@ export type Database = {
           of_number?: string | null
           portaria?: string | null
           quantity?: number
+          status?: string
         }
         Update: {
           cliente?: string | null
@@ -150,6 +152,7 @@ export type Database = {
           of_number?: string | null
           portaria?: string | null
           quantity?: number
+          status?: string
         }
         Relationships: []
       }

@@ -18,6 +18,14 @@ export const MTD_TYPE_LABELS: Record<MtdType, string> = {
   VALVULA_ROTATIVA: 'Válvula Rotativa',
 };
 
+export type MtdStatus = 'disponivel' | 'reservado' | 'vendido';
+
+export const MTD_STATUS_LABELS: Record<MtdStatus, string> = {
+  disponivel: 'Disponível',
+  reservado: 'Reservado',
+  vendido: 'Vendido',
+};
+
 export interface MtdProduct {
   id: string;
   code: string;
@@ -29,6 +37,7 @@ export interface MtdProduct {
   ofNumber: string;
   cliente: string;
   condicao: string;
+  status: MtdStatus;
   createdAt: string;
 }
 
@@ -66,6 +75,7 @@ function mapMtdProduct(row: any): MtdProduct {
     ofNumber: row.of_number || '',
     cliente: row.cliente || '',
     condicao: row.condicao || '',
+    status: (row.status as MtdStatus) || 'disponivel',
     createdAt: row.created_at,
   };
 }
@@ -92,7 +102,7 @@ export async function getMtdProducts(): Promise<MtdProduct[]> {
   return (data || []).map(mapMtdProduct);
 }
 
-export async function addMtdProduct(product: Omit<MtdProduct, 'id' | 'createdAt' | 'quantity'> & { quantity?: number }): Promise<MtdProduct> {
+export async function addMtdProduct(product: Omit<MtdProduct, 'id' | 'createdAt' | 'quantity' | 'status'> & { quantity?: number; status?: MtdStatus }): Promise<MtdProduct> {
   const { data, error } = await supabase.from('mtd_products').insert({
     code: product.code,
     description: product.description,
@@ -103,6 +113,7 @@ export async function addMtdProduct(product: Omit<MtdProduct, 'id' | 'createdAt'
     of_number: product.ofNumber,
     cliente: product.cliente,
     condicao: product.condicao,
+    status: product.status ?? 'disponivel',
   }).select().single();
   if (error) throw error;
   return mapMtdProduct(data);
@@ -118,6 +129,7 @@ export async function updateMtdProduct(id: string, updates: Partial<Omit<MtdProd
   if (updates.ofNumber !== undefined) dbUpdates.of_number = updates.ofNumber;
   if (updates.cliente !== undefined) dbUpdates.cliente = updates.cliente;
   if (updates.condicao !== undefined) dbUpdates.condicao = updates.condicao;
+  if ((updates as any).status !== undefined) dbUpdates.status = (updates as any).status;
   const { data, error } = await supabase.from('mtd_products').update(dbUpdates).eq('id', id).select().single();
   if (error) throw error;
   return mapMtdProduct(data);

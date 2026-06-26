@@ -3,6 +3,7 @@ import {
   getMtdProducts, addMtdProduct, updateMtdProduct, deleteMtdProduct,
   getMtdMovements, addMtdMovement,
   MtdProduct, MtdMovement, MtdType, MTD_TYPE_LABELS, CONDICAO_OPTIONS,
+  MtdStatus, MTD_STATUS_LABELS,
 } from '@/lib/mtd';
 import { formatQuantity } from '@/lib/inventory';
 import AppLayout from '@/components/AppLayout';
@@ -100,6 +101,9 @@ const Motorredutores = () => {
   const [editOfNumber, setEditOfNumber] = useState('');
   const [editCliente, setEditCliente] = useState('');
   const [editCondicao, setEditCondicao] = useState('');
+
+  // Reserva / status
+  const [statusDialog, setStatusDialog] = useState<{ product: MtdProduct; newStatus: MtdStatus; newCliente: string } | null>(null);
 
   // Month filter for movements
   const [selectedMonth, setSelectedMonth] = useState(new Date());
@@ -466,6 +470,33 @@ const Motorredutores = () => {
 
   const handlePrint = () => window.print();
 
+  const handleStatusChange = (product: MtdProduct, newStatus: MtdStatus) => {
+    if (newStatus === product.status) return;
+    if (newStatus === 'disponivel') {
+      // muda direto, mantém cliente
+      updateMtdProduct(product.id, { status: 'disponivel' })
+        .then(() => { toast.success(`Motor ${product.code} marcado como Disponível`); reload(); })
+        .catch((err: any) => toast.error(err.message));
+      return;
+    }
+    // reservado ou vendido => abre diálogo para confirmar/atualizar cliente
+    setStatusDialog({ product, newStatus, newCliente: product.cliente || '' });
+  };
+
+  const handleConfirmStatusChange = async () => {
+    if (!statusDialog) return;
+    const { product, newStatus, newCliente } = statusDialog;
+    try {
+      await updateMtdProduct(product.id, { status: newStatus, cliente: newCliente.trim() });
+      const label = MTD_STATUS_LABELS[newStatus];
+      const trocou = newCliente.trim() !== (product.cliente || '').trim();
+      toast.success(`Motor ${product.code} ${label}${trocou ? ` para ${newCliente.trim() || '—'}` : ''}`);
+      setStatusDialog(null);
+      reload();
+    } catch (err: any) { toast.error(err.message); }
+  };
+
+
   const handleInventarioNao = (product: MtdProduct) => {
     setInventarioConfirm(null);
     setInventarioChecked(prev => ({ ...prev, [product.id]: 'nao' }));
@@ -706,6 +737,7 @@ const Motorredutores = () => {
                     <th className="text-left px-4 py-3 font-medium text-muted-foreground">NF</th>
                     <th className="text-left px-4 py-3 font-medium text-muted-foreground">OF</th>
                     <th className="text-left px-4 py-3 font-medium text-muted-foreground">Cliente</th>
+                    <th className="text-left px-4 py-3 font-medium text-muted-foreground">Status</th>
                     {stockFilter === 'sem_estoque' && (
                       <th className="text-left px-4 py-3 font-medium text-muted-foreground">Data Baixa</th>
                     )}
@@ -714,10 +746,10 @@ const Motorredutores = () => {
                 </thead>
                 <tbody>
                   {filteredProducts.length === 0 ? (
-                    <tr><td colSpan={stockFilter === 'sem_estoque' ? 12 : 11} className="px-5 py-8 text-center text-muted-foreground">Nenhum motorredutor encontrado</td></tr>
+                    <tr><td colSpan={stockFilter === 'sem_estoque' ? 13 : 12} className="px-5 py-8 text-center text-muted-foreground">Nenhum motorredutor encontrado</td></tr>
                   ) : (
                     filteredProducts.map(p => (
-                      <tr key={p.id} className={`border-b last:border-0 hover:bg-muted/30 transition-colors ${p.quantity === 0 ? 'opacity-50' : ''} ${selectedIds.has(p.id) ? 'bg-primary/5' : ''}`}>
+                      <tr key={p.id} className={`border-b last:border-0 hover:bg-muted/30 transition-colors ${p.quantity === 0 ? 'opacity-50' : ''} ${selectedIds.has(p.id) ? 'bg-primary/5' : ''} ${p.status === 'reservado' ? 'bg-yellow-500/5' : ''} ${p.status === 'vendido' ? 'bg-destructive/5' : ''}`}>
                         <td className="px-3 py-2.5 print:hidden">
                           <input
                             type="checkbox"
@@ -744,6 +776,22 @@ const Motorredutores = () => {
                         <td className="px-4 py-2.5 text-xs font-mono">{p.notaFiscal || '—'}</td>
                         <td className="px-4 py-2.5 text-xs font-mono">{p.ofNumber || '—'}</td>
                         <td className="px-4 py-2.5 text-xs">{p.cliente || '—'}</td>
+                        <td className="px-4 py-2.5 text-xs">
+                          <select
+                            value={p.status}
+                            onChange={e => handleStatusChange(p, e.target.value as MtdStatus)}
+                            className={`text-xs font-semibold rounded px-2 py-1 border cursor-pointer outline-none ${
+                              p.status === 'disponivel' ? 'bg-success/15 text-success border-success/30' :
+                              p.status === 'reservado' ? 'bg-yellow-500/15 text-yellow-700 dark:text-yellow-400 border-yellow-500/30' :
+                              'bg-destructive/15 text-destructive border-destructive/30'
+                            }`}
+                            title={p.status === 'reservado' ? `Reservado para ${p.cliente || '—'} — não disponível` : ''}
+                          >
+                            {(Object.keys(MTD_STATUS_LABELS) as MtdStatus[]).map(s => (
+                              <option key={s} value={s}>{MTD_STATUS_LABELS[s]}</option>
+                            ))}
+                          </select>
+                        </td>
                         {stockFilter === 'sem_estoque' && (
                           <td className="px-4 py-2.5 text-xs font-mono">
                             {lastExitByProduct[p.id]
@@ -1769,6 +1817,43 @@ const Motorredutores = () => {
                 <button type="submit" className="bg-primary text-primary-foreground font-semibold px-4 py-2 rounded-md hover:bg-primary/90 transition-colors text-sm">Salvar</button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Status / Reserva dialog */}
+      {statusDialog && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setStatusDialog(null)}>
+          <div className="bg-background rounded-lg shadow-xl border w-full max-w-md p-6" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-foreground">
+                Marcar como {MTD_STATUS_LABELS[statusDialog.newStatus]}
+              </h3>
+              <button onClick={() => setStatusDialog(null)} className="text-muted-foreground hover:text-foreground"><X className="w-5 h-5" /></button>
+            </div>
+            <div className="text-sm text-muted-foreground mb-4 space-y-1">
+              <p><strong className="text-foreground">{statusDialog.product.code}</strong> — {statusDialog.product.description}</p>
+              <p>Cliente atual: <strong className="text-foreground">{statusDialog.product.cliente || '—'}</strong></p>
+              {statusDialog.newStatus === 'reservado' && (
+                <p className="text-xs">Informe para qual cliente este motor está sendo reservado. Ele deixará de aparecer como disponível.</p>
+              )}
+            </div>
+            <div className="mb-4">
+              <label className="text-sm font-medium text-foreground block mb-1">
+                {statusDialog.newStatus === 'reservado' ? 'Reservar para o cliente' : 'Cliente final (venda)'}
+              </label>
+              <input
+                value={statusDialog.newCliente}
+                onChange={e => setStatusDialog(prev => prev ? { ...prev, newCliente: e.target.value } : prev)}
+                placeholder="Nome do cliente"
+                className="input-steel w-full"
+                autoFocus
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setStatusDialog(null)} className="px-4 py-2 rounded-md border text-sm font-medium text-muted-foreground hover:bg-muted">Cancelar</button>
+              <button onClick={handleConfirmStatusChange} className="px-4 py-2 rounded-md bg-primary text-primary-foreground font-semibold text-sm hover:bg-primary/90">Confirmar</button>
+            </div>
           </div>
         </div>
       )}
