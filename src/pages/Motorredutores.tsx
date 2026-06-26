@@ -3,6 +3,7 @@ import {
   getMtdProducts, addMtdProduct, updateMtdProduct, deleteMtdProduct,
   getMtdMovements, addMtdMovement,
   MtdProduct, MtdMovement, MtdType, MTD_TYPE_LABELS, CONDICAO_OPTIONS,
+  MtdStatus, MTD_STATUS_LABELS,
 } from '@/lib/mtd';
 import { formatQuantity } from '@/lib/inventory';
 import AppLayout from '@/components/AppLayout';
