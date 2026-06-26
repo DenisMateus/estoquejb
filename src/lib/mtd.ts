@@ -129,6 +129,7 @@ export async function updateMtdProduct(id: string, updates: Partial<Omit<MtdProd
   if (updates.ofNumber !== undefined) dbUpdates.of_number = updates.ofNumber;
   if (updates.cliente !== undefined) dbUpdates.cliente = updates.cliente;
   if (updates.condicao !== undefined) dbUpdates.condicao = updates.condicao;
+  if ((updates as any).status !== undefined) dbUpdates.status = (updates as any).status;
   const { data, error } = await supabase.from('mtd_products').update(dbUpdates).eq('id', id).select().single();
   if (error) throw error;
   return mapMtdProduct(data);
