@@ -749,7 +749,7 @@ const Motorredutores = () => {
                     <tr><td colSpan={stockFilter === 'sem_estoque' ? 13 : 12} className="px-5 py-8 text-center text-muted-foreground">Nenhum motorredutor encontrado</td></tr>
                   ) : (
                     filteredProducts.map(p => (
-                      <tr key={p.id} className={`border-b last:border-0 hover:bg-muted/30 transition-colors ${p.quantity === 0 ? 'opacity-50' : ''} ${selectedIds.has(p.id) ? 'bg-primary/5' : ''}`}>
+                      <tr key={p.id} className={`border-b last:border-0 hover:bg-muted/30 transition-colors ${p.quantity === 0 ? 'opacity-50' : ''} ${selectedIds.has(p.id) ? 'bg-primary/5' : ''} ${p.status === 'reservado' ? 'bg-yellow-500/5' : ''} ${p.status === 'vendido' ? 'bg-destructive/5' : ''}`}>
                         <td className="px-3 py-2.5 print:hidden">
                           <input
                             type="checkbox"
