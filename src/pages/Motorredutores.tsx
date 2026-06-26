@@ -102,6 +102,9 @@ const Motorredutores = () => {
   const [editCliente, setEditCliente] = useState('');
   const [editCondicao, setEditCondicao] = useState('');
 
+  // Reserva / status
+  const [statusDialog, setStatusDialog] = useState<{ product: MtdProduct; newStatus: MtdStatus; newCliente: string } | null>(null);
+
   // Month filter for movements
   const [selectedMonth, setSelectedMonth] = useState(new Date());
 
