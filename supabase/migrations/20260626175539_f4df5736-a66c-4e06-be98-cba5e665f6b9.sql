@@ -1,0 +1,1 @@
+ALTER TABLE public.mtd_products ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'disponivel';
