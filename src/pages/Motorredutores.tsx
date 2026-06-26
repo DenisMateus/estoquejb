@@ -1821,6 +1821,43 @@ const Motorredutores = () => {
         </div>
       )}
 
+      {/* Status / Reserva dialog */}
+      {statusDialog && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setStatusDialog(null)}>
+          <div className="bg-background rounded-lg shadow-xl border w-full max-w-md p-6" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-foreground">
+                Marcar como {MTD_STATUS_LABELS[statusDialog.newStatus]}
+              </h3>
+              <button onClick={() => setStatusDialog(null)} className="text-muted-foreground hover:text-foreground"><X className="w-5 h-5" /></button>
+            </div>
+            <div className="text-sm text-muted-foreground mb-4 space-y-1">
+              <p><strong className="text-foreground">{statusDialog.product.code}</strong> — {statusDialog.product.description}</p>
+              <p>Cliente atual: <strong className="text-foreground">{statusDialog.product.cliente || '—'}</strong></p>
+              {statusDialog.newStatus === 'reservado' && (
+                <p className="text-xs">Informe para qual cliente este motor está sendo reservado. Ele deixará de aparecer como disponível.</p>
+              )}
+            </div>
+            <div className="mb-4">
+              <label className="text-sm font-medium text-foreground block mb-1">
+                {statusDialog.newStatus === 'reservado' ? 'Reservar para o cliente' : 'Cliente final (venda)'}
+              </label>
+              <input
+                value={statusDialog.newCliente}
+                onChange={e => setStatusDialog(prev => prev ? { ...prev, newCliente: e.target.value } : prev)}
+                placeholder="Nome do cliente"
+                className="input-steel w-full"
+                autoFocus
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setStatusDialog(null)} className="px-4 py-2 rounded-md border text-sm font-medium text-muted-foreground hover:bg-muted">Cancelar</button>
+              <button onClick={handleConfirmStatusChange} className="px-4 py-2 rounded-md bg-primary text-primary-foreground font-semibold text-sm hover:bg-primary/90">Confirmar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Delete confirmation dialog */}
       {deleteTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
