@@ -470,6 +470,33 @@ const Motorredutores = () => {
 
   const handlePrint = () => window.print();
 
+  const handleStatusChange = (product: MtdProduct, newStatus: MtdStatus) => {
+    if (newStatus === product.status) return;
+    if (newStatus === 'disponivel') {
+      // muda direto, mantém cliente
+      updateMtdProduct(product.id, { status: 'disponivel' })
+        .then(() => { toast.success(`Motor ${product.code} marcado como Disponível`); reload(); })
+        .catch((err: any) => toast.error(err.message));
+      return;
+    }
+    // reservado ou vendido => abre diálogo para confirmar/atualizar cliente
+    setStatusDialog({ product, newStatus, newCliente: product.cliente || '' });
+  };
+
+  const handleConfirmStatusChange = async () => {
+    if (!statusDialog) return;
+    const { product, newStatus, newCliente } = statusDialog;
+    try {
+      await updateMtdProduct(product.id, { status: newStatus, cliente: newCliente.trim() });
+      const label = MTD_STATUS_LABELS[newStatus];
+      const trocou = newCliente.trim() !== (product.cliente || '').trim();
+      toast.success(`Motor ${product.code} ${label}${trocou ? ` para ${newCliente.trim() || '—'}` : ''}`);
+      setStatusDialog(null);
+      reload();
+    } catch (err: any) { toast.error(err.message); }
+  };
+
+
   const handleInventarioNao = (product: MtdProduct) => {
     setInventarioConfirm(null);
     setInventarioChecked(prev => ({ ...prev, [product.id]: 'nao' }));
