@@ -18,6 +18,14 @@ export const MTD_TYPE_LABELS: Record<MtdType, string> = {
   VALVULA_ROTATIVA: 'Válvula Rotativa',
 };
 
+export type MtdStatus = 'disponivel' | 'reservado' | 'vendido';
+
+export const MTD_STATUS_LABELS: Record<MtdStatus, string> = {
+  disponivel: 'Disponível',
+  reservado: 'Reservado',
+  vendido: 'Vendido',
+};
+
 export interface MtdProduct {
   id: string;
   code: string;
@@ -29,6 +37,7 @@ export interface MtdProduct {
   ofNumber: string;
   cliente: string;
   condicao: string;
+  status: MtdStatus;
   createdAt: string;
 }
 
