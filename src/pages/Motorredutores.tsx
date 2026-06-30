@@ -11,6 +11,7 @@ import { Plus, Trash2, Search, Pencil, X, ArrowLeftRight, Printer, ChevronLeft, 
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
 import logoHeader from '@/assets/logo_header.png';
+import AdvancedEntryDialog from '@/components/AdvancedEntryDialog';
 
 const DELETE_SECRET_CODE = 'Jhonrob@1';
 
@@ -90,6 +91,7 @@ const Motorredutores = () => {
 
   // Entrada date
   const [entDate, setEntDate] = useState(todayLocalISO());
+  const [showAdvancedEntry, setShowAdvancedEntry] = useState(false);
 
   // Edit
   const [editProduct, setEditProduct] = useState<MtdProduct | null>(null);
@@ -824,10 +826,15 @@ const Motorredutores = () => {
                 <span className="font-semibold text-foreground capitalize min-w-[180px] text-center">{getMonthLabel(selectedMonth)}</span>
                 <button onClick={nextMonth} className="p-1.5 rounded hover:bg-muted transition-colors"><ChevronRight className="w-5 h-5" /></button>
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
                 <button onClick={() => { setMovFormType('entrada'); setShowMovForm(true); }}
                   className="inline-flex items-center gap-2 bg-success text-white font-semibold px-4 py-2 rounded-md hover:bg-success/90 transition-colors text-sm">
                   <ArrowDown className="w-4 h-4" /> Entrada de Motor
+                </button>
+                <button onClick={() => setShowAdvancedEntry(true)}
+                  className="inline-flex items-center gap-2 bg-primary text-primary-foreground font-semibold px-4 py-2 rounded-md hover:bg-primary/90 transition-colors text-sm"
+                  title="Extrair dados de motores a partir de imagem de NF/Excel">
+                  ✨ Entrada Avançada
                 </button>
                 <button onClick={() => { setMovFormType('saida'); setShowMovForm(true); }}
                   className="inline-flex items-center gap-2 bg-destructive text-destructive-foreground font-semibold px-4 py-2 rounded-md hover:bg-destructive/90 transition-colors text-sm">
@@ -835,6 +842,14 @@ const Motorredutores = () => {
                 </button>
               </div>
             </div>
+
+            <AdvancedEntryDialog
+              open={showAdvancedEntry}
+              onClose={() => setShowAdvancedEntry(false)}
+              onSaved={reload}
+              defaultDate={entDate}
+            />
+
 
             {/* Summary */}
             <div className="grid grid-cols-2 gap-4 print:hidden">
