@@ -192,6 +192,117 @@ export type Database = {
         }
         Relationships: []
       }
+      ventiladores_movements: {
+        Row: {
+          cliente: string
+          code: string
+          created_at: string
+          date: string
+          description: string
+          id: string
+          observacao: string
+          of_number: string
+          tipo: string
+          type: string
+          ventilador_id: string | null
+        }
+        Insert: {
+          cliente?: string
+          code: string
+          created_at?: string
+          date: string
+          description: string
+          id?: string
+          observacao?: string
+          of_number?: string
+          tipo?: string
+          type: string
+          ventilador_id?: string | null
+        }
+        Update: {
+          cliente?: string
+          code?: string
+          created_at?: string
+          date?: string
+          description?: string
+          id?: string
+          observacao?: string
+          of_number?: string
+          tipo?: string
+          type?: string
+          ventilador_id?: string | null
+        }
+        Relationships: []
+      }
+      ventiladores_pending: {
+        Row: {
+          cliente: string
+          code: string
+          created_at: string
+          description: string
+          id: string
+          of_number: string
+          prazo_entrega: string
+          priority: number
+          tipo: string
+        }
+        Insert: {
+          cliente?: string
+          code: string
+          created_at?: string
+          description: string
+          id?: string
+          of_number?: string
+          prazo_entrega?: string
+          priority?: number
+          tipo?: string
+        }
+        Update: {
+          cliente?: string
+          code?: string
+          created_at?: string
+          description?: string
+          id?: string
+          of_number?: string
+          prazo_entrega?: string
+          priority?: number
+          tipo?: string
+        }
+        Relationships: []
+      }
+      ventiladores_stock: {
+        Row: {
+          cliente: string
+          code: string
+          created_at: string
+          description: string
+          id: string
+          of_number: string
+          status: string
+          tipo: string
+        }
+        Insert: {
+          cliente?: string
+          code: string
+          created_at?: string
+          description: string
+          id?: string
+          of_number?: string
+          status?: string
+          tipo?: string
+        }
+        Update: {
+          cliente?: string
+          code?: string
+          created_at?: string
+          description?: string
+          id?: string
+          of_number?: string
+          status?: string
+          tipo?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
