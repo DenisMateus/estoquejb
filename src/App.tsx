@@ -9,6 +9,7 @@ import Dashboard from "./pages/Dashboard";
 import Products from "./pages/Products";
 import Guilhotina from "./pages/Guilhotina";
 import Motorredutores from "./pages/Motorredutores";
+import Ventiladores from "./pages/Ventiladores";
 import Movements from "./pages/Movements";
 import Reports from "./pages/Reports";
 import NotFound from "./pages/NotFound";
