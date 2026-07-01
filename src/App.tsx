@@ -9,6 +9,7 @@ import Dashboard from "./pages/Dashboard";
 import Products from "./pages/Products";
 import Guilhotina from "./pages/Guilhotina";
 import Motorredutores from "./pages/Motorredutores";
+import Ventiladores from "./pages/Ventiladores";
 import Movements from "./pages/Movements";
 import Reports from "./pages/Reports";
 import NotFound from "./pages/NotFound";
@@ -29,6 +30,7 @@ const App = () => (
             <Route path="/products" element={<ProtectedRoute><Products /></ProtectedRoute>} />
             <Route path="/guilhotina" element={<ProtectedRoute><Guilhotina /></ProtectedRoute>} />
             <Route path="/motorredutores" element={<ProtectedRoute><Motorredutores /></ProtectedRoute>} />
+            <Route path="/ventiladores" element={<ProtectedRoute><Ventiladores /></ProtectedRoute>} />
             <Route path="/movements" element={<ProtectedRoute><Movements /></ProtectedRoute>} />
             <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />

@@ -15,6 +15,7 @@ import {
   Sun,
   Moon,
   Cog,
+  Fan,
 } from 'lucide-react';
 
 const navItems = [
@@ -22,6 +23,7 @@ const navItems = [
   { path: '/products', label: 'Usinagem', icon: Package },
   { path: '/guilhotina', label: 'Guilhotina', icon: Scissors },
   { path: '/motorredutores', label: 'MTD', icon: Cog },
+  { path: '/ventiladores', label: 'Ventiladores', icon: Fan },
   { path: '/movements', label: 'Movimentações', icon: ArrowLeftRight },
   { path: '/reports', label: 'Relatórios', icon: FileSpreadsheet },
 ];
