@@ -106,6 +106,7 @@ export async function addVentStock(input: Omit<VentiladorStock, 'id' | 'createdA
     cliente: input.cliente,
     of_number: input.ofNumber,
     status: input.status,
+    volta_obra: input.voltaObra,
   }).select().single();
   if (error) throw error;
   return mapStock(data);
@@ -119,6 +120,7 @@ export async function updateVentStock(id: string, updates: Partial<Omit<Ventilad
   if (updates.cliente !== undefined) db.cliente = updates.cliente;
   if (updates.ofNumber !== undefined) db.of_number = updates.ofNumber;
   if (updates.status !== undefined) db.status = updates.status;
+  if (updates.voltaObra !== undefined) db.volta_obra = updates.voltaObra;
   const { data, error } = await supabase.from('ventiladores_stock').update(db).eq('id', id).select().single();
   if (error) throw error;
   return mapStock(data);
