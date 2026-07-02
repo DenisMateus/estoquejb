@@ -22,6 +22,7 @@ export interface VentiladorStock {
   cliente: string;
   ofNumber: string;
   status: VentiladorStatus;
+  voltaObra: boolean;
   createdAt: string;
 }
 
@@ -34,6 +35,7 @@ export interface VentiladorPending {
   ofNumber: string;
   prazoEntrega: string;
   priority: number;
+  quantidade: number;
   createdAt: string;
 }
 
