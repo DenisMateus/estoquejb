@@ -1,0 +1,2 @@
+ALTER TABLE public.ventiladores_stock ADD COLUMN IF NOT EXISTS volta_obra boolean NOT NULL DEFAULT false;
+ALTER TABLE public.ventiladores_pending ADD COLUMN IF NOT EXISTS quantidade integer NOT NULL DEFAULT 1;

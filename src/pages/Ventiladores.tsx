@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -62,19 +63,26 @@ export default function Ventiladores() {
   const [stockDialog, setStockDialog] = useState(false);
   const [stockForm, setStockForm] = useState({
     code: '', description: '', tipo: 'SILO' as VentiladorTipo,
-    cliente: '', ofNumber: '', status: 'disponivel' as VentiladorStatus,
+    clienteMode: 'estoque' as 'estoque' | 'cliente',
+    cliente: '', ofNumber: '',
+    voltaObra: false,
   });
 
   const [pendingDialog, setPendingDialog] = useState(false);
   const [pendingForm, setPendingForm] = useState({
     code: '', description: '', tipo: 'SILO' as VentiladorTipo,
-    cliente: '', ofNumber: '', prazoEntrega: '',
+    cliente: '', ofNumber: '', prazoEntrega: '', quantidade: 1,
   });
 
   const [exitDialog, setExitDialog] = useState<VentiladorStock | null>(null);
   const [exitObs, setExitObs] = useState('');
 
   const [confirmArrival, setConfirmArrival] = useState<VentiladorPending | null>(null);
+  const [arrivalQty, setArrivalQty] = useState(1);
+
+  // Reserva modal (substitui window.prompt)
+  const [reserveDialog, setReserveDialog] = useState<{ stock: VentiladorStock; status: VentiladorStatus } | null>(null);
+  const [reserveForm, setReserveForm] = useState({ cliente: '', ofNumber: '' });
 
   // ------- filters
   const filteredStock = useMemo(() => {
@@ -123,16 +131,27 @@ export default function Ventiladores() {
     if (!stockForm.code.trim() || !stockForm.description.trim()) {
       toast({ title: 'Preencha código e descrição', variant: 'destructive' }); return;
     }
+    const isEstoque = stockForm.clienteMode === 'estoque';
+    const cliente = isEstoque ? '' : stockForm.cliente.trim();
+    const ofNumber = isEstoque ? '' : stockForm.ofNumber.trim();
+    const status: VentiladorStatus = isEstoque ? 'disponivel' : 'reservado';
+    if (!isEstoque && !cliente) {
+      toast({ title: 'Informe o cliente ou selecione ESTOQUE', variant: 'destructive' }); return;
+    }
     try {
-      await addVentStock({ ...stockForm });
+      await addVentStock({
+        code: stockForm.code, description: stockForm.description, tipo: stockForm.tipo,
+        cliente, ofNumber, status, voltaObra: stockForm.voltaObra,
+      });
       await addVentMovement({
         ventiladorId: null,
         code: stockForm.code, description: stockForm.description, tipo: stockForm.tipo,
-        type: 'entrada', cliente: stockForm.cliente, ofNumber: stockForm.ofNumber,
-        observacao: 'Entrada manual em estoque', date: todayLocalISO(),
+        type: 'entrada', cliente, ofNumber,
+        observacao: stockForm.voltaObra ? 'Entrada - volta de obra' : 'Entrada manual em estoque',
+        date: todayLocalISO(),
       });
       setStockDialog(false);
-      setStockForm({ code: '', description: '', tipo: 'SILO', cliente: '', ofNumber: '', status: 'disponivel' });
+      setStockForm({ code: '', description: '', tipo: 'SILO', clienteMode: 'estoque', cliente: '', ofNumber: '', voltaObra: false });
       toast({ title: 'Ventilador adicionado ao estoque' });
       reload();
     } catch (e: any) {
@@ -144,7 +163,7 @@ export default function Ventiladores() {
     if (!pendingForm.code.trim() || !pendingForm.description.trim() || !pendingForm.cliente.trim()) {
       toast({ title: 'Preencha código, descrição e cliente', variant: 'destructive' }); return;
     }
-    // Verifica se há ventilador com mesmo código disponível em estoque
+    const qty = Math.max(1, Number(pendingForm.quantidade) || 1);
     const disponivel = stock.find(s =>
       s.code.trim().toLowerCase() === pendingForm.code.trim().toLowerCase() &&
       s.status === 'disponivel',
@@ -160,16 +179,16 @@ export default function Ventiladores() {
         });
         toast({ title: 'Ventilador reservado no estoque' });
         setPendingDialog(false);
-        setPendingForm({ code: '', description: '', tipo: 'SILO', cliente: '', ofNumber: '', prazoEntrega: '' });
+        setPendingForm({ code: '', description: '', tipo: 'SILO', cliente: '', ofNumber: '', prazoEntrega: '', quantidade: 1 });
         reload();
         return;
       }
     }
     try {
       const maxP = pending.reduce((mx, p) => Math.max(mx, p.priority), 0);
-      await addVentPending({ ...pendingForm, priority: maxP + 1 });
+      await addVentPending({ ...pendingForm, quantidade: qty, priority: maxP + 1 });
       setPendingDialog(false);
-      setPendingForm({ code: '', description: '', tipo: 'SILO', cliente: '', ofNumber: '', prazoEntrega: '' });
+      setPendingForm({ code: '', description: '', tipo: 'SILO', cliente: '', ofNumber: '', prazoEntrega: '', quantidade: 1 });
       toast({ title: 'Pendência registrada' });
       reload();
     } catch (e: any) {
@@ -181,7 +200,6 @@ export default function Ventiladores() {
     const list = [...filteredPending];
     const target = idx + dir;
     if (target < 0 || target >= list.length) return;
-    // troca prioridade
     const a = list[idx]; const b = list[target];
     const pa = a.priority; const pb = b.priority;
     await reorderVentPending([
@@ -191,22 +209,37 @@ export default function Ventiladores() {
     reload();
   };
 
-  const confirmArrivalAction = async (p: VentiladorPending) => {
-    // Cria stock reservado ao cliente e remove pendência
+  const openArrival = (p: VentiladorPending) => {
+    setArrivalQty(p.quantidade);
+    setConfirmArrival(p);
+  };
+
+  const confirmArrivalAction = async () => {
+    if (!confirmArrival) return;
+    const p = confirmArrival;
+    const chegou = Math.max(1, Math.min(p.quantidade, Number(arrivalQty) || 0));
     try {
-      await addVentStock({
-        code: p.code, description: p.description, tipo: p.tipo,
-        cliente: p.cliente, ofNumber: p.ofNumber, status: 'reservado',
-      });
-      await addVentMovement({
-        ventiladorId: null,
-        code: p.code, description: p.description, tipo: p.tipo,
-        type: 'entrada', cliente: p.cliente, ofNumber: p.ofNumber,
-        observacao: `Chegada de carga - reservado para ${p.cliente}`,
-        date: todayLocalISO(),
-      });
-      await deleteVentPending(p.id);
-      toast({ title: `Ventilador de ${p.cliente} recebido e reservado` });
+      for (let i = 0; i < chegou; i++) {
+        await addVentStock({
+          code: p.code, description: p.description, tipo: p.tipo,
+          cliente: p.cliente, ofNumber: p.ofNumber, status: 'reservado', voltaObra: false,
+        });
+        await addVentMovement({
+          ventiladorId: null,
+          code: p.code, description: p.description, tipo: p.tipo,
+          type: 'entrada', cliente: p.cliente, ofNumber: p.ofNumber,
+          observacao: `Chegada de carga - reservado para ${p.cliente}`,
+          date: todayLocalISO(),
+        });
+      }
+      const restante = p.quantidade - chegou;
+      if (restante <= 0) {
+        await deleteVentPending(p.id);
+        toast({ title: `${chegou} ventilador(es) recebido(s). Pendência concluída.` });
+      } else {
+        await updateVentPending(p.id, { quantidade: restante });
+        toast({ title: `${chegou} chegou(aram). Restam ${restante} na pendência.` });
+      }
       setConfirmArrival(null);
       reload();
     } catch (e: any) {
@@ -244,16 +277,31 @@ export default function Ventiladores() {
   };
 
   const setStockStatus = async (s: VentiladorStock, status: VentiladorStatus) => {
-    let cliente = s.cliente; let of = s.ofNumber;
-    if (status !== 'disponivel') {
-      const c = window.prompt('Cliente:', s.cliente || '');
-      if (c === null) return;
-      cliente = c;
-      const o = window.prompt('OF:', s.ofNumber || '');
-      if (o === null) return;
-      of = o;
+    if (status === 'disponivel') {
+      await updateVentStock(s.id, { status, cliente: '', ofNumber: '' });
+      reload();
+      return;
     }
-    await updateVentStock(s.id, { status, cliente, ofNumber: of });
+    setReserveForm({ cliente: s.cliente || '', ofNumber: s.ofNumber || '' });
+    setReserveDialog({ stock: s, status });
+  };
+
+  const confirmReserve = async () => {
+    if (!reserveDialog) return;
+    if (!reserveForm.cliente.trim()) {
+      toast({ title: 'Informe o cliente', variant: 'destructive' }); return;
+    }
+    await updateVentStock(reserveDialog.stock.id, {
+      status: reserveDialog.status,
+      cliente: reserveForm.cliente.trim(),
+      ofNumber: reserveForm.ofNumber.trim(),
+    });
+    setReserveDialog(null);
+    reload();
+  };
+
+  const toggleVoltaObra = async (s: VentiladorStock) => {
+    await updateVentStock(s.id, { voltaObra: !s.voltaObra });
     reload();
   };
 
@@ -311,11 +359,18 @@ export default function Ventiladores() {
             Total em estoque: <span className="font-bold text-primary">{stock.length}</span>
           </div>
           <div className="rounded border px-3 py-1.5 bg-muted/40">
-            Pendências: <span className="font-bold text-yellow-600">{pending.length}</span>
+            Pendências: <span className="font-bold text-yellow-600">
+              {pending.reduce((n, p) => n + p.quantidade, 0)}
+            </span>
           </div>
           <div className="rounded border px-3 py-1.5 bg-muted/40">
             Reservados: <span className="font-bold text-yellow-600">
               {stock.filter(s => s.status === 'reservado').length}
+            </span>
+          </div>
+          <div className="rounded border px-3 py-1.5 bg-muted/40">
+            Volta de obra: <span className="font-bold text-orange-600">
+              {stock.filter(s => s.voltaObra).length}
             </span>
           </div>
         </div>
@@ -332,6 +387,7 @@ export default function Ventiladores() {
                   <th className="text-left p-2">Cliente</th>
                   <th className="text-left p-2">OF</th>
                   <th className="text-left p-2">Status</th>
+                  <th className="text-center p-2" title="Volta de obra">V.O.</th>
                   <th className="text-left p-2">Data</th>
                   <th className="text-right p-2">Ações</th>
                 </tr>
@@ -345,7 +401,7 @@ export default function Ventiladores() {
                     <td className="p-2 font-mono">{s.code}</td>
                     <td className="p-2">{s.description}</td>
                     <td className="p-2">{VENT_TIPO_LABELS[s.tipo]}</td>
-                    <td className="p-2">{s.cliente || '-'}</td>
+                    <td className="p-2">{s.cliente || <span className="text-muted-foreground">ESTOQUE</span>}</td>
                     <td className="p-2">{s.ofNumber || '-'}</td>
                     <td className="p-2">
                       <Select value={s.status} onValueChange={(v) => setStockStatus(s, v as VentiladorStatus)}>
@@ -356,6 +412,14 @@ export default function Ventiladores() {
                           )}
                         </SelectContent>
                       </Select>
+                    </td>
+                    <td className="p-2 text-center">
+                      <Checkbox
+                        checked={s.voltaObra}
+                        onCheckedChange={() => toggleVoltaObra(s)}
+                        title="Volta de obra"
+                        aria-label="Volta de obra"
+                      />
                     </td>
                     <td className="p-2">{formatDateBR(s.createdAt)}</td>
                     <td className="p-2 text-right whitespace-nowrap">
@@ -369,7 +433,7 @@ export default function Ventiladores() {
                   </tr>
                 ))}
                 {filteredStock.length === 0 && (
-                  <tr><td colSpan={8} className="p-6 text-center text-muted-foreground">Nenhum ventilador em estoque.</td></tr>
+                  <tr><td colSpan={9} className="p-6 text-center text-muted-foreground">Nenhum ventilador em estoque.</td></tr>
                 )}
               </tbody>
             </table>
@@ -382,12 +446,13 @@ export default function Ventiladores() {
             <table className="w-full text-xs">
               <thead className="bg-muted/60">
                 <tr>
-                  <th className="text-left p-2 w-16">Ordem</th>
+                  <th className="text-left p-2 w-24">Prioridade</th>
                   <th className="text-left p-2">Código</th>
                   <th className="text-left p-2">Descrição</th>
                   <th className="text-left p-2">Tipo</th>
                   <th className="text-left p-2">Cliente</th>
                   <th className="text-left p-2">OF</th>
+                  <th className="text-center p-2">Qtd</th>
                   <th className="text-left p-2">Prazo</th>
                   <th className="text-right p-2">Ações</th>
                 </tr>
@@ -411,9 +476,10 @@ export default function Ventiladores() {
                     <td className="p-2">{VENT_TIPO_LABELS[p.tipo]}</td>
                     <td className="p-2">{p.cliente}</td>
                     <td className="p-2">{p.ofNumber || '-'}</td>
+                    <td className="p-2 text-center font-bold">{p.quantidade}</td>
                     <td className="p-2">{p.prazoEntrega ? formatDateBR(p.prazoEntrega) : '-'}</td>
                     <td className="p-2 text-right whitespace-nowrap">
-                      <Button size="sm" onClick={() => setConfirmArrival(p)}>
+                      <Button size="sm" onClick={() => openArrival(p)}>
                         <Check className="w-3.5 h-3.5 mr-1" /> Confirmar chegada
                       </Button>
                       <Button size="sm" variant="ghost" className="ml-1" onClick={() => removePending(p.id)}>
@@ -423,7 +489,7 @@ export default function Ventiladores() {
                   </tr>
                 ))}
                 {filteredPending.length === 0 && (
-                  <tr><td colSpan={8} className="p-6 text-center text-muted-foreground">Nenhuma pendência registrada.</td></tr>
+                  <tr><td colSpan={9} className="p-6 text-center text-muted-foreground">Nenhuma pendência registrada.</td></tr>
                 )}
               </tbody>
             </table>
@@ -490,19 +556,32 @@ export default function Ventiladores() {
               </div>
             </div>
             <div><Label>Descrição *</Label><Input value={stockForm.description} onChange={e => setStockForm({ ...stockForm, description: e.target.value })} /></div>
-            <div className="grid grid-cols-2 gap-3">
-              <div><Label>Cliente (opcional)</Label><Input value={stockForm.cliente} onChange={e => setStockForm({ ...stockForm, cliente: e.target.value })} /></div>
-              <div><Label>OF (opcional)</Label><Input value={stockForm.ofNumber} onChange={e => setStockForm({ ...stockForm, ofNumber: e.target.value })} /></div>
-            </div>
             <div>
-              <Label>Status</Label>
-              <Select value={stockForm.status} onValueChange={(v) => setStockForm({ ...stockForm, status: v as VentiladorStatus })}>
+              <Label>Destino</Label>
+              <Select
+                value={stockForm.clienteMode}
+                onValueChange={(v) => setStockForm({ ...stockForm, clienteMode: v as 'estoque' | 'cliente' })}
+              >
                 <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>{(Object.keys(VENT_STATUS_LABELS) as VentiladorStatus[]).map(k =>
-                  <SelectItem key={k} value={k}>{VENT_STATUS_LABELS[k]}</SelectItem>)}
+                <SelectContent>
+                  <SelectItem value="estoque">ESTOQUE (disponível)</SelectItem>
+                  <SelectItem value="cliente">Cliente específico (reservado)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
+            {stockForm.clienteMode === 'cliente' && (
+              <div className="grid grid-cols-2 gap-3">
+                <div><Label>Cliente *</Label><Input value={stockForm.cliente} onChange={e => setStockForm({ ...stockForm, cliente: e.target.value })} /></div>
+                <div><Label>OF (opcional)</Label><Input value={stockForm.ofNumber} onChange={e => setStockForm({ ...stockForm, ofNumber: e.target.value })} /></div>
+              </div>
+            )}
+            <label className="flex items-center gap-2 text-sm pt-1 text-muted-foreground cursor-pointer">
+              <Checkbox
+                checked={stockForm.voltaObra}
+                onCheckedChange={(v) => setStockForm({ ...stockForm, voltaObra: Boolean(v) })}
+              />
+              Volta de obra
+            </label>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setStockDialog(false)}>Cancelar</Button>
@@ -527,9 +606,14 @@ export default function Ventiladores() {
               </div>
             </div>
             <div><Label>Descrição *</Label><Input value={pendingForm.description} onChange={e => setPendingForm({ ...pendingForm, description: e.target.value })} /></div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-3 gap-3">
               <div><Label>Cliente *</Label><Input value={pendingForm.cliente} onChange={e => setPendingForm({ ...pendingForm, cliente: e.target.value })} /></div>
               <div><Label>OF</Label><Input value={pendingForm.ofNumber} onChange={e => setPendingForm({ ...pendingForm, ofNumber: e.target.value })} /></div>
+              <div>
+                <Label>Quantidade *</Label>
+                <Input type="number" min={1} value={pendingForm.quantidade}
+                  onChange={e => setPendingForm({ ...pendingForm, quantidade: Number(e.target.value) || 1 })} />
+              </div>
             </div>
             <div>
               <Label>Prazo de entrega</Label>
@@ -548,20 +632,66 @@ export default function Ventiladores() {
         <DialogContent>
           <DialogHeader><DialogTitle>Confirmar chegada de carga</DialogTitle></DialogHeader>
           {confirmArrival && (
-            <div className="text-sm space-y-1">
+            <div className="text-sm space-y-2">
               <div><strong>Código:</strong> {confirmArrival.code}</div>
               <div><strong>Descrição:</strong> {confirmArrival.description}</div>
               <div><strong>Modelo:</strong> {VENT_TIPO_LABELS[confirmArrival.tipo]}</div>
               <div><strong>Cliente:</strong> {confirmArrival.cliente}</div>
               <div><strong>OF:</strong> {confirmArrival.ofNumber || '-'}</div>
-              <p className="mt-3 text-muted-foreground">
-                Este ventilador irá para o Estoque como <strong>Reservado</strong> para {confirmArrival.cliente} e sairá da lista de pendências.
-              </p>
+              <div><strong>Pendente:</strong> {confirmArrival.quantidade}</div>
+              <div className="pt-2">
+                <Label>Quantos ventiladores chegaram?</Label>
+                <Input type="number" min={1} max={confirmArrival.quantidade}
+                  value={arrivalQty}
+                  onChange={e => setArrivalQty(Number(e.target.value) || 1)} />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Máx: {confirmArrival.quantidade}. Restante ficará na pendência.
+                </p>
+              </div>
             </div>
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setConfirmArrival(null)}>Cancelar</Button>
-            <Button onClick={() => confirmArrival && confirmArrivalAction(confirmArrival)}>Confirmar chegada</Button>
+            <Button onClick={confirmArrivalAction}>Confirmar chegada</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reserve dialog (substitui window.prompt) */}
+      <Dialog open={!!reserveDialog} onOpenChange={(o) => !o && setReserveDialog(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {reserveDialog?.status === 'vendido' ? 'Marcar como Vendido' : 'Reservar Ventilador'}
+            </DialogTitle>
+          </DialogHeader>
+          {reserveDialog && (
+            <div className="text-sm space-y-3">
+              <div>
+                <strong>{reserveDialog.stock.code}</strong> - {reserveDialog.stock.description}
+              </div>
+              <div>
+                <Label>Cliente *</Label>
+                <Input
+                  autoFocus
+                  value={reserveForm.cliente}
+                  onChange={e => setReserveForm({ ...reserveForm, cliente: e.target.value })}
+                  placeholder="Nome do cliente"
+                />
+              </div>
+              <div>
+                <Label>OF</Label>
+                <Input
+                  value={reserveForm.ofNumber}
+                  onChange={e => setReserveForm({ ...reserveForm, ofNumber: e.target.value })}
+                  placeholder="Número da OF (opcional)"
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setReserveDialog(null)}>Cancelar</Button>
+            <Button onClick={confirmReserve}>Confirmar</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

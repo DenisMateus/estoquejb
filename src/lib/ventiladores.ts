@@ -22,6 +22,7 @@ export interface VentiladorStock {
   cliente: string;
   ofNumber: string;
   status: VentiladorStatus;
+  voltaObra: boolean;
   createdAt: string;
 }
 
@@ -34,6 +35,7 @@ export interface VentiladorPending {
   ofNumber: string;
   prazoEntrega: string;
   priority: number;
+  quantidade: number;
   createdAt: string;
 }
 
@@ -59,6 +61,7 @@ const mapStock = (r: any): VentiladorStock => ({
   cliente: r.cliente || '',
   ofNumber: r.of_number || '',
   status: (r.status as VentiladorStatus) || 'disponivel',
+  voltaObra: Boolean(r.volta_obra),
   createdAt: r.created_at,
 });
 
@@ -71,6 +74,7 @@ const mapPending = (r: any): VentiladorPending => ({
   ofNumber: r.of_number || '',
   prazoEntrega: r.prazo_entrega || '',
   priority: Number(r.priority) || 0,
+  quantidade: Number(r.quantidade) || 1,
   createdAt: r.created_at,
 });
 
@@ -102,6 +106,7 @@ export async function addVentStock(input: Omit<VentiladorStock, 'id' | 'createdA
     cliente: input.cliente,
     of_number: input.ofNumber,
     status: input.status,
+    volta_obra: input.voltaObra,
   }).select().single();
   if (error) throw error;
   return mapStock(data);
@@ -115,6 +120,7 @@ export async function updateVentStock(id: string, updates: Partial<Omit<Ventilad
   if (updates.cliente !== undefined) db.cliente = updates.cliente;
   if (updates.ofNumber !== undefined) db.of_number = updates.ofNumber;
   if (updates.status !== undefined) db.status = updates.status;
+  if (updates.voltaObra !== undefined) db.volta_obra = updates.voltaObra;
   const { data, error } = await supabase.from('ventiladores_stock').update(db).eq('id', id).select().single();
   if (error) throw error;
   return mapStock(data);
@@ -140,6 +146,7 @@ export async function addVentPending(input: Omit<VentiladorPending, 'id' | 'crea
     of_number: input.ofNumber,
     prazo_entrega: input.prazoEntrega,
     priority: input.priority,
+    quantidade: input.quantidade,
   }).select().single();
   if (error) throw error;
   return mapPending(data);
@@ -154,6 +161,7 @@ export async function updateVentPending(id: string, updates: Partial<Omit<Ventil
   if (updates.ofNumber !== undefined) db.of_number = updates.ofNumber;
   if (updates.prazoEntrega !== undefined) db.prazo_entrega = updates.prazoEntrega;
   if (updates.priority !== undefined) db.priority = updates.priority;
+  if (updates.quantidade !== undefined) db.quantidade = updates.quantidade;
   const { data, error } = await supabase.from('ventiladores_pending').update(db).eq('id', id).select().single();
   if (error) throw error;
   return mapPending(data);
