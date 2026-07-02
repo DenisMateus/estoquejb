@@ -244,6 +244,7 @@ export type Database = {
           of_number: string
           prazo_entrega: string
           priority: number
+          quantidade: number
           tipo: string
         }
         Insert: {
@@ -255,6 +256,7 @@ export type Database = {
           of_number?: string
           prazo_entrega?: string
           priority?: number
+          quantidade?: number
           tipo?: string
         }
         Update: {
@@ -266,6 +268,7 @@ export type Database = {
           of_number?: string
           prazo_entrega?: string
           priority?: number
+          quantidade?: number
           tipo?: string
         }
         Relationships: []
@@ -280,6 +283,7 @@ export type Database = {
           of_number: string
           status: string
           tipo: string
+          volta_obra: boolean
         }
         Insert: {
           cliente?: string
@@ -290,6 +294,7 @@ export type Database = {
           of_number?: string
           status?: string
           tipo?: string
+          volta_obra?: boolean
         }
         Update: {
           cliente?: string
@@ -300,6 +305,7 @@ export type Database = {
           of_number?: string
           status?: string
           tipo?: string
+          volta_obra?: boolean
         }
         Relationships: []
       }
