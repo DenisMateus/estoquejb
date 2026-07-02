@@ -146,6 +146,7 @@ export async function addVentPending(input: Omit<VentiladorPending, 'id' | 'crea
     of_number: input.ofNumber,
     prazo_entrega: input.prazoEntrega,
     priority: input.priority,
+    quantidade: input.quantidade,
   }).select().single();
   if (error) throw error;
   return mapPending(data);
@@ -160,6 +161,7 @@ export async function updateVentPending(id: string, updates: Partial<Omit<Ventil
   if (updates.ofNumber !== undefined) db.of_number = updates.ofNumber;
   if (updates.prazoEntrega !== undefined) db.prazo_entrega = updates.prazoEntrega;
   if (updates.priority !== undefined) db.priority = updates.priority;
+  if (updates.quantidade !== undefined) db.quantidade = updates.quantidade;
   const { data, error } = await supabase.from('ventiladores_pending').update(db).eq('id', id).select().single();
   if (error) throw error;
   return mapPending(data);
