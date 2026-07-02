@@ -61,6 +61,7 @@ const mapStock = (r: any): VentiladorStock => ({
   cliente: r.cliente || '',
   ofNumber: r.of_number || '',
   status: (r.status as VentiladorStatus) || 'disponivel',
+  voltaObra: Boolean(r.volta_obra),
   createdAt: r.created_at,
 });
 
@@ -73,6 +74,7 @@ const mapPending = (r: any): VentiladorPending => ({
   ofNumber: r.of_number || '',
   prazoEntrega: r.prazo_entrega || '',
   priority: Number(r.priority) || 0,
+  quantidade: Number(r.quantidade) || 1,
   createdAt: r.created_at,
 });
 
