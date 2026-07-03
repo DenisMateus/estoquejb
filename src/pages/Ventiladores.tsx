@@ -12,7 +12,7 @@ import {
 import { toast } from '@/hooks/use-toast';
 import {
   Fan, Plus, Search, Trash2, ArrowDown, ArrowUp, Check, PackageCheck,
-  Warehouse, ClipboardList, ArrowLeftRight,
+  Warehouse, ClipboardList, ArrowLeftRight, Pencil,
 } from 'lucide-react';
 import {
   addVentMovement,
