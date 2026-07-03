@@ -537,9 +537,13 @@ export default function Ventiladores() {
                       <Button size="sm" onClick={() => openArrival(p)}>
                         <Check className="w-3.5 h-3.5 mr-1" /> Confirmar chegada
                       </Button>
-                      <Button size="sm" variant="ghost" className="ml-1" onClick={() => removePending(p.id)}>
+                      <Button size="sm" variant="ghost" className="ml-1" onClick={() => openEditPending(p)} title="Editar">
+                        <Pencil className="w-3.5 h-3.5" />
+                      </Button>
+                      <Button size="sm" variant="ghost" className="ml-1" onClick={() => setDeletePendingId(p.id)} title="Excluir">
                         <Trash2 className="w-3.5 h-3.5" />
                       </Button>
+
                     </td>
                   </tr>
                 ))}
