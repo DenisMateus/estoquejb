@@ -481,7 +481,7 @@ export default function Ventiladores() {
                       <Button size="sm" variant="outline" onClick={() => setExitDialog(s)}>
                         <PackageCheck className="w-3.5 h-3.5 mr-1" /> Baixa
                       </Button>
-                      <Button size="sm" variant="ghost" className="ml-1" onClick={() => removeStock(s.id)}>
+                      <Button size="sm" variant="ghost" className="ml-1" onClick={() => { setDeleteStockId(s.id); setDeleteStockPwd(''); }}>
                         <Trash2 className="w-3.5 h-3.5" />
                       </Button>
                     </td>
