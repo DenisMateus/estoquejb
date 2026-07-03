@@ -304,15 +304,31 @@ export default function Ventiladores() {
     }
   };
 
-  const removePending = async (id: string) => {
-    if (!window.confirm('Excluir esta pendência?')) return;
-    await deleteVentPending(id); reload();
+  const confirmDeletePending = async () => {
+    if (!deletePendingId) return;
+    try {
+      await deleteVentPending(deletePendingId);
+      toast({ title: 'Pendência excluída' });
+    } catch (e: any) {
+      toast({ title: 'Erro', description: e.message, variant: 'destructive' });
+    }
+    setDeletePendingId(null);
+    reload();
   };
 
-  const removeStock = async (id: string) => {
-    const pwd = window.prompt('Senha para excluir:');
-    if (pwd !== 'Jhonrob@1') { toast({ title: 'Senha incorreta', variant: 'destructive' }); return; }
-    await deleteVentStock(id); reload();
+  const confirmDeleteStock = async () => {
+    if (!deleteStockId) return;
+    if (deleteStockPwd !== 'Jhonrob@1') {
+      toast({ title: 'Senha incorreta', variant: 'destructive' }); return;
+    }
+    try {
+      await deleteVentStock(deleteStockId);
+      toast({ title: 'Ventilador excluído' });
+    } catch (e: any) {
+      toast({ title: 'Erro', description: e.message, variant: 'destructive' });
+    }
+    setDeleteStockId(null); setDeleteStockPwd('');
+    reload();
   };
 
   const setStockStatus = async (s: VentiladorStock, status: VentiladorStatus) => {
