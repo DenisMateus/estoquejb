@@ -12,7 +12,7 @@ import {
 import { toast } from '@/hooks/use-toast';
 import {
   Fan, Plus, Search, Trash2, ArrowDown, ArrowUp, Check, PackageCheck,
-  Warehouse, ClipboardList, ArrowLeftRight,
+  Warehouse, ClipboardList, ArrowLeftRight, Pencil,
 } from 'lucide-react';
 import {
   addVentMovement,
@@ -69,6 +69,7 @@ export default function Ventiladores() {
   });
 
   const [pendingDialog, setPendingDialog] = useState(false);
+  const [editingPendingId, setEditingPendingId] = useState<string | null>(null);
   const [pendingForm, setPendingForm] = useState({
     code: '', description: '', tipo: 'SILO' as VentiladorTipo,
     cliente: '', ofNumber: '', prazoEntrega: '', quantidade: 1,
@@ -83,6 +84,11 @@ export default function Ventiladores() {
   // Reserva modal (substitui window.prompt)
   const [reserveDialog, setReserveDialog] = useState<{ stock: VentiladorStock; status: VentiladorStatus } | null>(null);
   const [reserveForm, setReserveForm] = useState({ cliente: '', ofNumber: '' });
+
+  // Delete confirmations (substituem window.confirm/prompt)
+  const [deletePendingId, setDeletePendingId] = useState<string | null>(null);
+  const [deleteStockId, setDeleteStockId] = useState<string | null>(null);
+  const [deleteStockPwd, setDeleteStockPwd] = useState('');
 
   // ------- filters
   const filteredStock = useMemo(() => {
@@ -159,27 +165,60 @@ export default function Ventiladores() {
     }
   };
 
+  const resetPendingForm = () => {
+    setPendingForm({ code: '', description: '', tipo: 'SILO', cliente: '', ofNumber: '', prazoEntrega: '', quantidade: 1 });
+    setEditingPendingId(null);
+  };
+
+  const openEditPending = (p: VentiladorPending) => {
+    setPendingForm({
+      code: p.code, description: p.description, tipo: p.tipo,
+      cliente: p.cliente, ofNumber: p.ofNumber, prazoEntrega: p.prazoEntrega,
+      quantidade: p.quantidade,
+    });
+    setEditingPendingId(p.id);
+    setPendingDialog(true);
+  };
+
   const submitPending = async () => {
-    if (!pendingForm.code.trim() || !pendingForm.description.trim() || !pendingForm.cliente.trim()) {
-      toast({ title: 'Preencha código, descrição e cliente', variant: 'destructive' }); return;
+    const { code, description, cliente, ofNumber, prazoEntrega, quantidade, tipo } = pendingForm;
+    if (!code.trim() || !description.trim() || !cliente.trim() || !ofNumber.trim() || !prazoEntrega.trim()) {
+      toast({ title: 'Preencha TODOS os campos obrigatórios', variant: 'destructive' }); return;
     }
-    const qty = Math.max(1, Number(pendingForm.quantidade) || 1);
+    const qty = Math.max(1, Number(quantidade) || 1);
+
+    // Edit mode
+    if (editingPendingId) {
+      try {
+        await updateVentPending(editingPendingId, {
+          code, description, tipo, cliente, ofNumber, prazoEntrega, quantidade: qty,
+        });
+        setPendingDialog(false);
+        resetPendingForm();
+        toast({ title: 'Pendência atualizada' });
+        reload();
+      } catch (e: any) {
+        toast({ title: 'Erro', description: e.message, variant: 'destructive' });
+      }
+      return;
+    }
+
     const disponivel = stock.find(s =>
-      s.code.trim().toLowerCase() === pendingForm.code.trim().toLowerCase() &&
+      s.code.trim().toLowerCase() === code.trim().toLowerCase() &&
       s.status === 'disponivel',
     );
     if (disponivel) {
       const ok = window.confirm(
         `⚠️ Existe um ventilador "${disponivel.code}" DISPONÍVEL em estoque!\n\n` +
-        `Deseja RESERVAR o do estoque para ${pendingForm.cliente} (OF ${pendingForm.ofNumber || '-'}) em vez de criar uma pendência?`,
+        `Deseja RESERVAR o do estoque para ${cliente} (OF ${ofNumber}) em vez de criar uma pendência?`,
       );
       if (ok) {
         await updateVentStock(disponivel.id, {
-          status: 'reservado', cliente: pendingForm.cliente, ofNumber: pendingForm.ofNumber,
+          status: 'reservado', cliente, ofNumber,
         });
         toast({ title: 'Ventilador reservado no estoque' });
         setPendingDialog(false);
-        setPendingForm({ code: '', description: '', tipo: 'SILO', cliente: '', ofNumber: '', prazoEntrega: '', quantidade: 1 });
+        resetPendingForm();
         reload();
         return;
       }
@@ -188,7 +227,7 @@ export default function Ventiladores() {
       const maxP = pending.reduce((mx, p) => Math.max(mx, p.priority), 0);
       await addVentPending({ ...pendingForm, quantidade: qty, priority: maxP + 1 });
       setPendingDialog(false);
-      setPendingForm({ code: '', description: '', tipo: 'SILO', cliente: '', ofNumber: '', prazoEntrega: '', quantidade: 1 });
+      resetPendingForm();
       toast({ title: 'Pendência registrada' });
       reload();
     } catch (e: any) {
@@ -265,15 +304,31 @@ export default function Ventiladores() {
     }
   };
 
-  const removePending = async (id: string) => {
-    if (!window.confirm('Excluir esta pendência?')) return;
-    await deleteVentPending(id); reload();
+  const confirmDeletePending = async () => {
+    if (!deletePendingId) return;
+    try {
+      await deleteVentPending(deletePendingId);
+      toast({ title: 'Pendência excluída' });
+    } catch (e: any) {
+      toast({ title: 'Erro', description: e.message, variant: 'destructive' });
+    }
+    setDeletePendingId(null);
+    reload();
   };
 
-  const removeStock = async (id: string) => {
-    const pwd = window.prompt('Senha para excluir:');
-    if (pwd !== 'Jhonrob@1') { toast({ title: 'Senha incorreta', variant: 'destructive' }); return; }
-    await deleteVentStock(id); reload();
+  const confirmDeleteStock = async () => {
+    if (!deleteStockId) return;
+    if (deleteStockPwd !== 'Jhonrob@1') {
+      toast({ title: 'Senha incorreta', variant: 'destructive' }); return;
+    }
+    try {
+      await deleteVentStock(deleteStockId);
+      toast({ title: 'Ventilador excluído' });
+    } catch (e: any) {
+      toast({ title: 'Erro', description: e.message, variant: 'destructive' });
+    }
+    setDeleteStockId(null); setDeleteStockPwd('');
+    reload();
   };
 
   const setStockStatus = async (s: VentiladorStock, status: VentiladorStatus) => {
@@ -426,7 +481,7 @@ export default function Ventiladores() {
                       <Button size="sm" variant="outline" onClick={() => setExitDialog(s)}>
                         <PackageCheck className="w-3.5 h-3.5 mr-1" /> Baixa
                       </Button>
-                      <Button size="sm" variant="ghost" className="ml-1" onClick={() => removeStock(s.id)}>
+                      <Button size="sm" variant="ghost" className="ml-1" onClick={() => { setDeleteStockId(s.id); setDeleteStockPwd(''); }}>
                         <Trash2 className="w-3.5 h-3.5" />
                       </Button>
                     </td>
@@ -482,9 +537,13 @@ export default function Ventiladores() {
                       <Button size="sm" onClick={() => openArrival(p)}>
                         <Check className="w-3.5 h-3.5 mr-1" /> Confirmar chegada
                       </Button>
-                      <Button size="sm" variant="ghost" className="ml-1" onClick={() => removePending(p.id)}>
+                      <Button size="sm" variant="ghost" className="ml-1" onClick={() => openEditPending(p)} title="Editar">
+                        <Pencil className="w-3.5 h-3.5" />
+                      </Button>
+                      <Button size="sm" variant="ghost" className="ml-1" onClick={() => setDeletePendingId(p.id)} title="Excluir">
                         <Trash2 className="w-3.5 h-3.5" />
                       </Button>
+
                     </td>
                   </tr>
                 ))}
@@ -590,10 +649,12 @@ export default function Ventiladores() {
         </DialogContent>
       </Dialog>
 
-      {/* Dialog: Pending */}
-      <Dialog open={pendingDialog} onOpenChange={setPendingDialog}>
+      {/* Dialog: Pending (nova / editar) */}
+      <Dialog open={pendingDialog} onOpenChange={(o) => { setPendingDialog(o); if (!o) resetPendingForm(); }}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Nova Pendência</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>{editingPendingId ? 'Editar Pendência' : 'Nova Pendência'}</DialogTitle>
+          </DialogHeader>
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
               <div><Label>Código *</Label><Input value={pendingForm.code} onChange={e => setPendingForm({ ...pendingForm, code: e.target.value })} /></div>
@@ -608,7 +669,7 @@ export default function Ventiladores() {
             <div><Label>Descrição *</Label><Input value={pendingForm.description} onChange={e => setPendingForm({ ...pendingForm, description: e.target.value })} /></div>
             <div className="grid grid-cols-3 gap-3">
               <div><Label>Cliente *</Label><Input value={pendingForm.cliente} onChange={e => setPendingForm({ ...pendingForm, cliente: e.target.value })} /></div>
-              <div><Label>OF</Label><Input value={pendingForm.ofNumber} onChange={e => setPendingForm({ ...pendingForm, ofNumber: e.target.value })} /></div>
+              <div><Label>OF *</Label><Input value={pendingForm.ofNumber} onChange={e => setPendingForm({ ...pendingForm, ofNumber: e.target.value })} /></div>
               <div>
                 <Label>Quantidade *</Label>
                 <Input type="number" min={1} value={pendingForm.quantidade}
@@ -616,16 +677,54 @@ export default function Ventiladores() {
               </div>
             </div>
             <div>
-              <Label>Prazo de entrega</Label>
+              <Label>Prazo de entrega *</Label>
               <Input type="date" value={pendingForm.prazoEntrega} onChange={e => setPendingForm({ ...pendingForm, prazoEntrega: e.target.value })} />
             </div>
+            <p className="text-xs text-muted-foreground">Todos os campos marcados com * são obrigatórios.</p>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setPendingDialog(false)}>Cancelar</Button>
-            <Button onClick={submitPending}>Registrar</Button>
+            <Button variant="outline" onClick={() => { setPendingDialog(false); resetPendingForm(); }}>Cancelar</Button>
+            <Button onClick={submitPending}>{editingPendingId ? 'Salvar alterações' : 'Registrar'}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Confirmar exclusão de pendência */}
+      <Dialog open={!!deletePendingId} onOpenChange={(o) => !o && setDeletePendingId(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>Excluir pendência</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Tem certeza que deseja excluir esta pendência? Esta ação não poderá ser desfeita.
+          </p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeletePendingId(null)}>Cancelar</Button>
+            <Button variant="destructive" onClick={confirmDeletePending}>Excluir</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirmar exclusão de estoque (com senha) */}
+      <Dialog open={!!deleteStockId} onOpenChange={(o) => { if (!o) { setDeleteStockId(null); setDeleteStockPwd(''); } }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>Excluir ventilador do estoque</DialogTitle></DialogHeader>
+          <div className="space-y-2">
+            <Label>Senha para excluir</Label>
+            <Input
+              type="password"
+              autoFocus
+              value={deleteStockPwd}
+              onChange={e => setDeleteStockPwd(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') confirmDeleteStock(); }}
+              placeholder="Digite a senha"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setDeleteStockId(null); setDeleteStockPwd(''); }}>Cancelar</Button>
+            <Button variant="destructive" onClick={confirmDeleteStock}>Excluir</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
 
       {/* Confirm arrival */}
       <Dialog open={!!confirmArrival} onOpenChange={(o) => !o && setConfirmArrival(null)}>
