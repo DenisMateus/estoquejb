@@ -69,6 +69,7 @@ export default function Ventiladores() {
   });
 
   const [pendingDialog, setPendingDialog] = useState(false);
+  const [editingPendingId, setEditingPendingId] = useState<string | null>(null);
   const [pendingForm, setPendingForm] = useState({
     code: '', description: '', tipo: 'SILO' as VentiladorTipo,
     cliente: '', ofNumber: '', prazoEntrega: '', quantidade: 1,
@@ -83,6 +84,11 @@ export default function Ventiladores() {
   // Reserva modal (substitui window.prompt)
   const [reserveDialog, setReserveDialog] = useState<{ stock: VentiladorStock; status: VentiladorStatus } | null>(null);
   const [reserveForm, setReserveForm] = useState({ cliente: '', ofNumber: '' });
+
+  // Delete confirmations (substituem window.confirm/prompt)
+  const [deletePendingId, setDeletePendingId] = useState<string | null>(null);
+  const [deleteStockId, setDeleteStockId] = useState<string | null>(null);
+  const [deleteStockPwd, setDeleteStockPwd] = useState('');
 
   // ------- filters
   const filteredStock = useMemo(() => {
