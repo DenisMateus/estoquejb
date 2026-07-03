@@ -649,10 +649,12 @@ export default function Ventiladores() {
         </DialogContent>
       </Dialog>
 
-      {/* Dialog: Pending */}
-      <Dialog open={pendingDialog} onOpenChange={setPendingDialog}>
+      {/* Dialog: Pending (nova / editar) */}
+      <Dialog open={pendingDialog} onOpenChange={(o) => { setPendingDialog(o); if (!o) resetPendingForm(); }}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Nova Pendência</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>{editingPendingId ? 'Editar Pendência' : 'Nova Pendência'}</DialogTitle>
+          </DialogHeader>
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
               <div><Label>Código *</Label><Input value={pendingForm.code} onChange={e => setPendingForm({ ...pendingForm, code: e.target.value })} /></div>
@@ -667,7 +669,7 @@ export default function Ventiladores() {
             <div><Label>Descrição *</Label><Input value={pendingForm.description} onChange={e => setPendingForm({ ...pendingForm, description: e.target.value })} /></div>
             <div className="grid grid-cols-3 gap-3">
               <div><Label>Cliente *</Label><Input value={pendingForm.cliente} onChange={e => setPendingForm({ ...pendingForm, cliente: e.target.value })} /></div>
-              <div><Label>OF</Label><Input value={pendingForm.ofNumber} onChange={e => setPendingForm({ ...pendingForm, ofNumber: e.target.value })} /></div>
+              <div><Label>OF *</Label><Input value={pendingForm.ofNumber} onChange={e => setPendingForm({ ...pendingForm, ofNumber: e.target.value })} /></div>
               <div>
                 <Label>Quantidade *</Label>
                 <Input type="number" min={1} value={pendingForm.quantidade}
@@ -675,16 +677,54 @@ export default function Ventiladores() {
               </div>
             </div>
             <div>
-              <Label>Prazo de entrega</Label>
+              <Label>Prazo de entrega *</Label>
               <Input type="date" value={pendingForm.prazoEntrega} onChange={e => setPendingForm({ ...pendingForm, prazoEntrega: e.target.value })} />
             </div>
+            <p className="text-xs text-muted-foreground">Todos os campos marcados com * são obrigatórios.</p>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setPendingDialog(false)}>Cancelar</Button>
-            <Button onClick={submitPending}>Registrar</Button>
+            <Button variant="outline" onClick={() => { setPendingDialog(false); resetPendingForm(); }}>Cancelar</Button>
+            <Button onClick={submitPending}>{editingPendingId ? 'Salvar alterações' : 'Registrar'}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Confirmar exclusão de pendência */}
+      <Dialog open={!!deletePendingId} onOpenChange={(o) => !o && setDeletePendingId(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>Excluir pendência</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Tem certeza que deseja excluir esta pendência? Esta ação não poderá ser desfeita.
+          </p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeletePendingId(null)}>Cancelar</Button>
+            <Button variant="destructive" onClick={confirmDeletePending}>Excluir</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirmar exclusão de estoque (com senha) */}
+      <Dialog open={!!deleteStockId} onOpenChange={(o) => { if (!o) { setDeleteStockId(null); setDeleteStockPwd(''); } }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>Excluir ventilador do estoque</DialogTitle></DialogHeader>
+          <div className="space-y-2">
+            <Label>Senha para excluir</Label>
+            <Input
+              type="password"
+              autoFocus
+              value={deleteStockPwd}
+              onChange={e => setDeleteStockPwd(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') confirmDeleteStock(); }}
+              placeholder="Digite a senha"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setDeleteStockId(null); setDeleteStockPwd(''); }}>Cancelar</Button>
+            <Button variant="destructive" onClick={confirmDeleteStock}>Excluir</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
 
       {/* Confirm arrival */}
       <Dialog open={!!confirmArrival} onOpenChange={(o) => !o && setConfirmArrival(null)}>
