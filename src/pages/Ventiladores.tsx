@@ -165,27 +165,60 @@ export default function Ventiladores() {
     }
   };
 
+  const resetPendingForm = () => {
+    setPendingForm({ code: '', description: '', tipo: 'SILO', cliente: '', ofNumber: '', prazoEntrega: '', quantidade: 1 });
+    setEditingPendingId(null);
+  };
+
+  const openEditPending = (p: VentiladorPending) => {
+    setPendingForm({
+      code: p.code, description: p.description, tipo: p.tipo,
+      cliente: p.cliente, ofNumber: p.ofNumber, prazoEntrega: p.prazoEntrega,
+      quantidade: p.quantidade,
+    });
+    setEditingPendingId(p.id);
+    setPendingDialog(true);
+  };
+
   const submitPending = async () => {
-    if (!pendingForm.code.trim() || !pendingForm.description.trim() || !pendingForm.cliente.trim()) {
-      toast({ title: 'Preencha código, descrição e cliente', variant: 'destructive' }); return;
+    const { code, description, cliente, ofNumber, prazoEntrega, quantidade, tipo } = pendingForm;
+    if (!code.trim() || !description.trim() || !cliente.trim() || !ofNumber.trim() || !prazoEntrega.trim()) {
+      toast({ title: 'Preencha TODOS os campos obrigatórios', variant: 'destructive' }); return;
     }
-    const qty = Math.max(1, Number(pendingForm.quantidade) || 1);
+    const qty = Math.max(1, Number(quantidade) || 1);
+
+    // Edit mode
+    if (editingPendingId) {
+      try {
+        await updateVentPending(editingPendingId, {
+          code, description, tipo, cliente, ofNumber, prazoEntrega, quantidade: qty,
+        });
+        setPendingDialog(false);
+        resetPendingForm();
+        toast({ title: 'Pendência atualizada' });
+        reload();
+      } catch (e: any) {
+        toast({ title: 'Erro', description: e.message, variant: 'destructive' });
+      }
+      return;
+    }
+
     const disponivel = stock.find(s =>
-      s.code.trim().toLowerCase() === pendingForm.code.trim().toLowerCase() &&
+      s.code.trim().toLowerCase() === code.trim().toLowerCase() &&
       s.status === 'disponivel',
     );
     if (disponivel) {
       const ok = window.confirm(
         `⚠️ Existe um ventilador "${disponivel.code}" DISPONÍVEL em estoque!\n\n` +
-        `Deseja RESERVAR o do estoque para ${pendingForm.cliente} (OF ${pendingForm.ofNumber || '-'}) em vez de criar uma pendência?`,
+        `Deseja RESERVAR o do estoque para ${cliente} (OF ${ofNumber}) em vez de criar uma pendência?`,
       );
       if (ok) {
         await updateVentStock(disponivel.id, {
-          status: 'reservado', cliente: pendingForm.cliente, ofNumber: pendingForm.ofNumber,
+          status: 'reservado', cliente, ofNumber,
         });
         toast({ title: 'Ventilador reservado no estoque' });
         setPendingDialog(false);
-        setPendingForm({ code: '', description: '', tipo: 'SILO', cliente: '', ofNumber: '', prazoEntrega: '', quantidade: 1 });
+        resetPendingForm();
         reload();
         return;
       }
@@ -194,7 +227,7 @@ export default function Ventiladores() {
       const maxP = pending.reduce((mx, p) => Math.max(mx, p.priority), 0);
       await addVentPending({ ...pendingForm, quantidade: qty, priority: maxP + 1 });
       setPendingDialog(false);
-      setPendingForm({ code: '', description: '', tipo: 'SILO', cliente: '', ofNumber: '', prazoEntrega: '', quantidade: 1 });
+      resetPendingForm();
       toast({ title: 'Pendência registrada' });
       reload();
     } catch (e: any) {
