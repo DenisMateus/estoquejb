@@ -114,6 +114,7 @@ export default function AdvancedEntryDialog({ open, onClose, onSaved, defaultDat
     let created = 0;
     try {
       for (const m of motors) {
+        const portariaToUse = m.portaria.trim() || date;
         const qty = Math.max(1, m.quantity || 1);
         for (let i = 0; i < qty; i++) {
           const newProduct = await addMtdProduct({
@@ -121,7 +122,7 @@ export default function AdvancedEntryDialog({ open, onClose, onSaved, defaultDat
             description: m.description.trim(),
             mtdType: m.mtdType,
             quantity: 1,
-            portaria: m.portaria.trim(),
+            portaria: portariaToUse,
             notaFiscal: m.notaFiscal.trim(),
             ofNumber: m.ofNumber.trim(),
             cliente: m.cliente.trim(),
@@ -136,7 +137,7 @@ export default function AdvancedEntryDialog({ open, onClose, onSaved, defaultDat
             clienteDestino: m.cliente.trim(),
             notaFiscal: m.notaFiscal.trim(),
             date,
-            observacao: `OF: ${m.ofNumber.trim()} (entrada avançada)`,
+            observacao: `Portaria: ${portariaToUse} | OF: ${m.ofNumber.trim()} (entrada avançada)`,
           }, true);
           created++;
         }
