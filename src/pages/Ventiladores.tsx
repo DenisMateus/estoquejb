@@ -90,6 +90,76 @@ export default function Ventiladores() {
   const [deleteStockId, setDeleteStockId] = useState<string | null>(null);
   const [deleteStockPwd, setDeleteStockPwd] = useState('');
 
+  // Bulk selection
+  const [selectedStock, setSelectedStock] = useState<Set<string>>(new Set());
+  const [selectedPending, setSelectedPending] = useState<Set<string>>(new Set());
+  const [bulkDeleteStockOpen, setBulkDeleteStockOpen] = useState(false);
+  const [bulkDeleteStockPwd, setBulkDeleteStockPwd] = useState('');
+  const [bulkDeletePendingOpen, setBulkDeletePendingOpen] = useState(false);
+
+  const toggleSelectStock = (id: string) => {
+    setSelectedStock(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+  const toggleSelectPending = (id: string) => {
+    setSelectedPending(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+  const toggleSelectAllStock = (ids: string[]) => {
+    setSelectedStock(prev => {
+      const allSelected = ids.length > 0 && ids.every(id => prev.has(id));
+      if (allSelected) {
+        const next = new Set(prev); ids.forEach(id => next.delete(id)); return next;
+      }
+      const next = new Set(prev); ids.forEach(id => next.add(id)); return next;
+    });
+  };
+  const toggleSelectAllPending = (ids: string[]) => {
+    setSelectedPending(prev => {
+      const allSelected = ids.length > 0 && ids.every(id => prev.has(id));
+      if (allSelected) {
+        const next = new Set(prev); ids.forEach(id => next.delete(id)); return next;
+      }
+      const next = new Set(prev); ids.forEach(id => next.add(id)); return next;
+    });
+  };
+
+  const confirmBulkDeleteStock = async () => {
+    if (bulkDeleteStockPwd !== 'Jhonrob@1') {
+      toast({ title: 'Senha incorreta', variant: 'destructive' }); return;
+    }
+    const ids = Array.from(selectedStock);
+    try {
+      await Promise.all(ids.map(id => deleteVentStock(id)));
+      toast({ title: `${ids.length} ventilador(es) excluído(s)` });
+      setSelectedStock(new Set());
+      setBulkDeleteStockOpen(false);
+      setBulkDeleteStockPwd('');
+      reload();
+    } catch (e: any) {
+      toast({ title: 'Erro', description: e.message, variant: 'destructive' });
+    }
+  };
+
+  const confirmBulkDeletePending = async () => {
+    const ids = Array.from(selectedPending);
+    try {
+      await Promise.all(ids.map(id => deleteVentPending(id)));
+      toast({ title: `${ids.length} pendência(s) excluída(s)` });
+      setSelectedPending(new Set());
+      setBulkDeletePendingOpen(false);
+      reload();
+    } catch (e: any) {
+      toast({ title: 'Erro', description: e.message, variant: 'destructive' });
+    }
+  };
+
   // ------- filters
   const filteredStock = useMemo(() => {
     return stock.filter(s => {
