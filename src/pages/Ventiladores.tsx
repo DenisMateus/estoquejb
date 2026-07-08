@@ -912,6 +912,47 @@ export default function Ventiladores() {
         </DialogContent>
       </Dialog>
 
+      {/* Bulk delete stock (com senha) */}
+      <Dialog open={bulkDeleteStockOpen} onOpenChange={(o) => { if (!o) { setBulkDeleteStockOpen(false); setBulkDeleteStockPwd(''); } }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>Excluir {selectedStock.size} ventilador(es)</DialogTitle></DialogHeader>
+          <div className="space-y-2">
+            <p className="text-sm text-muted-foreground">
+              Esta ação não poderá ser desfeita. Digite a senha para confirmar.
+            </p>
+            <Label>Senha</Label>
+            <Input
+              type="password"
+              autoFocus
+              value={bulkDeleteStockPwd}
+              onChange={e => setBulkDeleteStockPwd(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') confirmBulkDeleteStock(); }}
+              placeholder="Digite a senha"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setBulkDeleteStockOpen(false); setBulkDeleteStockPwd(''); }}>Cancelar</Button>
+            <Button variant="destructive" onClick={confirmBulkDeleteStock}>Excluir</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk delete pending */}
+      <Dialog open={bulkDeletePendingOpen} onOpenChange={(o) => !o && setBulkDeletePendingOpen(false)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>Excluir {selectedPending.size} pendência(s)</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Tem certeza que deseja excluir as pendências selecionadas? Esta ação não poderá ser desfeita.
+          </p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBulkDeletePendingOpen(false)}>Cancelar</Button>
+            <Button variant="destructive" onClick={confirmBulkDeletePending}>Excluir</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+
+
 
       {/* Confirm arrival */}
       <Dialog open={!!confirmArrival} onOpenChange={(o) => !o && setConfirmArrival(null)}>
