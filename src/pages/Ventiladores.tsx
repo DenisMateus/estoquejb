@@ -90,6 +90,76 @@ export default function Ventiladores() {
   const [deleteStockId, setDeleteStockId] = useState<string | null>(null);
   const [deleteStockPwd, setDeleteStockPwd] = useState('');
 
+  // Bulk selection
+  const [selectedStock, setSelectedStock] = useState<Set<string>>(new Set());
+  const [selectedPending, setSelectedPending] = useState<Set<string>>(new Set());
+  const [bulkDeleteStockOpen, setBulkDeleteStockOpen] = useState(false);
+  const [bulkDeleteStockPwd, setBulkDeleteStockPwd] = useState('');
+  const [bulkDeletePendingOpen, setBulkDeletePendingOpen] = useState(false);
+
+  const toggleSelectStock = (id: string) => {
+    setSelectedStock(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+  const toggleSelectPending = (id: string) => {
+    setSelectedPending(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+  const toggleSelectAllStock = (ids: string[]) => {
+    setSelectedStock(prev => {
+      const allSelected = ids.length > 0 && ids.every(id => prev.has(id));
+      if (allSelected) {
+        const next = new Set(prev); ids.forEach(id => next.delete(id)); return next;
+      }
+      const next = new Set(prev); ids.forEach(id => next.add(id)); return next;
+    });
+  };
+  const toggleSelectAllPending = (ids: string[]) => {
+    setSelectedPending(prev => {
+      const allSelected = ids.length > 0 && ids.every(id => prev.has(id));
+      if (allSelected) {
+        const next = new Set(prev); ids.forEach(id => next.delete(id)); return next;
+      }
+      const next = new Set(prev); ids.forEach(id => next.add(id)); return next;
+    });
+  };
+
+  const confirmBulkDeleteStock = async () => {
+    if (bulkDeleteStockPwd !== 'Jhonrob@1') {
+      toast({ title: 'Senha incorreta', variant: 'destructive' }); return;
+    }
+    const ids = Array.from(selectedStock);
+    try {
+      await Promise.all(ids.map(id => deleteVentStock(id)));
+      toast({ title: `${ids.length} ventilador(es) excluído(s)` });
+      setSelectedStock(new Set());
+      setBulkDeleteStockOpen(false);
+      setBulkDeleteStockPwd('');
+      reload();
+    } catch (e: any) {
+      toast({ title: 'Erro', description: e.message, variant: 'destructive' });
+    }
+  };
+
+  const confirmBulkDeletePending = async () => {
+    const ids = Array.from(selectedPending);
+    try {
+      await Promise.all(ids.map(id => deleteVentPending(id)));
+      toast({ title: `${ids.length} pendência(s) excluída(s)` });
+      setSelectedPending(new Set());
+      setBulkDeletePendingOpen(false);
+      reload();
+    } catch (e: any) {
+      toast({ title: 'Erro', description: e.message, variant: 'destructive' });
+    }
+  };
+
   // ------- filters
   const filteredStock = useMemo(() => {
     return stock.filter(s => {
@@ -432,67 +502,184 @@ export default function Ventiladores() {
 
         {/* TAB: STOCK */}
         {tab === 'stock' && (
-          <div className="border rounded-md overflow-x-auto">
-            <table className="w-full text-xs">
-              <thead className="bg-muted/60">
-                <tr>
-                  <th className="text-left p-2">Código</th>
-                  <th className="text-left p-2">Descrição</th>
-                  <th className="text-left p-2">Tipo</th>
-                  <th className="text-left p-2">Cliente</th>
-                  <th className="text-left p-2">OF</th>
-                  <th className="text-left p-2">Status</th>
-                  <th className="text-center p-2" title="Volta de obra">V.O.</th>
-                  <th className="text-left p-2">Data</th>
-                  <th className="text-right p-2">Ações</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredStock.map(s => (
-                  <tr key={s.id} className={`border-t ${
-                    s.status === 'reservado' ? 'bg-yellow-500/10' :
-                    s.status === 'vendido' ? 'bg-red-500/10' : ''
-                  }`}>
-                    <td className="p-2 font-mono">{s.code}</td>
-                    <td className="p-2">{s.description}</td>
-                    <td className="p-2">{VENT_TIPO_LABELS[s.tipo]}</td>
-                    <td className="p-2">{s.cliente || <span className="text-muted-foreground">ESTOQUE</span>}</td>
-                    <td className="p-2">{s.ofNumber || '-'}</td>
-                    <td className="p-2">
-                      <Select value={s.status} onValueChange={(v) => setStockStatus(s, v as VentiladorStatus)}>
-                        <SelectTrigger className="h-7 text-xs w-32"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          {(Object.keys(VENT_STATUS_LABELS) as VentiladorStatus[]).map(k =>
-                            <SelectItem key={k} value={k}>{VENT_STATUS_LABELS[k]}</SelectItem>
-                          )}
-                        </SelectContent>
-                      </Select>
-                    </td>
-                    <td className="p-2 text-center">
+          <>
+            {selectedStock.size > 0 && (
+              <div className="flex items-center justify-between border rounded-md p-2 bg-muted/40">
+                <span className="text-sm">
+                  <strong>{selectedStock.size}</strong> selecionado(s)
+                </span>
+                <div className="flex gap-2">
+                  <Button size="sm" variant="ghost" onClick={() => setSelectedStock(new Set())}>Limpar</Button>
+                  <Button size="sm" variant="destructive" onClick={() => { setBulkDeleteStockOpen(true); setBulkDeleteStockPwd(''); }}>
+                    <Trash2 className="w-3.5 h-3.5 mr-1" /> Excluir selecionado(s)
+                  </Button>
+                </div>
+              </div>
+            )}
+            <div className="border rounded-md overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead className="bg-muted/60">
+                  <tr>
+                    <th className="p-2 w-8">
                       <Checkbox
-                        checked={s.voltaObra}
-                        onCheckedChange={() => toggleVoltaObra(s)}
-                        title="Volta de obra"
-                        aria-label="Volta de obra"
+                        checked={filteredStock.length > 0 && filteredStock.every(s => selectedStock.has(s.id))}
+                        onCheckedChange={() => toggleSelectAllStock(filteredStock.map(s => s.id))}
+                        aria-label="Selecionar todos"
                       />
-                    </td>
-                    <td className="p-2">{formatDateBR(s.createdAt)}</td>
-                    <td className="p-2 text-right whitespace-nowrap">
-                      <Button size="sm" variant="outline" onClick={() => setExitDialog(s)}>
-                        <PackageCheck className="w-3.5 h-3.5 mr-1" /> Baixa
-                      </Button>
-                      <Button size="sm" variant="ghost" className="ml-1" onClick={() => { setDeleteStockId(s.id); setDeleteStockPwd(''); }}>
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </Button>
-                    </td>
+                    </th>
+                    <th className="text-left p-2">Código</th>
+                    <th className="text-left p-2">Descrição</th>
+                    <th className="text-left p-2">Tipo</th>
+                    <th className="text-left p-2">Cliente</th>
+                    <th className="text-left p-2">OF</th>
+                    <th className="text-left p-2">Status</th>
+                    <th className="text-center p-2" title="Volta de obra">V.O.</th>
+                    <th className="text-left p-2">Data</th>
+                    <th className="text-right p-2">Ações</th>
                   </tr>
-                ))}
-                {filteredStock.length === 0 && (
-                  <tr><td colSpan={9} className="p-6 text-center text-muted-foreground">Nenhum ventilador em estoque.</td></tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {filteredStock.map(s => (
+                    <tr key={s.id} className={`border-t ${
+                      s.status === 'reservado' ? 'bg-yellow-500/10' :
+                      s.status === 'vendido' ? 'bg-red-500/10' : ''
+                    }`}>
+                      <td className="p-2 text-center">
+                        <Checkbox
+                          checked={selectedStock.has(s.id)}
+                          onCheckedChange={() => toggleSelectStock(s.id)}
+                          aria-label="Selecionar"
+                        />
+                      </td>
+                      <td className="p-2 font-mono">{s.code}</td>
+                      <td className="p-2">{s.description}</td>
+                      <td className="p-2">{VENT_TIPO_LABELS[s.tipo]}</td>
+                      <td className="p-2">{s.cliente || <span className="text-muted-foreground">ESTOQUE</span>}</td>
+                      <td className="p-2">{s.ofNumber || '-'}</td>
+                      <td className="p-2">
+                        <Select value={s.status} onValueChange={(v) => setStockStatus(s, v as VentiladorStatus)}>
+                          <SelectTrigger className="h-7 text-xs w-32"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            {(Object.keys(VENT_STATUS_LABELS) as VentiladorStatus[]).map(k =>
+                              <SelectItem key={k} value={k}>{VENT_STATUS_LABELS[k]}</SelectItem>
+                            )}
+                          </SelectContent>
+                        </Select>
+                      </td>
+                      <td className="p-2 text-center">
+                        <Checkbox
+                          checked={s.voltaObra}
+                          onCheckedChange={() => toggleVoltaObra(s)}
+                          title="Volta de obra"
+                          aria-label="Volta de obra"
+                        />
+                      </td>
+                      <td className="p-2">{formatDateBR(s.createdAt)}</td>
+                      <td className="p-2 text-right whitespace-nowrap">
+                        <Button size="sm" variant="outline" onClick={() => setExitDialog(s)}>
+                          <PackageCheck className="w-3.5 h-3.5 mr-1" /> Baixa
+                        </Button>
+                        <Button size="sm" variant="ghost" className="ml-1" onClick={() => { setDeleteStockId(s.id); setDeleteStockPwd(''); }}>
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                  {filteredStock.length === 0 && (
+                    <tr><td colSpan={10} className="p-6 text-center text-muted-foreground">Nenhum ventilador em estoque.</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
+
+        {/* TAB: PENDING */}
+        {tab === 'pending' && (
+          <>
+            {selectedPending.size > 0 && (
+              <div className="flex items-center justify-between border rounded-md p-2 bg-muted/40">
+                <span className="text-sm">
+                  <strong>{selectedPending.size}</strong> selecionado(s)
+                </span>
+                <div className="flex gap-2">
+                  <Button size="sm" variant="ghost" onClick={() => setSelectedPending(new Set())}>Limpar</Button>
+                  <Button size="sm" variant="destructive" onClick={() => setBulkDeletePendingOpen(true)}>
+                    <Trash2 className="w-3.5 h-3.5 mr-1" /> Excluir selecionado(s)
+                  </Button>
+                </div>
+              </div>
+            )}
+            <div className="border rounded-md overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead className="bg-muted/60">
+                  <tr>
+                    <th className="p-2 w-8">
+                      <Checkbox
+                        checked={filteredPending.length > 0 && filteredPending.every(p => selectedPending.has(p.id))}
+                        onCheckedChange={() => toggleSelectAllPending(filteredPending.map(p => p.id))}
+                        aria-label="Selecionar todos"
+                      />
+                    </th>
+                    <th className="text-left p-2 w-24">Prioridade</th>
+                    <th className="text-left p-2">Código</th>
+                    <th className="text-left p-2">Descrição</th>
+                    <th className="text-left p-2">Tipo</th>
+                    <th className="text-left p-2">Cliente</th>
+                    <th className="text-left p-2">OF</th>
+                    <th className="text-center p-2">Qtd</th>
+                    <th className="text-left p-2">Prazo</th>
+                    <th className="text-right p-2">Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredPending.map((p, idx) => (
+                    <tr key={p.id} className="border-t">
+                      <td className="p-2 text-center">
+                        <Checkbox
+                          checked={selectedPending.has(p.id)}
+                          onCheckedChange={() => toggleSelectPending(p.id)}
+                          aria-label="Selecionar"
+                        />
+                      </td>
+                      <td className="p-2">
+                        <div className="flex items-center gap-1">
+                          <span className="font-bold w-5 text-center">{idx + 1}</span>
+                          <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => movePriority(idx, -1)} disabled={idx === 0}>
+                            <ArrowUp className="w-3 h-3" />
+                          </Button>
+                          <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => movePriority(idx, 1)} disabled={idx === filteredPending.length - 1}>
+                            <ArrowDown className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      </td>
+                      <td className="p-2 font-mono">{p.code}</td>
+                      <td className="p-2">{p.description}</td>
+                      <td className="p-2">{VENT_TIPO_LABELS[p.tipo]}</td>
+                      <td className="p-2">{p.cliente}</td>
+                      <td className="p-2">{p.ofNumber || '-'}</td>
+                      <td className="p-2 text-center font-bold">{p.quantidade}</td>
+                      <td className="p-2">{p.prazoEntrega ? formatDateBR(p.prazoEntrega) : '-'}</td>
+                      <td className="p-2 text-right whitespace-nowrap">
+                        <Button size="sm" onClick={() => openArrival(p)}>
+                          <Check className="w-3.5 h-3.5 mr-1" /> Confirmar chegada
+                        </Button>
+                        <Button size="sm" variant="ghost" className="ml-1" onClick={() => openEditPending(p)} title="Editar">
+                          <Pencil className="w-3.5 h-3.5" />
+                        </Button>
+                        <Button size="sm" variant="ghost" className="ml-1" onClick={() => setDeletePendingId(p.id)} title="Excluir">
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                  {filteredPending.length === 0 && (
+                    <tr><td colSpan={10} className="p-6 text-center text-muted-foreground">Nenhuma pendência registrada.</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
 
         {/* TAB: PENDING */}
@@ -724,6 +911,47 @@ export default function Ventiladores() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Bulk delete stock (com senha) */}
+      <Dialog open={bulkDeleteStockOpen} onOpenChange={(o) => { if (!o) { setBulkDeleteStockOpen(false); setBulkDeleteStockPwd(''); } }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>Excluir {selectedStock.size} ventilador(es)</DialogTitle></DialogHeader>
+          <div className="space-y-2">
+            <p className="text-sm text-muted-foreground">
+              Esta ação não poderá ser desfeita. Digite a senha para confirmar.
+            </p>
+            <Label>Senha</Label>
+            <Input
+              type="password"
+              autoFocus
+              value={bulkDeleteStockPwd}
+              onChange={e => setBulkDeleteStockPwd(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') confirmBulkDeleteStock(); }}
+              placeholder="Digite a senha"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setBulkDeleteStockOpen(false); setBulkDeleteStockPwd(''); }}>Cancelar</Button>
+            <Button variant="destructive" onClick={confirmBulkDeleteStock}>Excluir</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk delete pending */}
+      <Dialog open={bulkDeletePendingOpen} onOpenChange={(o) => !o && setBulkDeletePendingOpen(false)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>Excluir {selectedPending.size} pendência(s)</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Tem certeza que deseja excluir as pendências selecionadas? Esta ação não poderá ser desfeita.
+          </p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBulkDeletePendingOpen(false)}>Cancelar</Button>
+            <Button variant="destructive" onClick={confirmBulkDeletePending}>Excluir</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+
 
 
       {/* Confirm arrival */}
