@@ -682,65 +682,6 @@ export default function Ventiladores() {
           </>
         )}
 
-        {/* TAB: PENDING */}
-        {tab === 'pending' && (
-          <div className="border rounded-md overflow-x-auto">
-            <table className="w-full text-xs">
-              <thead className="bg-muted/60">
-                <tr>
-                  <th className="text-left p-2 w-24">Prioridade</th>
-                  <th className="text-left p-2">Código</th>
-                  <th className="text-left p-2">Descrição</th>
-                  <th className="text-left p-2">Tipo</th>
-                  <th className="text-left p-2">Cliente</th>
-                  <th className="text-left p-2">OF</th>
-                  <th className="text-center p-2">Qtd</th>
-                  <th className="text-left p-2">Prazo</th>
-                  <th className="text-right p-2">Ações</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredPending.map((p, idx) => (
-                  <tr key={p.id} className="border-t">
-                    <td className="p-2">
-                      <div className="flex items-center gap-1">
-                        <span className="font-bold w-5 text-center">{idx + 1}</span>
-                        <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => movePriority(idx, -1)} disabled={idx === 0}>
-                          <ArrowUp className="w-3 h-3" />
-                        </Button>
-                        <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => movePriority(idx, 1)} disabled={idx === filteredPending.length - 1}>
-                          <ArrowDown className="w-3 h-3" />
-                        </Button>
-                      </div>
-                    </td>
-                    <td className="p-2 font-mono">{p.code}</td>
-                    <td className="p-2">{p.description}</td>
-                    <td className="p-2">{VENT_TIPO_LABELS[p.tipo]}</td>
-                    <td className="p-2">{p.cliente}</td>
-                    <td className="p-2">{p.ofNumber || '-'}</td>
-                    <td className="p-2 text-center font-bold">{p.quantidade}</td>
-                    <td className="p-2">{p.prazoEntrega ? formatDateBR(p.prazoEntrega) : '-'}</td>
-                    <td className="p-2 text-right whitespace-nowrap">
-                      <Button size="sm" onClick={() => openArrival(p)}>
-                        <Check className="w-3.5 h-3.5 mr-1" /> Confirmar chegada
-                      </Button>
-                      <Button size="sm" variant="ghost" className="ml-1" onClick={() => openEditPending(p)} title="Editar">
-                        <Pencil className="w-3.5 h-3.5" />
-                      </Button>
-                      <Button size="sm" variant="ghost" className="ml-1" onClick={() => setDeletePendingId(p.id)} title="Excluir">
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </Button>
-
-                    </td>
-                  </tr>
-                ))}
-                {filteredPending.length === 0 && (
-                  <tr><td colSpan={9} className="p-6 text-center text-muted-foreground">Nenhuma pendência registrada.</td></tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        )}
 
         {/* TAB: MOV */}
         {tab === 'mov' && (
