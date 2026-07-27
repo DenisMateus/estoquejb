@@ -279,21 +279,13 @@ export default function Ventiladores() {
       s.status === 'disponivel',
     );
     if (disponivel) {
-      const ok = window.confirm(
-        `⚠️ Existe um ventilador "${disponivel.code}" DISPONÍVEL em estoque!\n\n` +
-        `Deseja RESERVAR o do estoque para ${cliente} (OF ${ofNumber}) em vez de criar uma pendência?`,
-      );
-      if (ok) {
-        await updateVentStock(disponivel.id, {
-          status: 'reservado', cliente, ofNumber,
-        });
-        toast({ title: 'Ventilador reservado no estoque' });
-        setPendingDialog(false);
-        resetPendingForm();
-        reload();
-        return;
-      }
+      setStockAvailableDialog({ disponivel, cliente, ofNumber, qty });
+      return;
     }
+    await createPendingNow(qty);
+  };
+
+  const createPendingNow = async (qty: number) => {
     try {
       const maxP = pending.reduce((mx, p) => Math.max(mx, p.priority), 0);
       await addVentPending({ ...pendingForm, quantidade: qty, priority: maxP + 1 });
@@ -304,6 +296,33 @@ export default function Ventiladores() {
     } catch (e: any) {
       toast({ title: 'Erro', description: e.message, variant: 'destructive' });
     }
+  };
+
+  const reserveFromStock = async () => {
+    if (!stockAvailableDialog) return;
+    const { disponivel, cliente, ofNumber, qty } = stockAvailableDialog;
+    try {
+      await updateVentStock(disponivel.id, { status: 'reservado', cliente, ofNumber });
+      toast({ title: 'Ventilador reservado no estoque' });
+      setStockAvailableDialog(null);
+      // If more than 1 was requested, create pendência for the remaining
+      if (qty > 1) {
+        await createPendingNow(qty - 1);
+      } else {
+        setPendingDialog(false);
+        resetPendingForm();
+        reload();
+      }
+    } catch (e: any) {
+      toast({ title: 'Erro', description: e.message, variant: 'destructive' });
+    }
+  };
+
+  const createPendingAnyway = async () => {
+    if (!stockAvailableDialog) return;
+    const qty = stockAvailableDialog.qty;
+    setStockAvailableDialog(null);
+    await createPendingNow(qty);
   };
 
   const movePriority = async (idx: number, dir: -1 | 1) => {
