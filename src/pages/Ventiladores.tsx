@@ -96,6 +96,7 @@ export default function Ventiladores() {
   const [bulkDeleteStockOpen, setBulkDeleteStockOpen] = useState(false);
   const [bulkDeleteStockPwd, setBulkDeleteStockPwd] = useState('');
   const [bulkDeletePendingOpen, setBulkDeletePendingOpen] = useState(false);
+  const [stockAvailableDialog, setStockAvailableDialog] = useState<{ disponivel: VentiladorStock; cliente: string; ofNumber: string; qty: number } | null>(null);
 
   const toggleSelectStock = (id: string) => {
     setSelectedStock(prev => {
@@ -278,21 +279,13 @@ export default function Ventiladores() {
       s.status === 'disponivel',
     );
     if (disponivel) {
-      const ok = window.confirm(
-        `⚠️ Existe um ventilador "${disponivel.code}" DISPONÍVEL em estoque!\n\n` +
-        `Deseja RESERVAR o do estoque para ${cliente} (OF ${ofNumber}) em vez de criar uma pendência?`,
-      );
-      if (ok) {
-        await updateVentStock(disponivel.id, {
-          status: 'reservado', cliente, ofNumber,
-        });
-        toast({ title: 'Ventilador reservado no estoque' });
-        setPendingDialog(false);
-        resetPendingForm();
-        reload();
-        return;
-      }
+      setStockAvailableDialog({ disponivel, cliente, ofNumber, qty });
+      return;
     }
+    await createPendingNow(qty);
+  };
+
+  const createPendingNow = async (qty: number) => {
     try {
       const maxP = pending.reduce((mx, p) => Math.max(mx, p.priority), 0);
       await addVentPending({ ...pendingForm, quantidade: qty, priority: maxP + 1 });
@@ -303,6 +296,33 @@ export default function Ventiladores() {
     } catch (e: any) {
       toast({ title: 'Erro', description: e.message, variant: 'destructive' });
     }
+  };
+
+  const reserveFromStock = async () => {
+    if (!stockAvailableDialog) return;
+    const { disponivel, cliente, ofNumber, qty } = stockAvailableDialog;
+    try {
+      await updateVentStock(disponivel.id, { status: 'reservado', cliente, ofNumber });
+      toast({ title: 'Ventilador reservado no estoque' });
+      setStockAvailableDialog(null);
+      // If more than 1 was requested, create pendência for the remaining
+      if (qty > 1) {
+        await createPendingNow(qty - 1);
+      } else {
+        setPendingDialog(false);
+        resetPendingForm();
+        reload();
+      }
+    } catch (e: any) {
+      toast({ title: 'Erro', description: e.message, variant: 'destructive' });
+    }
+  };
+
+  const createPendingAnyway = async () => {
+    if (!stockAvailableDialog) return;
+    const qty = stockAvailableDialog.qty;
+    setStockAvailableDialog(null);
+    await createPendingNow(qty);
   };
 
   const movePriority = async (idx: number, dir: -1 | 1) => {
@@ -981,6 +1001,46 @@ export default function Ventiladores() {
           <DialogFooter>
             <Button variant="outline" onClick={() => { setExitDialog(null); setExitObs(''); }}>Cancelar</Button>
             <Button onClick={doExit}>Confirmar baixa</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Ventilador disponível em estoque */}
+      <Dialog open={!!stockAvailableDialog} onOpenChange={(o) => !o && setStockAvailableDialog(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-warning/15 text-warning">⚠️</span>
+              Ventilador disponível em estoque
+            </DialogTitle>
+          </DialogHeader>
+          {stockAvailableDialog && (
+            <div className="text-sm space-y-3">
+              <div className="rounded-md border bg-muted/40 p-3 space-y-1">
+                <div><span className="text-muted-foreground">Código:</span> <strong>{stockAvailableDialog.disponivel.code}</strong></div>
+                <div><span className="text-muted-foreground">Descrição:</span> {stockAvailableDialog.disponivel.description}</div>
+                <div><span className="text-muted-foreground">Modelo:</span> {VENT_TIPO_LABELS[stockAvailableDialog.disponivel.tipo]}</div>
+              </div>
+              <p>
+                Existe <strong>1 unidade disponível</strong> em estoque com este código.
+                Deseja <strong>reservar</strong> a unidade do estoque para{' '}
+                <strong>{stockAvailableDialog.cliente}</strong>
+                {stockAvailableDialog.ofNumber ? ` (OF ${stockAvailableDialog.ofNumber})` : ''}?
+              </p>
+              {stockAvailableDialog.qty > 1 && (
+                <p className="text-xs text-muted-foreground">
+                  A quantidade pendente é {stockAvailableDialog.qty}. Ao reservar, 1 sai do estoque e {stockAvailableDialog.qty - 1} ficarão como pendência.
+                </p>
+              )}
+            </div>
+          )}
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button variant="outline" onClick={createPendingAnyway}>
+              Criar pendência mesmo assim
+            </Button>
+            <Button onClick={reserveFromStock}>
+              Reservar do estoque
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
