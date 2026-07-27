@@ -1004,6 +1004,46 @@ export default function Ventiladores() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Ventilador disponível em estoque */}
+      <Dialog open={!!stockAvailableDialog} onOpenChange={(o) => !o && setStockAvailableDialog(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-warning/15 text-warning">⚠️</span>
+              Ventilador disponível em estoque
+            </DialogTitle>
+          </DialogHeader>
+          {stockAvailableDialog && (
+            <div className="text-sm space-y-3">
+              <div className="rounded-md border bg-muted/40 p-3 space-y-1">
+                <div><span className="text-muted-foreground">Código:</span> <strong>{stockAvailableDialog.disponivel.code}</strong></div>
+                <div><span className="text-muted-foreground">Descrição:</span> {stockAvailableDialog.disponivel.description}</div>
+                <div><span className="text-muted-foreground">Modelo:</span> {VENT_TIPO_LABELS[stockAvailableDialog.disponivel.tipo]}</div>
+              </div>
+              <p>
+                Existe <strong>1 unidade disponível</strong> em estoque com este código.
+                Deseja <strong>reservar</strong> a unidade do estoque para{' '}
+                <strong>{stockAvailableDialog.cliente}</strong>
+                {stockAvailableDialog.ofNumber ? ` (OF ${stockAvailableDialog.ofNumber})` : ''}?
+              </p>
+              {stockAvailableDialog.qty > 1 && (
+                <p className="text-xs text-muted-foreground">
+                  A quantidade pendente é {stockAvailableDialog.qty}. Ao reservar, 1 sai do estoque e {stockAvailableDialog.qty - 1} ficarão como pendência.
+                </p>
+              )}
+            </div>
+          )}
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button variant="outline" onClick={createPendingAnyway}>
+              Criar pendência mesmo assim
+            </Button>
+            <Button onClick={reserveFromStock}>
+              Reservar do estoque
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   );
 }
