@@ -96,6 +96,7 @@ export default function Ventiladores() {
   const [bulkDeleteStockOpen, setBulkDeleteStockOpen] = useState(false);
   const [bulkDeleteStockPwd, setBulkDeleteStockPwd] = useState('');
   const [bulkDeletePendingOpen, setBulkDeletePendingOpen] = useState(false);
+  const [stockAvailableDialog, setStockAvailableDialog] = useState<{ disponivel: VentiladorStock; cliente: string; ofNumber: string; qty: number } | null>(null);
 
   const toggleSelectStock = (id: string) => {
     setSelectedStock(prev => {
