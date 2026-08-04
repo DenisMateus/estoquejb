@@ -29,12 +29,26 @@ Sua tarefa: identificar TODOS os motores listados na imagem (podem ser de 1 a 30
   ]
 }
 
-Regras:
-- Inferir o mtdType a partir da descrição (ex: descrição contendo "REDLER" -> "REDLER", "ELEVADOR" -> "ELEVADOR", etc). Se não conseguir inferir, use "REDLER".
+REGRAS DE MAPEAMENTO DE COLUNAS (MUITO IMPORTANTE):
+- Localize primeiro a LINHA DE CABEÇALHO da tabela e associe cada valor à coluna CORRETA pela posição/cabeçalho. NÃO desloque valores entre colunas.
+- "notaFiscal": SOMENTE valores da coluna/rótulo "NF", "N° NF", "Nota", "Nota Fiscal", "NFe", "NF-e". Se a coluna NF estiver vazia na linha, use "" — NUNCA copie o valor de OF ou Portaria para NF.
+- "ofNumber": SOMENTE valores da coluna/rótulo "OF", "O.F.", "Ordem", "Ordem de Fabricação". NUNCA use o número da NF nem da Portaria aqui.
+- "portaria": SOMENTE valores da coluna/rótulo "Portaria", "PORT", "Port.". Pode ser um número (ex: 17102) ou uma data. NUNCA use o valor de OF aqui.
+- "code": coluna "Código", "Cód.", "Patrimônio", "Item".
+- "description": coluna "Descrição"/"Modelo"/"Produto" (texto completo).
+- "cliente": coluna "Cliente", "Destino", "Razão Social", "Fornecedor".
+- "quantity": coluna "Qtd", "Quantidade". Se ausente, 1.
+- "condicao": coluna "Condição"/"Estado". Um de: Novo, Usado, Recondicionado, Revisado, Danificado. Caso contrário "".
+- Se dois campos (NF, OF, Portaria) tiverem números parecidos, confie EXCLUSIVAMENTE no cabeçalho da coluna, não no formato do número.
+- Antes de responder, revise linha por linha: o valor de cada campo deve estar exatamente sob o cabeçalho correspondente. Se houver dúvida sobre qual coluna, deixe "" em vez de adivinhar.
+
+Outras regras:
+- Inferir o mtdType a partir da descrição (ex: descrição contendo "REDLER" -> "REDLER", "ELEVADOR" -> "ELEVADOR", "THV" -> "THV", "VALVULA ROTATIVA" -> "VALVULA_ROTATIVA", "REGISTRO" -> "REGISTRO_MOTORIZADO", etc). Se não conseguir inferir, use "REDLER".
 - Se um campo não estiver visível, use string vazia "" (ou 1 para quantity).
 - Se a mesma NF/cliente se aplica a todos os motores da imagem, repita o valor em cada item.
 - NUNCA invente dados. Se a imagem não contém motores, retorne { "motors": [] }.
 - Retorne SOMENTE o JSON, sem texto adicional, sem markdown, sem \`\`\`.`;
+
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
