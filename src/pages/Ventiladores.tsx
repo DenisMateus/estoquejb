@@ -176,6 +176,38 @@ export default function Ventiladores() {
     });
   }, [stock, tipoFilter, search]);
 
+  // ------- ordenação do estoque
+  type StockSortKey = 'code' | 'description' | 'tipo' | 'cliente' | 'ofNumber' | 'status' | 'voltaObra' | 'createdAt';
+  const [stockSort, setStockSort] = useState<{ key: StockSortKey; dir: 'asc' | 'desc' } | null>(null);
+  const toggleStockSort = (key: StockSortKey) => {
+    setStockSort(prev => {
+      if (!prev || prev.key !== key) return { key, dir: 'asc' };
+      if (prev.dir === 'asc') return { key, dir: 'desc' };
+      return null;
+    });
+  };
+  const sortedStock = useMemo(() => {
+    if (!stockSort) return filteredStock;
+    const { key, dir } = stockSort;
+    const mult = dir === 'asc' ? 1 : -1;
+    const val = (s: VentiladorStock) => {
+      switch (key) {
+        case 'tipo': return VENT_TIPO_LABELS[s.tipo];
+        case 'status': return VENT_STATUS_LABELS[s.status];
+        case 'voltaObra': return s.voltaObra ? 1 : 0;
+        case 'createdAt': return new Date(s.createdAt).getTime();
+        default: return (s[key] as string) || '';
+      }
+    };
+    return [...filteredStock].sort((a, b) => {
+      const va = val(a); const vb = val(b);
+      if (typeof va === 'number' && typeof vb === 'number') return (va - vb) * mult;
+      const na = Number(va); const nb = Number(vb);
+      if (String(va).trim() !== '' && String(vb).trim() !== '' && !isNaN(na) && !isNaN(nb)) return (na - nb) * mult;
+      return String(va).localeCompare(String(vb), 'pt-BR', { sensitivity: 'base' }) * mult;
+    });
+  }, [filteredStock, stockSort]);
+
   const filteredPending = useMemo(() => {
     return pending.filter(p => {
       if (tipoFilter !== 'all' && p.tipo !== tipoFilter) return false;
