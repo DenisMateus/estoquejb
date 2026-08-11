@@ -379,18 +379,31 @@ export default function Ventiladores() {
     await createPendingNow(qty);
   };
 
-  const movePriority = async (idx: number, dir: -1 | 1) => {
-    const list = [...filteredPending];
-    const target = idx + dir;
-    if (target < 0 || target >= list.length) return;
-    const a = list[idx]; const b = list[target];
-    const pa = a.priority; const pb = b.priority;
-    await reorderVentPending([
-      { id: a.id, priority: pb },
-      { id: b.id, priority: pa },
-    ]);
-    reload();
+  // ------- arrastar para reordenar prioridade
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [dragOverId, setDragOverId] = useState<string | null>(null);
+
+  const handleDropOn = async (targetId: string) => {
+    const sourceId = dragId;
+    setDragId(null);
+    setDragOverId(null);
+    if (!sourceId || sourceId === targetId) return;
+    const list = [...pending].sort((a, b) => a.priority - b.priority);
+    const from = list.findIndex(p => p.id === sourceId);
+    const to = list.findIndex(p => p.id === targetId);
+    if (from < 0 || to < 0) return;
+    const [moved] = list.splice(from, 1);
+    list.splice(to, 0, moved);
+    const renumbered = list.map((p, i) => ({ ...p, priority: i + 1 }));
+    setPending(renumbered); // otimista: sem delay
+    try {
+      await reorderVentPending(renumbered.map(p => ({ id: p.id, priority: p.priority })));
+    } catch (e: any) {
+      toast({ title: 'Erro ao reordenar', description: e.message, variant: 'destructive' });
+      reload();
+    }
   };
+
 
   const openArrival = (p: VentiladorPending) => {
     setArrivalQty(p.quantidade);
