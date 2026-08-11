@@ -46,7 +46,7 @@ const AppLayout = ({ children }: Props) => {
   return (
     <div className="min-h-screen flex flex-col">
       {/* Header */}
-      <header className="steel-gradient text-white shadow-lg sticky top-0 z-40">
+      <header className="steel-gradient text-foreground shadow-lg sticky top-0 z-40 border-b border-border">
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
@@ -67,8 +67,8 @@ const AppLayout = ({ children }: Props) => {
                   to={item.path}
                   className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors
                     ${active
-                      ? 'bg-white/15 text-white'
-                      : 'text-white/70 hover:text-white hover:bg-white/10'
+                      ? 'bg-foreground/15 text-foreground'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-foreground/10'
                     }`}
                 >
                   <item.icon className="w-4 h-4" />
@@ -81,15 +81,15 @@ const AppLayout = ({ children }: Props) => {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              className="p-1.5 rounded-md text-white/70 hover:text-white hover:bg-white/10 transition-colors"
+              className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-foreground/10 transition-colors"
               title={theme === 'dark' ? 'Modo claro' : 'Modo escuro'}
             >
               {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </button>
-            <span className="text-sm text-white/70 font-mono hidden sm:block">PCP4</span>
+            <span className="text-sm text-muted-foreground font-mono hidden sm:block">PCP4</span>
             <button
               onClick={handleLogout}
-              className="flex items-center gap-1.5 text-sm text-white/70 hover:text-white transition-colors"
+              className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
               <LogOut className="w-4 h-4" />
               <span className="hidden sm:inline">Sair</span>
@@ -99,7 +99,7 @@ const AppLayout = ({ children }: Props) => {
 
         {/* Mobile menu */}
         {menuOpen && (
-          <div className="md:hidden border-t border-white/10 px-4 py-2 space-y-1">
+          <div className="md:hidden border-t border-border px-4 py-2 space-y-1">
             {navItems.map(item => {
               const active = location.pathname === item.path;
               return (
@@ -108,7 +108,7 @@ const AppLayout = ({ children }: Props) => {
                   to={item.path}
                   onClick={() => setMenuOpen(false)}
                   className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium
-                    ${active ? 'bg-white/15 text-white' : 'text-white/70'}`}
+                    ${active ? 'bg-foreground/15 text-foreground' : 'text-muted-foreground'}`}
                 >
                   <item.icon className="w-4 h-4" />
                   {item.label}
