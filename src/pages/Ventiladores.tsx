@@ -208,6 +208,27 @@ export default function Ventiladores() {
     });
   }, [filteredStock, stockSort]);
 
+  const SortTh = ({ label, col, align = 'left' }: { label: string; col: StockSortKey; align?: 'left' | 'center' }) => {
+    const active = stockSort?.key === col;
+    return (
+      <th className={`p-2 ${align === 'center' ? 'text-center' : 'text-left'}`}>
+        <button
+          type="button"
+          onClick={() => toggleStockSort(col)}
+          className={`inline-flex items-center gap-1 hover:text-primary transition-colors ${active ? 'text-primary font-semibold' : ''}`}
+          title="Clique para ordenar"
+        >
+          {label}
+          {active
+            ? (stockSort!.dir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)
+            : <ChevronsUpDown className="w-3 h-3 opacity-40" />}
+        </button>
+      </th>
+    );
+  };
+
+
+
   const filteredPending = useMemo(() => {
     return pending.filter(p => {
       if (tipoFilter !== 'all' && p.tipo !== tipoFilter) return false;
