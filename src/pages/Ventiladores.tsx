@@ -11,8 +11,9 @@ import {
 } from '@/components/ui/select';
 import { toast } from '@/hooks/use-toast';
 import {
-  Fan, Plus, Search, Trash2, ArrowDown, ArrowUp, Check, PackageCheck,
+  Fan, Plus, Search, Trash2, Check, PackageCheck,
   Warehouse, ClipboardList, ArrowLeftRight, Pencil,
+  ChevronUp, ChevronDown, ChevronsUpDown, GripVertical,
 } from 'lucide-react';
 import {
   addVentMovement,
