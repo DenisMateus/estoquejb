@@ -721,7 +721,18 @@ export default function Ventiladores() {
                 </thead>
                 <tbody>
                   {filteredPending.map((p, idx) => (
-                    <tr key={p.id} className="border-t">
+                    <tr
+                      key={p.id}
+                      draggable
+                      onDragStart={() => setDragId(p.id)}
+                      onDragOver={(e) => { e.preventDefault(); setDragOverId(p.id); }}
+                      onDragLeave={() => setDragOverId(prev => (prev === p.id ? null : prev))}
+                      onDrop={() => handleDropOn(p.id)}
+                      onDragEnd={() => { setDragId(null); setDragOverId(null); }}
+                      className={`border-t transition-colors ${dragId === p.id ? 'opacity-50' : ''} ${
+                        dragOverId === p.id && dragId !== p.id ? 'bg-primary/10 border-t-2 border-t-primary' : ''
+                      }`}
+                    >
                       <td className="p-2 text-center">
                         <Checkbox
                           checked={selectedPending.has(p.id)}
@@ -730,16 +741,12 @@ export default function Ventiladores() {
                         />
                       </td>
                       <td className="p-2">
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1.5 cursor-grab active:cursor-grabbing" title="Arraste para alterar a prioridade">
+                          <GripVertical className="w-3.5 h-3.5 text-muted-foreground" />
                           <span className="font-bold w-5 text-center">{idx + 1}</span>
-                          <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => movePriority(idx, -1)} disabled={idx === 0}>
-                            <ArrowUp className="w-3 h-3" />
-                          </Button>
-                          <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => movePriority(idx, 1)} disabled={idx === filteredPending.length - 1}>
-                            <ArrowDown className="w-3 h-3" />
-                          </Button>
                         </div>
                       </td>
+
                       <td className="p-2 font-mono">{p.code}</td>
                       <td className="p-2">{p.description}</td>
                       <td className="p-2">{VENT_TIPO_LABELS[p.tipo]}</td>
