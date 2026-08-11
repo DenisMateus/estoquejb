@@ -67,8 +67,8 @@ const AppLayout = ({ children }: Props) => {
                   to={item.path}
                   className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors
                     ${active
-                      ? 'bg-foreground/15 text-foreground'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-foreground/10'
+                      ? 'bg-slate-800 text-white shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
                     }`}
                 >
                   <item.icon className="w-4 h-4" />
@@ -108,7 +108,7 @@ const AppLayout = ({ children }: Props) => {
                   to={item.path}
                   onClick={() => setMenuOpen(false)}
                   className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium
-                    ${active ? 'bg-foreground/15 text-foreground' : 'text-muted-foreground'}`}
+                    ${active ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-600'}`}
                 >
                   <item.icon className="w-4 h-4" />
                   {item.label}
