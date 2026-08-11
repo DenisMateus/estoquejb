@@ -11,8 +11,9 @@ import {
 } from '@/components/ui/select';
 import { toast } from '@/hooks/use-toast';
 import {
-  Fan, Plus, Search, Trash2, ArrowDown, ArrowUp, Check, PackageCheck,
+  Fan, Plus, Search, Trash2, Check, PackageCheck,
   Warehouse, ClipboardList, ArrowLeftRight, Pencil,
+  ChevronUp, ChevronDown, ChevronsUpDown, GripVertical,
 } from 'lucide-react';
 import {
   addVentMovement,
@@ -176,6 +177,59 @@ export default function Ventiladores() {
     });
   }, [stock, tipoFilter, search]);
 
+  // ------- ordenação do estoque
+  type StockSortKey = 'code' | 'description' | 'tipo' | 'cliente' | 'ofNumber' | 'status' | 'voltaObra' | 'createdAt';
+  const [stockSort, setStockSort] = useState<{ key: StockSortKey; dir: 'asc' | 'desc' } | null>(null);
+  const toggleStockSort = (key: StockSortKey) => {
+    setStockSort(prev => {
+      if (!prev || prev.key !== key) return { key, dir: 'asc' };
+      if (prev.dir === 'asc') return { key, dir: 'desc' };
+      return null;
+    });
+  };
+  const sortedStock = useMemo(() => {
+    if (!stockSort) return filteredStock;
+    const { key, dir } = stockSort;
+    const mult = dir === 'asc' ? 1 : -1;
+    const val = (s: VentiladorStock) => {
+      switch (key) {
+        case 'tipo': return VENT_TIPO_LABELS[s.tipo];
+        case 'status': return VENT_STATUS_LABELS[s.status];
+        case 'voltaObra': return s.voltaObra ? 1 : 0;
+        case 'createdAt': return new Date(s.createdAt).getTime();
+        default: return (s[key] as string) || '';
+      }
+    };
+    return [...filteredStock].sort((a, b) => {
+      const va = val(a); const vb = val(b);
+      if (typeof va === 'number' && typeof vb === 'number') return (va - vb) * mult;
+      const na = Number(va); const nb = Number(vb);
+      if (String(va).trim() !== '' && String(vb).trim() !== '' && !isNaN(na) && !isNaN(nb)) return (na - nb) * mult;
+      return String(va).localeCompare(String(vb), 'pt-BR', { sensitivity: 'base' }) * mult;
+    });
+  }, [filteredStock, stockSort]);
+
+  const SortTh = ({ label, col, align = 'left' }: { label: string; col: StockSortKey; align?: 'left' | 'center' }) => {
+    const active = stockSort?.key === col;
+    return (
+      <th className={`p-2 ${align === 'center' ? 'text-center' : 'text-left'}`}>
+        <button
+          type="button"
+          onClick={() => toggleStockSort(col)}
+          className={`inline-flex items-center gap-1 hover:text-primary transition-colors ${active ? 'text-primary font-semibold' : ''}`}
+          title="Clique para ordenar"
+        >
+          {label}
+          {active
+            ? (stockSort!.dir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)
+            : <ChevronsUpDown className="w-3 h-3 opacity-40" />}
+        </button>
+      </th>
+    );
+  };
+
+
+
   const filteredPending = useMemo(() => {
     return pending.filter(p => {
       if (tipoFilter !== 'all' && p.tipo !== tipoFilter) return false;
@@ -325,18 +379,31 @@ export default function Ventiladores() {
     await createPendingNow(qty);
   };
 
-  const movePriority = async (idx: number, dir: -1 | 1) => {
-    const list = [...filteredPending];
-    const target = idx + dir;
-    if (target < 0 || target >= list.length) return;
-    const a = list[idx]; const b = list[target];
-    const pa = a.priority; const pb = b.priority;
-    await reorderVentPending([
-      { id: a.id, priority: pb },
-      { id: b.id, priority: pa },
-    ]);
-    reload();
+  // ------- arrastar para reordenar prioridade
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [dragOverId, setDragOverId] = useState<string | null>(null);
+
+  const handleDropOn = async (targetId: string) => {
+    const sourceId = dragId;
+    setDragId(null);
+    setDragOverId(null);
+    if (!sourceId || sourceId === targetId) return;
+    const list = [...pending].sort((a, b) => a.priority - b.priority);
+    const from = list.findIndex(p => p.id === sourceId);
+    const to = list.findIndex(p => p.id === targetId);
+    if (from < 0 || to < 0) return;
+    const [moved] = list.splice(from, 1);
+    list.splice(to, 0, moved);
+    const renumbered = list.map((p, i) => ({ ...p, priority: i + 1 }));
+    setPending(renumbered); // otimista: sem delay
+    try {
+      await reorderVentPending(renumbered.map(p => ({ id: p.id, priority: p.priority })));
+    } catch (e: any) {
+      toast({ title: 'Erro ao reordenar', description: e.message, variant: 'destructive' });
+      reload();
+    }
   };
+
 
   const openArrival = (p: VentiladorPending) => {
     setArrivalQty(p.quantidade);
@@ -547,19 +614,19 @@ export default function Ventiladores() {
                         aria-label="Selecionar todos"
                       />
                     </th>
-                    <th className="text-left p-2">Código</th>
-                    <th className="text-left p-2">Descrição</th>
-                    <th className="text-left p-2">Tipo</th>
-                    <th className="text-left p-2">Cliente</th>
-                    <th className="text-left p-2">OF</th>
-                    <th className="text-left p-2">Status</th>
-                    <th className="text-center p-2" title="Volta de obra">V.O.</th>
-                    <th className="text-left p-2">Data</th>
+                    <SortTh label="Código" col="code" />
+                    <SortTh label="Descrição" col="description" />
+                    <SortTh label="Tipo" col="tipo" />
+                    <SortTh label="Cliente" col="cliente" />
+                    <SortTh label="OF" col="ofNumber" />
+                    <SortTh label="Status" col="status" />
+                    <SortTh label="V.O." col="voltaObra" align="center" />
+                    <SortTh label="Data" col="createdAt" />
                     <th className="text-right p-2">Ações</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredStock.map(s => (
+                  {sortedStock.map(s => (
                     <tr key={s.id} className={`border-t ${
                       s.status === 'reservado' ? 'bg-yellow-500/10' :
                       s.status === 'vendido' ? 'bg-red-500/10' : ''
@@ -654,7 +721,18 @@ export default function Ventiladores() {
                 </thead>
                 <tbody>
                   {filteredPending.map((p, idx) => (
-                    <tr key={p.id} className="border-t">
+                    <tr
+                      key={p.id}
+                      draggable
+                      onDragStart={() => setDragId(p.id)}
+                      onDragOver={(e) => { e.preventDefault(); setDragOverId(p.id); }}
+                      onDragLeave={() => setDragOverId(prev => (prev === p.id ? null : prev))}
+                      onDrop={() => handleDropOn(p.id)}
+                      onDragEnd={() => { setDragId(null); setDragOverId(null); }}
+                      className={`border-t transition-colors ${dragId === p.id ? 'opacity-50' : ''} ${
+                        dragOverId === p.id && dragId !== p.id ? 'bg-primary/10 border-t-2 border-t-primary' : ''
+                      }`}
+                    >
                       <td className="p-2 text-center">
                         <Checkbox
                           checked={selectedPending.has(p.id)}
@@ -663,16 +741,12 @@ export default function Ventiladores() {
                         />
                       </td>
                       <td className="p-2">
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1.5 cursor-grab active:cursor-grabbing" title="Arraste para alterar a prioridade">
+                          <GripVertical className="w-3.5 h-3.5 text-muted-foreground" />
                           <span className="font-bold w-5 text-center">{idx + 1}</span>
-                          <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => movePriority(idx, -1)} disabled={idx === 0}>
-                            <ArrowUp className="w-3 h-3" />
-                          </Button>
-                          <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => movePriority(idx, 1)} disabled={idx === filteredPending.length - 1}>
-                            <ArrowDown className="w-3 h-3" />
-                          </Button>
                         </div>
                       </td>
+
                       <td className="p-2 font-mono">{p.code}</td>
                       <td className="p-2">{p.description}</td>
                       <td className="p-2">{VENT_TIPO_LABELS[p.tipo]}</td>
