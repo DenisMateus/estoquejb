@@ -579,19 +579,19 @@ export default function Ventiladores() {
                         aria-label="Selecionar todos"
                       />
                     </th>
-                    <th className="text-left p-2">Código</th>
-                    <th className="text-left p-2">Descrição</th>
-                    <th className="text-left p-2">Tipo</th>
-                    <th className="text-left p-2">Cliente</th>
-                    <th className="text-left p-2">OF</th>
-                    <th className="text-left p-2">Status</th>
-                    <th className="text-center p-2" title="Volta de obra">V.O.</th>
-                    <th className="text-left p-2">Data</th>
+                    <SortTh label="Código" col="code" />
+                    <SortTh label="Descrição" col="description" />
+                    <SortTh label="Tipo" col="tipo" />
+                    <SortTh label="Cliente" col="cliente" />
+                    <SortTh label="OF" col="ofNumber" />
+                    <SortTh label="Status" col="status" />
+                    <SortTh label="V.O." col="voltaObra" align="center" />
+                    <SortTh label="Data" col="createdAt" />
                     <th className="text-right p-2">Ações</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredStock.map(s => (
+                  {sortedStock.map(s => (
                     <tr key={s.id} className={`border-t ${
                       s.status === 'reservado' ? 'bg-yellow-500/10' :
                       s.status === 'vendido' ? 'bg-red-500/10' : ''
