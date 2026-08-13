@@ -1,0 +1,1 @@
+ALTER TABLE public.ventiladores_pending ADD COLUMN IF NOT EXISTS negativa boolean NOT NULL DEFAULT false;
