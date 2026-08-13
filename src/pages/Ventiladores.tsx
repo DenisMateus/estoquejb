@@ -73,7 +73,7 @@ export default function Ventiladores() {
   const [editingPendingId, setEditingPendingId] = useState<string | null>(null);
   const [pendingForm, setPendingForm] = useState({
     code: '', description: '', tipo: 'SILO' as VentiladorTipo,
-    cliente: '', ofNumber: '', prazoEntrega: '', quantidade: 1,
+    cliente: '', ofNumber: '', prazoEntrega: '', quantidade: 1, negativa: false,
   });
 
   const [exitDialog, setExitDialog] = useState<VentiladorStock | null>(null);
@@ -291,7 +291,7 @@ export default function Ventiladores() {
   };
 
   const resetPendingForm = () => {
-    setPendingForm({ code: '', description: '', tipo: 'SILO', cliente: '', ofNumber: '', prazoEntrega: '', quantidade: 1 });
+    setPendingForm({ code: '', description: '', tipo: 'SILO', cliente: '', ofNumber: '', prazoEntrega: '', quantidade: 1, negativa: false });
     setEditingPendingId(null);
   };
 
@@ -300,9 +300,19 @@ export default function Ventiladores() {
       code: p.code, description: p.description, tipo: p.tipo,
       cliente: p.cliente, ofNumber: p.ofNumber, prazoEntrega: p.prazoEntrega,
       quantidade: p.quantidade,
+      negativa: p.negativa,
     });
     setEditingPendingId(p.id);
     setPendingDialog(true);
+  };
+
+  const toggleNegativa = async (p: VentiladorPending) => {
+    try {
+      await updateVentPending(p.id, { negativa: !p.negativa });
+      setPending(prev => prev.map(x => (x.id === p.id ? { ...x, negativa: !p.negativa } : x)));
+    } catch (e: any) {
+      toast({ title: 'Erro', description: e.message, variant: 'destructive' });
+    }
   };
 
   const submitPending = async () => {
@@ -316,7 +326,7 @@ export default function Ventiladores() {
     if (editingPendingId) {
       try {
         await updateVentPending(editingPendingId, {
-          code, description, tipo, cliente, ofNumber, prazoEntrega, quantidade: qty,
+          code, description, tipo, cliente, ofNumber, prazoEntrega, quantidade: qty, negativa: pendingForm.negativa,
         });
         setPendingDialog(false);
         resetPendingForm();
@@ -576,6 +586,11 @@ export default function Ventiladores() {
             </span>
           </div>
           <div className="rounded border px-3 py-1.5 bg-muted/40">
+            Em negativa: <span className="font-bold text-red-600">
+              {pending.filter(p => p.negativa).length}
+            </span>
+          </div>
+          <div className="rounded border px-3 py-1.5 bg-muted/40">
             Reservados: <span className="font-bold text-yellow-600">
               {stock.filter(s => s.status === 'reservado').length}
             </span>
@@ -715,6 +730,7 @@ export default function Ventiladores() {
                     <th className="text-left p-2">Cliente</th>
                     <th className="text-left p-2">OF</th>
                     <th className="text-center p-2">Qtd</th>
+                    <th className="text-center p-2" title="Negativa: itens que ainda faltam separar para o cliente">Neg.</th>
                     <th className="text-left p-2">Prazo</th>
                     <th className="text-right p-2">Ações</th>
                   </tr>
@@ -729,7 +745,7 @@ export default function Ventiladores() {
                       onDragLeave={() => setDragOverId(prev => (prev === p.id ? null : prev))}
                       onDrop={() => handleDropOn(p.id)}
                       onDragEnd={() => { setDragId(null); setDragOverId(null); }}
-                      className={`border-t transition-colors ${dragId === p.id ? 'opacity-50' : ''} ${
+                      className={`border-t transition-colors ${p.negativa ? 'bg-red-500/10' : ''} ${dragId === p.id ? 'opacity-50' : ''} ${
                         dragOverId === p.id && dragId !== p.id ? 'bg-primary/10 border-t-2 border-t-primary' : ''
                       }`}
                     >
@@ -748,11 +764,28 @@ export default function Ventiladores() {
                       </td>
 
                       <td className="p-2 font-mono">{p.code}</td>
-                      <td className="p-2">{p.description}</td>
+                      <td className="p-2">
+                        <div className="flex items-center gap-1.5">
+                          <span>{p.description}</span>
+                          {p.negativa && (
+                            <span className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold bg-red-600 text-white" title="Cliente em negativa - prioridade máxima">
+                              NEGATIVA
+                            </span>
+                          )}
+                        </div>
+                      </td>
                       <td className="p-2">{VENT_TIPO_LABELS[p.tipo]}</td>
                       <td className="p-2">{p.cliente}</td>
                       <td className="p-2">{p.ofNumber || '-'}</td>
                       <td className="p-2 text-center font-bold">{p.quantidade}</td>
+                      <td className="p-2 text-center">
+                        <Checkbox
+                          checked={p.negativa}
+                          onCheckedChange={() => toggleNegativa(p)}
+                          title="Marcar como NEGATIVA (urgente)"
+                          aria-label="Negativa"
+                        />
+                      </td>
                       <td className="p-2">{p.prazoEntrega ? formatDateBR(p.prazoEntrega) : '-'}</td>
                       <td className="p-2 text-right whitespace-nowrap">
                         <Button size="sm" onClick={() => openArrival(p)}>
@@ -768,11 +801,15 @@ export default function Ventiladores() {
                     </tr>
                   ))}
                   {filteredPending.length === 0 && (
-                    <tr><td colSpan={10} className="p-6 text-center text-muted-foreground">Nenhuma pendência registrada.</td></tr>
+                    <tr><td colSpan={11} className="p-6 text-center text-muted-foreground">Nenhuma pendência registrada.</td></tr>
                   )}
                 </tbody>
               </table>
             </div>
+            <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+              <span className="rounded px-1.5 py-0.5 text-[10px] font-bold bg-red-600 text-white">NEGATIVA</span>
+              Cliente com itens pendentes que ainda faltam separar — prioridade máxima de atendimento.
+            </p>
           </>
         )}
 
@@ -902,6 +939,13 @@ export default function Ventiladores() {
               <Label>Prazo de entrega *</Label>
               <Input type="date" value={pendingForm.prazoEntrega} onChange={e => setPendingForm({ ...pendingForm, prazoEntrega: e.target.value })} />
             </div>
+            <label className="flex items-center gap-2 text-sm cursor-pointer">
+              <Checkbox
+                checked={pendingForm.negativa}
+                onCheckedChange={(v) => setPendingForm({ ...pendingForm, negativa: Boolean(v) })}
+              />
+              Cliente em <strong>NEGATIVA</strong> (itens que ainda faltam separar — urgente)
+            </label>
             <p className="text-xs text-muted-foreground">Todos os campos marcados com * são obrigatórios.</p>
           </div>
           <DialogFooter>
