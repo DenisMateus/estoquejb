@@ -36,6 +36,7 @@ export interface VentiladorPending {
   prazoEntrega: string;
   priority: number;
   quantidade: number;
+  negativa: boolean;
   createdAt: string;
 }
 
@@ -75,6 +76,7 @@ const mapPending = (r: any): VentiladorPending => ({
   prazoEntrega: r.prazo_entrega || '',
   priority: Number(r.priority) || 0,
   quantidade: Number(r.quantidade) || 1,
+  negativa: Boolean(r.negativa),
   createdAt: r.created_at,
 });
 
@@ -147,6 +149,7 @@ export async function addVentPending(input: Omit<VentiladorPending, 'id' | 'crea
     prazo_entrega: input.prazoEntrega,
     priority: input.priority,
     quantidade: input.quantidade,
+    negativa: input.negativa,
   }).select().single();
   if (error) throw error;
   return mapPending(data);
@@ -162,6 +165,7 @@ export async function updateVentPending(id: string, updates: Partial<Omit<Ventil
   if (updates.prazoEntrega !== undefined) db.prazo_entrega = updates.prazoEntrega;
   if (updates.priority !== undefined) db.priority = updates.priority;
   if (updates.quantidade !== undefined) db.quantidade = updates.quantidade;
+  if (updates.negativa !== undefined) db.negativa = updates.negativa;
   const { data, error } = await supabase.from('ventiladores_pending').update(db).eq('id', id).select().single();
   if (error) throw error;
   return mapPending(data);

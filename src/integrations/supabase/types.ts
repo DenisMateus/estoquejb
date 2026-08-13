@@ -241,6 +241,7 @@ export type Database = {
           created_at: string
           description: string
           id: string
+          negativa: boolean
           of_number: string
           prazo_entrega: string
           priority: number
@@ -253,6 +254,7 @@ export type Database = {
           created_at?: string
           description: string
           id?: string
+          negativa?: boolean
           of_number?: string
           prazo_entrega?: string
           priority?: number
@@ -265,6 +267,7 @@ export type Database = {
           created_at?: string
           description?: string
           id?: string
+          negativa?: boolean
           of_number?: string
           prazo_entrega?: string
           priority?: number
