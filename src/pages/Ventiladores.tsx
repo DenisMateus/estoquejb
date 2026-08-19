@@ -763,10 +763,10 @@ export default function Ventiladores() {
                         </div>
                       </td>
 
-                      <td className="p-2 font-mono whitespace-nowrap overflow-hidden text-ellipsis">{p.code}</td>
+                      <td className="p-2 font-mono whitespace-nowrap">{p.code}</td>
                       <td className="p-2">
-                        <div className="flex items-center gap-1.5 whitespace-nowrap overflow-hidden">
-                          <span className="overflow-hidden text-ellipsis">{p.description}</span>
+                        <div className="flex items-center gap-1.5 whitespace-nowrap">
+                          <span>{p.description}</span>
                           {p.negativa && (
                             <span className="shrink-0 rounded px-1 py-0 text-[9px] font-bold bg-red-600 text-white leading-tight" title="Cliente em negativa - prioridade máxima">
                               NEG
@@ -775,7 +775,7 @@ export default function Ventiladores() {
                         </div>
                       </td>
                       <td className="p-2 whitespace-nowrap">{VENT_TIPO_LABELS[p.tipo]}</td>
-                      <td className="p-2 whitespace-nowrap overflow-hidden text-ellipsis">{p.cliente}</td>
+                      <td className="p-2 whitespace-nowrap">{p.cliente}</td>
                       <td className="p-2 whitespace-nowrap">{p.ofNumber || '-'}</td>
                       <td className="p-2 text-center font-bold">{p.quantidade}</td>
                       <td className="p-2 text-center">
