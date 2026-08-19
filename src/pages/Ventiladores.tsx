@@ -758,25 +758,25 @@ export default function Ventiladores() {
                       </td>
                       <td className="p-2">
                         <div className="flex items-center gap-1.5 cursor-grab active:cursor-grabbing" title="Arraste para alterar a prioridade">
-                          <GripVertical className="w-3.5 h-3.5 text-muted-foreground" />
+                          <GripVertical className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
                           <span className="font-bold w-5 text-center">{idx + 1}</span>
                         </div>
                       </td>
 
-                      <td className="p-2 font-mono">{p.code}</td>
+                      <td className="p-2 font-mono whitespace-nowrap overflow-hidden text-ellipsis">{p.code}</td>
                       <td className="p-2">
-                        <div className="flex items-center gap-1.5">
-                          <span>{p.description}</span>
+                        <div className="flex items-center gap-1.5 whitespace-nowrap overflow-hidden">
+                          <span className="overflow-hidden text-ellipsis">{p.description}</span>
                           {p.negativa && (
-                            <span className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold bg-red-600 text-white" title="Cliente em negativa - prioridade máxima">
-                              NEGATIVA
+                            <span className="shrink-0 rounded px-1 py-0 text-[9px] font-bold bg-red-600 text-white leading-tight" title="Cliente em negativa - prioridade máxima">
+                              NEG
                             </span>
                           )}
                         </div>
                       </td>
-                      <td className="p-2">{VENT_TIPO_LABELS[p.tipo]}</td>
-                      <td className="p-2">{p.cliente}</td>
-                      <td className="p-2">{p.ofNumber || '-'}</td>
+                      <td className="p-2 whitespace-nowrap">{VENT_TIPO_LABELS[p.tipo]}</td>
+                      <td className="p-2 whitespace-nowrap overflow-hidden text-ellipsis">{p.cliente}</td>
+                      <td className="p-2 whitespace-nowrap">{p.ofNumber || '-'}</td>
                       <td className="p-2 text-center font-bold">{p.quantidade}</td>
                       <td className="p-2 text-center">
                         <Checkbox
