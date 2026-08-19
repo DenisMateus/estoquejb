@@ -713,7 +713,7 @@ export default function Ventiladores() {
               </div>
             )}
             <div className="border rounded-md overflow-x-auto">
-              <table className="w-full text-xs table-fixed">
+              <table className="w-full text-xs">
                 <thead className="bg-muted/60">
                   <tr>
                     <th className="p-2 w-8">
