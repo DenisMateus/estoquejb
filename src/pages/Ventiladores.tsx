@@ -713,7 +713,7 @@ export default function Ventiladores() {
               </div>
             )}
             <div className="border rounded-md overflow-x-auto">
-              <table className="w-full text-xs table-fixed">
+              <table className="w-full text-xs">
                 <thead className="bg-muted/60">
                   <tr>
                     <th className="p-2 w-8">
@@ -724,15 +724,15 @@ export default function Ventiladores() {
                       />
                     </th>
                     <th className="text-left p-2 w-20">Prioridade</th>
-                    <th className="text-left p-2 w-24">Código</th>
+                    <th className="text-left p-2">Código</th>
                     <th className="text-left p-2">Descrição</th>
-                    <th className="text-left p-2 w-28">Tipo</th>
-                    <th className="text-left p-2 w-32">Cliente</th>
-                    <th className="text-left p-2 w-24">OF</th>
+                    <th className="text-left p-2">Tipo</th>
+                    <th className="text-left p-2">Cliente</th>
+                    <th className="text-left p-2">OF</th>
                     <th className="text-center p-2 w-12">Qtd</th>
                     <th className="text-center p-2 w-12" title="Negativa: itens que ainda faltam separar para o cliente">Neg.</th>
-                    <th className="text-left p-2 w-24">Prazo</th>
-                    <th className="text-right p-2 w-44">Ações</th>
+                    <th className="text-left p-2">Prazo</th>
+                    <th className="text-right p-2">Ações</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -763,10 +763,10 @@ export default function Ventiladores() {
                         </div>
                       </td>
 
-                      <td className="p-2 font-mono whitespace-nowrap overflow-hidden text-ellipsis">{p.code}</td>
+                      <td className="p-2 font-mono whitespace-nowrap">{p.code}</td>
                       <td className="p-2">
-                        <div className="flex items-center gap-1.5 whitespace-nowrap overflow-hidden">
-                          <span className="overflow-hidden text-ellipsis">{p.description}</span>
+                        <div className="flex items-center gap-1.5 whitespace-nowrap">
+                          <span>{p.description}</span>
                           {p.negativa && (
                             <span className="shrink-0 rounded px-1 py-0 text-[9px] font-bold bg-red-600 text-white leading-tight" title="Cliente em negativa - prioridade máxima">
                               NEG
@@ -775,7 +775,7 @@ export default function Ventiladores() {
                         </div>
                       </td>
                       <td className="p-2 whitespace-nowrap">{VENT_TIPO_LABELS[p.tipo]}</td>
-                      <td className="p-2 whitespace-nowrap overflow-hidden text-ellipsis">{p.cliente}</td>
+                      <td className="p-2 whitespace-nowrap">{p.cliente}</td>
                       <td className="p-2 whitespace-nowrap">{p.ofNumber || '-'}</td>
                       <td className="p-2 text-center font-bold">{p.quantidade}</td>
                       <td className="p-2 text-center">
