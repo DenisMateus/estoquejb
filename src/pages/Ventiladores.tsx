@@ -619,16 +619,17 @@ export default function Ventiladores() {
               </div>
             )}
             <div className="border rounded-md overflow-hidden">
-              <table className="w-full table-fixed text-[10px]">
+              <table className="w-full text-xs">
                 <thead className="bg-muted/60">
                   <tr>
-                    <th className="px-1 py-1.5 w-[3%]">
+                    <th className="p-2 w-8">
                       <Checkbox
                         checked={filteredStock.length > 0 && filteredStock.every(s => selectedStock.has(s.id))}
                         onCheckedChange={() => toggleSelectAllStock(filteredStock.map(s => s.id))}
                         aria-label="Selecionar todos"
                       />
                     </th>
+
                     <SortTh label="Código" col="code" />
                     <SortTh label="Descrição" col="description" />
                     <SortTh label="Tipo" col="tipo" />
