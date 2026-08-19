@@ -618,11 +618,11 @@ export default function Ventiladores() {
                 </div>
               </div>
             )}
-            <div className="border rounded-md overflow-x-auto">
-              <table className="w-full text-xs">
+            <div className="border rounded-md overflow-hidden">
+              <table className="w-full table-fixed text-[10px]">
                 <thead className="bg-muted/60">
                   <tr>
-                    <th className="p-2 w-8">
+                    <th className="px-1 py-1.5 w-[3%]">
                       <Checkbox
                         checked={filteredStock.length > 0 && filteredStock.every(s => selectedStock.has(s.id))}
                         onCheckedChange={() => toggleSelectAllStock(filteredStock.map(s => s.id))}
@@ -723,16 +723,16 @@ export default function Ventiladores() {
                         aria-label="Selecionar todos"
                       />
                     </th>
-                    <th className="text-left p-2 w-20">Prioridade</th>
-                    <th className="text-left p-2">Código</th>
-                    <th className="text-left p-2">Descrição</th>
-                    <th className="text-left p-2">Tipo</th>
-                    <th className="text-left p-2">Cliente</th>
-                    <th className="text-left p-2">OF</th>
-                    <th className="text-center p-2 w-12">Qtd</th>
-                    <th className="text-center p-2 w-12" title="Negativa: itens que ainda faltam separar para o cliente">Neg.</th>
-                    <th className="text-left p-2">Prazo</th>
-                    <th className="text-right p-2">Ações</th>
+                    <th className="text-left px-1 py-1.5 w-[6%]">Prior.</th>
+                    <th className="text-left px-1 py-1.5 w-[8%]">Código</th>
+                    <th className="text-left px-1 py-1.5 w-[32%]">Descrição</th>
+                    <th className="text-left px-1 py-1.5 w-[6%]">Tipo</th>
+                    <th className="text-left px-1 py-1.5 w-[11%]">Cliente</th>
+                    <th className="text-left px-1 py-1.5 w-[5%]">OF</th>
+                    <th className="text-center px-1 py-1.5 w-[4%]">Qtd</th>
+                    <th className="text-center px-1 py-1.5 w-[4%]" title="Negativa: itens que ainda faltam separar para o cliente">Neg.</th>
+                    <th className="text-left px-1 py-1.5 w-[8%]">Prazo</th>
+                    <th className="text-center px-1 py-1.5 w-[13%]">Ações</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -749,23 +749,23 @@ export default function Ventiladores() {
                         dragOverId === p.id && dragId !== p.id ? 'bg-primary/10 border-t-2 border-t-primary' : ''
                       }`}
                     >
-                      <td className="p-2 text-center">
+                      <td className="px-1 py-1 text-center">
                         <Checkbox
                           checked={selectedPending.has(p.id)}
                           onCheckedChange={() => toggleSelectPending(p.id)}
                           aria-label="Selecionar"
                         />
                       </td>
-                      <td className="p-2">
-                        <div className="flex items-center gap-1.5 cursor-grab active:cursor-grabbing" title="Arraste para alterar a prioridade">
-                          <GripVertical className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                          <span className="font-bold w-5 text-center">{idx + 1}</span>
+                      <td className="px-1 py-1">
+                        <div className="flex items-center gap-0.5 cursor-grab active:cursor-grabbing" title="Arraste para alterar a prioridade">
+                          <GripVertical className="w-3 h-3 text-muted-foreground shrink-0" />
+                          <span className="font-bold text-center">{idx + 1}</span>
                         </div>
                       </td>
 
-                      <td className="p-2 font-mono whitespace-nowrap">{p.code}</td>
-                      <td className="p-2">
-                        <div className="flex items-center gap-1.5 whitespace-nowrap">
+                      <td className="px-1 py-1 font-mono whitespace-nowrap">{p.code}</td>
+                      <td className="px-1 py-1">
+                        <div className="flex items-center gap-1 whitespace-nowrap">
                           <span>{p.description}</span>
                           {p.negativa && (
                             <span className="shrink-0 rounded px-1 py-0 text-[9px] font-bold bg-red-600 text-white leading-tight" title="Cliente em negativa - prioridade máxima">
@@ -774,11 +774,11 @@ export default function Ventiladores() {
                           )}
                         </div>
                       </td>
-                      <td className="p-2 whitespace-nowrap">{VENT_TIPO_LABELS[p.tipo]}</td>
-                      <td className="p-2 whitespace-nowrap">{p.cliente}</td>
-                      <td className="p-2 whitespace-nowrap">{p.ofNumber || '-'}</td>
-                      <td className="p-2 text-center font-bold">{p.quantidade}</td>
-                      <td className="p-2 text-center">
+                      <td className="px-1 py-1 whitespace-nowrap">{VENT_TIPO_LABELS[p.tipo]}</td>
+                      <td className="px-1 py-1 whitespace-nowrap">{p.cliente}</td>
+                      <td className="px-1 py-1 whitespace-nowrap">{p.ofNumber || '-'}</td>
+                      <td className="px-1 py-1 text-center font-bold">{p.quantidade}</td>
+                      <td className="px-1 py-1 text-center">
                         <Checkbox
                           checked={p.negativa}
                           onCheckedChange={() => toggleNegativa(p)}
@@ -786,15 +786,15 @@ export default function Ventiladores() {
                           aria-label="Negativa"
                         />
                       </td>
-                      <td className="p-2">{p.prazoEntrega ? formatDateBR(p.prazoEntrega) : '-'}</td>
-                      <td className="p-2 text-right whitespace-nowrap">
-                        <Button size="sm" onClick={() => openArrival(p)}>
-                          <Check className="w-3.5 h-3.5 mr-1" /> Confirmar chegada
+                      <td className="px-1 py-1 whitespace-nowrap">{p.prazoEntrega ? formatDateBR(p.prazoEntrega) : '-'}</td>
+                      <td className="px-1 py-1 text-center whitespace-nowrap">
+                        <Button size="icon" className="h-7 w-7" onClick={() => openArrival(p)} title="Confirmar chegada" aria-label="Confirmar chegada">
+                          <Check className="w-3.5 h-3.5" />
                         </Button>
-                        <Button size="sm" variant="ghost" className="ml-1" onClick={() => openEditPending(p)} title="Editar">
+                        <Button size="icon" variant="ghost" className="ml-0.5 h-7 w-7" onClick={() => openEditPending(p)} title="Editar" aria-label="Editar">
                           <Pencil className="w-3.5 h-3.5" />
                         </Button>
-                        <Button size="sm" variant="ghost" className="ml-1" onClick={() => setDeletePendingId(p.id)} title="Excluir">
+                        <Button size="icon" variant="ghost" className="ml-0.5 h-7 w-7" onClick={() => setDeletePendingId(p.id)} title="Excluir" aria-label="Excluir">
                           <Trash2 className="w-3.5 h-3.5" />
                         </Button>
                       </td>
