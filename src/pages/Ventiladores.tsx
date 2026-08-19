@@ -723,16 +723,16 @@ export default function Ventiladores() {
                         aria-label="Selecionar todos"
                       />
                     </th>
-                    <th className="text-left p-2 w-24">Prioridade</th>
-                    <th className="text-left p-2">Código</th>
+                    <th className="text-left p-2 w-20">Prioridade</th>
+                    <th className="text-left p-2 w-24">Código</th>
                     <th className="text-left p-2">Descrição</th>
-                    <th className="text-left p-2">Tipo</th>
-                    <th className="text-left p-2">Cliente</th>
-                    <th className="text-left p-2">OF</th>
-                    <th className="text-center p-2">Qtd</th>
-                    <th className="text-center p-2" title="Negativa: itens que ainda faltam separar para o cliente">Neg.</th>
-                    <th className="text-left p-2">Prazo</th>
-                    <th className="text-right p-2">Ações</th>
+                    <th className="text-left p-2 w-28">Tipo</th>
+                    <th className="text-left p-2 w-32">Cliente</th>
+                    <th className="text-left p-2 w-24">OF</th>
+                    <th className="text-center p-2 w-12">Qtd</th>
+                    <th className="text-center p-2 w-12" title="Negativa: itens que ainda faltam separar para o cliente">Neg.</th>
+                    <th className="text-left p-2 w-24">Prazo</th>
+                    <th className="text-right p-2 w-44">Ações</th>
                   </tr>
                 </thead>
                 <tbody>
