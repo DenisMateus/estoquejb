@@ -176,3 +176,25 @@ export async function addMtdMovement(mov: Omit<MtdMovement, 'id' | 'createdAt'>,
   if (error) throw error;
   return mapMtdMovement(data);
 }
+
+export async function deleteMtdMovement(id: string) {
+  const { error } = await supabase.from('mtd_movements').delete().eq('id', id);
+  if (error) throw error;
+}
+
+/**
+ * Reverte uma saída de motorredutor: devolve a quantidade exata ao estoque,
+ * volta o status para "disponível" e remove o registro da movimentação.
+ */
+export async function revertMtdSaida(mov: MtdMovement) {
+  const { data: product, error: pErr } = await supabase
+    .from('mtd_products').select('*').eq('id', mov.mtdProductId).single();
+  if (pErr || !product) throw new Error('Motorredutor não encontrado');
+
+  const { error: uErr } = await supabase.from('mtd_products')
+    .update({ quantity: Number(product.quantity) + Number(mov.quantity), status: 'disponivel' })
+    .eq('id', mov.mtdProductId);
+  if (uErr) throw uErr;
+
+  await deleteMtdMovement(mov.id);
+}
