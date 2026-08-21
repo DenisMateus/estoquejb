@@ -1873,6 +1873,34 @@ const Motorredutores = () => {
         </div>
       )}
 
+      {/* Reverter saída dialog */}
+      {revertTarget && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setRevertTarget(null)}>
+          <div className="bg-background rounded-lg shadow-xl border w-full max-w-md p-6" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
+                <Undo2 className="w-5 h-5 text-primary" /> Reverter saída
+              </h3>
+              <button onClick={() => setRevertTarget(null)} className="text-muted-foreground hover:text-foreground"><X className="w-5 h-5" /></button>
+            </div>
+            <div className="text-sm text-muted-foreground space-y-1 mb-5">
+              <p><strong className="text-foreground font-mono">{revertTarget.mtdProductCode}</strong> — {revertTarget.mtdProductDescription}</p>
+              <p>Quantidade: <strong className="text-foreground">{formatQuantity(revertTarget.quantity)}</strong></p>
+              <p>Cliente destino: <strong className="text-foreground">{revertTarget.clienteDestino || '—'}</strong></p>
+              <p>Data da saída: <strong className="text-foreground font-mono">{formatDateBR(revertTarget.date)}</strong></p>
+              <p className="pt-2 text-xs">O motor voltará ao estoque com todas as informações originais (código, descrição, NF, OF, cliente, portaria) e o registro desta saída será removido das movimentações.</p>
+            </div>
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setRevertTarget(null)} className="px-4 py-2 rounded-lg text-sm font-medium bg-muted text-muted-foreground hover:bg-muted/80">Cancelar</button>
+              <button onClick={handleRevertSaida} disabled={revertingId === revertTarget.id}
+                className="px-4 py-2 rounded-lg text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
+                {revertingId === revertTarget.id ? 'Revertendo...' : 'Reverter saída'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Status / Reserva dialog */}
       {statusDialog && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setStatusDialog(null)}>
