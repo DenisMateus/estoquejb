@@ -1160,12 +1160,13 @@ const Motorredutores = () => {
                   <col style={{ width: '7%' }} />
                   <col style={{ width: '19%' }} />
                   <col style={{ width: '4%' }} />
-                  <col style={{ width: '11%' }} />
-                  <col style={{ width: '17%' }} />
+                  <col style={{ width: '10%' }} />
+                  <col style={{ width: '16%' }} />
                   <col style={{ width: '6%' }} />
                   <col style={{ width: '5%' }} />
-                  <col style={{ width: '8%' }} />
-                  <col style={{ width: '11%' }} />
+                  <col style={{ width: '7%' }} />
+                  <col style={{ width: '9%' }} />
+                  <col style={{ width: '5%' }} />
                 </colgroup>
                 <thead>
                   <tr className="border-b bg-muted/50">
@@ -1181,6 +1182,7 @@ const Motorredutores = () => {
                       { key: null, label: 'OF', sortable: false, align: 'left', nowrap: true },
                       { key: null, label: 'Inventário', sortable: false, align: 'center', nowrap: true },
                       { key: null, label: 'Observação', sortable: false, align: 'left', nowrap: false },
+                      { key: null, label: 'Ações', sortable: false, align: 'center', nowrap: true },
                     ] as Array<{ key: 'data' | 'codigo' | 'origem' | 'destino' | null; label: string; sortable: boolean; align: 'left' | 'center'; nowrap: boolean }>).map((h, i) => {
                       const isActive = h.sortable && movSortKey === h.key;
                       return (
