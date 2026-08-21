@@ -1201,7 +1201,7 @@ const Motorredutores = () => {
                 </thead>
                 <tbody>
                   {filteredMovements.length === 0 ? (
-                    <tr><td colSpan={11} className="px-5 py-8 text-center text-muted-foreground">Nenhuma movimentação neste mês</td></tr>
+                    <tr><td colSpan={12} className="px-5 py-8 text-center text-muted-foreground">Nenhuma movimentação neste mês</td></tr>
                   ) : (
                     filteredMovements.map(m => {
                       const prod = productById[m.mtdProductId];
