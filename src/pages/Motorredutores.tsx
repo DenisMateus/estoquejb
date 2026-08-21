@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo, useRef, useLayoutEffect } from 'react';
 import {
   getMtdProducts, addMtdProduct, updateMtdProduct, deleteMtdProduct,
-  getMtdMovements, addMtdMovement,
+  getMtdMovements, addMtdMovement, revertMtdSaida,
   MtdProduct, MtdMovement, MtdType, MTD_TYPE_LABELS, CONDICAO_OPTIONS,
   MtdStatus, MTD_STATUS_LABELS,
 } from '@/lib/mtd';
@@ -106,6 +106,10 @@ const Motorredutores = () => {
 
   // Reserva / status
   const [statusDialog, setStatusDialog] = useState<{ product: MtdProduct; newStatus: MtdStatus; newCliente: string } | null>(null);
+
+  // Reverter saída
+  const [revertTarget, setRevertTarget] = useState<MtdMovement | null>(null);
+  const [revertingId, setRevertingId] = useState<string | null>(null);
 
   // Month filter for movements
   const [selectedMonth, setSelectedMonth] = useState(new Date());
@@ -496,6 +500,21 @@ const Motorredutores = () => {
       setStatusDialog(null);
       reload();
     } catch (err: any) { toast.error(err.message); }
+  };
+
+  const handleRevertSaida = async () => {
+    if (!revertTarget) return;
+    const mov = revertTarget;
+    setRevertingId(mov.id);
+    try {
+      await revertMtdSaida(mov);
+      toast.success(`Saída do motor ${mov.mtdProductCode} revertida — voltou ao estoque`);
+      setRevertTarget(null);
+      await reload();
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao reverter saída');
+    }
+    setRevertingId(null);
   };
 
 
@@ -1141,12 +1160,13 @@ const Motorredutores = () => {
                   <col style={{ width: '7%' }} />
                   <col style={{ width: '19%' }} />
                   <col style={{ width: '4%' }} />
-                  <col style={{ width: '11%' }} />
-                  <col style={{ width: '17%' }} />
+                  <col style={{ width: '10%' }} />
+                  <col style={{ width: '16%' }} />
                   <col style={{ width: '6%' }} />
                   <col style={{ width: '5%' }} />
-                  <col style={{ width: '8%' }} />
-                  <col style={{ width: '11%' }} />
+                  <col style={{ width: '7%' }} />
+                  <col style={{ width: '9%' }} />
+                  <col style={{ width: '5%' }} />
                 </colgroup>
                 <thead>
                   <tr className="border-b bg-muted/50">
@@ -1162,6 +1182,7 @@ const Motorredutores = () => {
                       { key: null, label: 'OF', sortable: false, align: 'left', nowrap: true },
                       { key: null, label: 'Inventário', sortable: false, align: 'center', nowrap: true },
                       { key: null, label: 'Observação', sortable: false, align: 'left', nowrap: false },
+                      { key: null, label: 'Ações', sortable: false, align: 'center', nowrap: true },
                     ] as Array<{ key: 'data' | 'codigo' | 'origem' | 'destino' | null; label: string; sortable: boolean; align: 'left' | 'center'; nowrap: boolean }>).map((h, i) => {
                       const isActive = h.sortable && movSortKey === h.key;
                       return (
@@ -1180,7 +1201,7 @@ const Motorredutores = () => {
                 </thead>
                 <tbody>
                   {filteredMovements.length === 0 ? (
-                    <tr><td colSpan={11} className="px-5 py-8 text-center text-muted-foreground">Nenhuma movimentação neste mês</td></tr>
+                    <tr><td colSpan={12} className="px-5 py-8 text-center text-muted-foreground">Nenhuma movimentação neste mês</td></tr>
                   ) : (
                     filteredMovements.map(m => {
                       const prod = productById[m.mtdProductId];
@@ -1253,6 +1274,22 @@ const Motorredutores = () => {
                             )}
                           </td>
                           <td className="px-2 py-1.5 text-xs text-muted-foreground max-w-[200px]">{m.observacao || '—'}</td>
+                          <td className="px-2 py-1.5 text-center whitespace-nowrap">
+                            {m.type === 'saida' ? (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <button type="button" disabled={revertingId === m.id}
+                                    onClick={() => setRevertTarget(m)}
+                                    className="inline-flex items-center justify-center p-1 rounded text-primary hover:bg-primary/10 transition-colors disabled:opacity-50">
+                                    <Undo2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="text-xs">Reverter saída (devolver ao estoque)</TooltipContent>
+                              </Tooltip>
+                            ) : (
+                              <span className="text-muted-foreground text-xs">—</span>
+                            )}
+                          </td>
                         </tr>
                       );
                     })
@@ -1832,6 +1869,34 @@ const Motorredutores = () => {
                 <button type="submit" className="bg-primary text-primary-foreground font-semibold px-4 py-2 rounded-md hover:bg-primary/90 transition-colors text-sm">Salvar</button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Reverter saída dialog */}
+      {revertTarget && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setRevertTarget(null)}>
+          <div className="bg-background rounded-lg shadow-xl border w-full max-w-md p-6" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
+                <Undo2 className="w-5 h-5 text-primary" /> Reverter saída
+              </h3>
+              <button onClick={() => setRevertTarget(null)} className="text-muted-foreground hover:text-foreground"><X className="w-5 h-5" /></button>
+            </div>
+            <div className="text-sm text-muted-foreground space-y-1 mb-5">
+              <p><strong className="text-foreground font-mono">{revertTarget.mtdProductCode}</strong> — {revertTarget.mtdProductDescription}</p>
+              <p>Quantidade: <strong className="text-foreground">{formatQuantity(revertTarget.quantity)}</strong></p>
+              <p>Cliente destino: <strong className="text-foreground">{revertTarget.clienteDestino || '—'}</strong></p>
+              <p>Data da saída: <strong className="text-foreground font-mono">{formatDateBR(revertTarget.date)}</strong></p>
+              <p className="pt-2 text-xs">O motor voltará ao estoque com todas as informações originais (código, descrição, NF, OF, cliente, portaria) e o registro desta saída será removido das movimentações.</p>
+            </div>
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setRevertTarget(null)} className="px-4 py-2 rounded-lg text-sm font-medium bg-muted text-muted-foreground hover:bg-muted/80">Cancelar</button>
+              <button onClick={handleRevertSaida} disabled={revertingId === revertTarget.id}
+                className="px-4 py-2 rounded-lg text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
+                {revertingId === revertTarget.id ? 'Revertendo...' : 'Reverter saída'}
+              </button>
+            </div>
           </div>
         </div>
       )}
