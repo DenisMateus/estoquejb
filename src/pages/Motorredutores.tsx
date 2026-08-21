@@ -1274,6 +1274,22 @@ const Motorredutores = () => {
                             )}
                           </td>
                           <td className="px-2 py-1.5 text-xs text-muted-foreground max-w-[200px]">{m.observacao || '—'}</td>
+                          <td className="px-2 py-1.5 text-center whitespace-nowrap">
+                            {m.type === 'saida' ? (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <button type="button" disabled={revertingId === m.id}
+                                    onClick={() => setRevertTarget(m)}
+                                    className="inline-flex items-center justify-center p-1 rounded text-primary hover:bg-primary/10 transition-colors disabled:opacity-50">
+                                    <Undo2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="text-xs">Reverter saída (devolver ao estoque)</TooltipContent>
+                              </Tooltip>
+                            ) : (
+                              <span className="text-muted-foreground text-xs">—</span>
+                            )}
+                          </td>
                         </tr>
                       );
                     })
