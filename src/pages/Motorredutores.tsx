@@ -105,7 +105,7 @@ const Motorredutores = () => {
   const [editCondicao, setEditCondicao] = useState('');
 
   // Reserva / status
-  const [statusDialog, setStatusDialog] = useState<{ product: MtdProduct; newStatus: MtdStatus; newCliente: string } | null>(null);
+  const [statusDialog, setStatusDialog] = useState<{ product: MtdProduct; newStatus: MtdStatus; newCliente: string; newOf: string } | null>(null);
 
   // Reverter saída
   const [revertTarget, setRevertTarget] = useState<MtdMovement | null>(null);
