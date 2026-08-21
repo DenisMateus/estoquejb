@@ -502,6 +502,21 @@ const Motorredutores = () => {
     } catch (err: any) { toast.error(err.message); }
   };
 
+  const handleRevertSaida = async () => {
+    if (!revertTarget) return;
+    const mov = revertTarget;
+    setRevertingId(mov.id);
+    try {
+      await revertMtdSaida(mov);
+      toast.success(`Saída do motor ${mov.mtdProductCode} revertida — voltou ao estoque`);
+      setRevertTarget(null);
+      await reload();
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao reverter saída');
+    }
+    setRevertingId(null);
+  };
+
 
   const handleInventarioNao = (product: MtdProduct) => {
     setInventarioConfirm(null);
