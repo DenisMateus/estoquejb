@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo, useRef, useLayoutEffect } from 'react';
 import {
   getMtdProducts, addMtdProduct, updateMtdProduct, deleteMtdProduct,
-  getMtdMovements, addMtdMovement,
+  getMtdMovements, addMtdMovement, revertMtdSaida,
   MtdProduct, MtdMovement, MtdType, MTD_TYPE_LABELS, CONDICAO_OPTIONS,
   MtdStatus, MTD_STATUS_LABELS,
 } from '@/lib/mtd';
