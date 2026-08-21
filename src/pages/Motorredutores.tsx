@@ -107,6 +107,10 @@ const Motorredutores = () => {
   // Reserva / status
   const [statusDialog, setStatusDialog] = useState<{ product: MtdProduct; newStatus: MtdStatus; newCliente: string } | null>(null);
 
+  // Reverter saída
+  const [revertTarget, setRevertTarget] = useState<MtdMovement | null>(null);
+  const [revertingId, setRevertingId] = useState<string | null>(null);
+
   // Month filter for movements
   const [selectedMonth, setSelectedMonth] = useState(new Date());
 
