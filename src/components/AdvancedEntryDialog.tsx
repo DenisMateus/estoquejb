@@ -1,9 +1,9 @@
+import { getErrorMessage } from '@/lib/errors';
 import { useEffect, useRef, useState } from 'react';
 import { X, Upload, Sparkles, Trash2, ImagePlus, Loader2, Check } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import {
-import { getErrorMessage } from '@/lib/errors';
   addMtdProduct, addMtdMovement, MTD_TYPE_LABELS, MtdType, CONDICAO_OPTIONS,
 } from '@/lib/mtd';
 

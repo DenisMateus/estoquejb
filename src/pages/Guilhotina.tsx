@@ -1,9 +1,9 @@
+import { getErrorMessage } from '@/lib/errors';
 import { useEffect, useState } from 'react';
 import { getProducts, addProduct, updateProduct, deleteProduct, Product, CategoryType, CATEGORY_LABELS, formatQuantity } from '@/lib/inventory';
 import AppLayout from '@/components/AppLayout';
 import { Plus, Trash2, Search, Filter, Pencil, X } from 'lucide-react';
 import { toast } from 'sonner';
-import { getErrorMessage } from '@/lib/errors';
 
 const Guilhotina = () => {
   const [products, setProducts] = useState<Product[]>([]);

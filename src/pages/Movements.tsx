@@ -1,10 +1,10 @@
+import { getErrorMessage } from '@/lib/errors';
 import { useEffect, useState, useMemo } from 'react';
 import { getProducts, addMovement, getMovements, applyInventoryCount, Product, Movement, formatQuantity, SectorType } from '@/lib/inventory';
 import AppLayout from '@/components/AppLayout';
 import { ArrowDownCircle, ArrowUpCircle, ShieldCheck, X, ChevronLeft, ChevronRight, ClipboardList, ClipboardCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { getErrorMessage } from '@/lib/errors';
 
 function generateCaptcha() {
   const a = Math.floor(Math.random() * 20) + 1;
