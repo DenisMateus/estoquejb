@@ -63,8 +63,9 @@ const Login = () => {
               </div>
             </div>
             {error && <p className="text-destructive text-sm font-medium">{error}</p>}
-            <button type="submit" className="w-full bg-primary text-primary-foreground font-semibold py-2.5 rounded-md hover:bg-primary/90 transition-colors">
-              Entrar
+            <button type="submit" disabled={loading} className="w-full bg-primary text-primary-foreground font-semibold py-2.5 rounded-md hover:bg-primary/90 transition-colors disabled:opacity-60">
+              {loading ? 'Entrando...' : 'Entrar'}
+
             </button>
           </form>
         </div>
