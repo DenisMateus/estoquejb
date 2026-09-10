@@ -125,32 +125,15 @@ export async function getMovements(): Promise<Movement[]> {
 }
 
 export async function addMovement(mov: Omit<Movement, 'id' | 'createdAt' | 'origem'> & { origem?: OrigemType }): Promise<Movement> {
-  // Get current product
-  const { data: product, error: pErr } = await supabase.from('products').select('*').eq('id', mov.productId).single();
-  if (pErr || !product) throw new Error('Produto não encontrado');
-
-  const currentQty = Number(product.quantity);
-  if (mov.type === 'saida' && currentQty < mov.quantity) {
-    throw new Error('Estoque insuficiente');
-  }
-
-  const newQty = mov.type === 'entrada' ? currentQty + mov.quantity : currentQty - mov.quantity;
-
-  // Update product quantity
-  const { error: uErr } = await supabase.from('products').update({ quantity: newQty }).eq('id', mov.productId);
-  if (uErr) throw uErr;
-
-  // Insert movement
-  const { data, error } = await supabase.from('movements').insert({
-    product_id: mov.productId,
-    product_code: mov.productCode,
-    product_description: mov.productDescription,
-    type: mov.type,
-    quantity: mov.quantity,
-    unit: mov.unit,
-    date: mov.date,
-    origem: mov.origem || 'manual',
-  } as any).select().single();
+  // Operação atômica no banco: atualiza o estoque e registra a movimentação
+  // em um único passo, evitando erros de contagem em acessos simultâneos.
+  const { data, error } = await supabase.rpc('add_movement', {
+    p_product_id: mov.productId,
+    p_type: mov.type,
+    p_quantity: mov.quantity,
+    p_date: mov.date,
+    p_origem: mov.origem || 'manual',
+  } as any);
   if (error) throw error;
   return mapMovement(data);
 }
@@ -179,21 +162,6 @@ export async function applyInventoryCount(
   return count;
 }
 
-// Auth kept as localStorage (simple shared login)
-const AUTH_KEY = 'jhonrob_auth';
+// Autenticação real validada no servidor (ver src/lib/auth.ts)
+export { login, logout, isAuthenticated } from './auth';
 
-export function login(user: string, pass: string): boolean {
-  if (user === 'planejamentopcp' && pass === '123456') {
-    localStorage.setItem(AUTH_KEY, 'true');
-    return true;
-  }
-  return false;
-}
-
-export function isAuthenticated(): boolean {
-  return localStorage.getItem(AUTH_KEY) === 'true';
-}
-
-export function logout() {
-  localStorage.removeItem(AUTH_KEY);
-}
