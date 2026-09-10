@@ -16,6 +16,7 @@ import {
   ChevronUp, ChevronDown, ChevronsUpDown, GripVertical,
 } from 'lucide-react';
 import {
+import { getErrorMessage } from '@/lib/errors';
   addVentMovement,
   addVentPending,
   addVentStock,
@@ -55,7 +56,7 @@ export default function Ventiladores() {
       const [s, p, m] = await Promise.all([getVentStock(), getVentPending(), getVentMovements()]);
       setStock(s); setPending(p); setMovs(m);
     } catch (e: any) {
-      toast({ title: 'Erro ao carregar', description: e.message, variant: 'destructive' });
+      toast({ title: 'Erro ao carregar', description: getErrorMessage(e), variant: 'destructive' });
     }
   };
   useEffect(() => { reload(); }, []);
@@ -145,7 +146,7 @@ export default function Ventiladores() {
       setBulkDeleteStockPwd('');
       reload();
     } catch (e: any) {
-      toast({ title: 'Erro', description: e.message, variant: 'destructive' });
+      toast({ title: 'Erro', description: getErrorMessage(e), variant: 'destructive' });
     }
   };
 
@@ -158,7 +159,7 @@ export default function Ventiladores() {
       setBulkDeletePendingOpen(false);
       reload();
     } catch (e: any) {
-      toast({ title: 'Erro', description: e.message, variant: 'destructive' });
+      toast({ title: 'Erro', description: getErrorMessage(e), variant: 'destructive' });
     }
   };
 
@@ -286,7 +287,7 @@ export default function Ventiladores() {
       toast({ title: 'Ventilador adicionado ao estoque' });
       reload();
     } catch (e: any) {
-      toast({ title: 'Erro', description: e.message, variant: 'destructive' });
+      toast({ title: 'Erro', description: getErrorMessage(e), variant: 'destructive' });
     }
   };
 
@@ -311,7 +312,7 @@ export default function Ventiladores() {
       await updateVentPending(p.id, { negativa: !p.negativa });
       setPending(prev => prev.map(x => (x.id === p.id ? { ...x, negativa: !p.negativa } : x)));
     } catch (e: any) {
-      toast({ title: 'Erro', description: e.message, variant: 'destructive' });
+      toast({ title: 'Erro', description: getErrorMessage(e), variant: 'destructive' });
     }
   };
 
@@ -333,7 +334,7 @@ export default function Ventiladores() {
         toast({ title: 'Pendência atualizada' });
         reload();
       } catch (e: any) {
-        toast({ title: 'Erro', description: e.message, variant: 'destructive' });
+        toast({ title: 'Erro', description: getErrorMessage(e), variant: 'destructive' });
       }
       return;
     }
@@ -358,7 +359,7 @@ export default function Ventiladores() {
       toast({ title: 'Pendência registrada' });
       reload();
     } catch (e: any) {
-      toast({ title: 'Erro', description: e.message, variant: 'destructive' });
+      toast({ title: 'Erro', description: getErrorMessage(e), variant: 'destructive' });
     }
   };
 
@@ -378,7 +379,7 @@ export default function Ventiladores() {
         reload();
       }
     } catch (e: any) {
-      toast({ title: 'Erro', description: e.message, variant: 'destructive' });
+      toast({ title: 'Erro', description: getErrorMessage(e), variant: 'destructive' });
     }
   };
 
@@ -409,7 +410,7 @@ export default function Ventiladores() {
     try {
       await reorderVentPending(renumbered.map(p => ({ id: p.id, priority: p.priority })));
     } catch (e: any) {
-      toast({ title: 'Erro ao reordenar', description: e.message, variant: 'destructive' });
+      toast({ title: 'Erro ao reordenar', description: getErrorMessage(e), variant: 'destructive' });
       reload();
     }
   };
@@ -449,7 +450,7 @@ export default function Ventiladores() {
       setConfirmArrival(null);
       reload();
     } catch (e: any) {
-      toast({ title: 'Erro', description: e.message, variant: 'destructive' });
+      toast({ title: 'Erro', description: getErrorMessage(e), variant: 'destructive' });
     }
   };
 
@@ -467,7 +468,7 @@ export default function Ventiladores() {
       setExitDialog(null); setExitObs('');
       reload();
     } catch (e: any) {
-      toast({ title: 'Erro', description: e.message, variant: 'destructive' });
+      toast({ title: 'Erro', description: getErrorMessage(e), variant: 'destructive' });
     }
   };
 
@@ -477,7 +478,7 @@ export default function Ventiladores() {
       await deleteVentPending(deletePendingId);
       toast({ title: 'Pendência excluída' });
     } catch (e: any) {
-      toast({ title: 'Erro', description: e.message, variant: 'destructive' });
+      toast({ title: 'Erro', description: getErrorMessage(e), variant: 'destructive' });
     }
     setDeletePendingId(null);
     reload();
@@ -492,7 +493,7 @@ export default function Ventiladores() {
       await deleteVentStock(deleteStockId);
       toast({ title: 'Ventilador excluído' });
     } catch (e: any) {
-      toast({ title: 'Erro', description: e.message, variant: 'destructive' });
+      toast({ title: 'Erro', description: getErrorMessage(e), variant: 'destructive' });
     }
     setDeleteStockId(null); setDeleteStockPwd('');
     reload();

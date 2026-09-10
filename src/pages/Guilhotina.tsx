@@ -3,6 +3,7 @@ import { getProducts, addProduct, updateProduct, deleteProduct, Product, Categor
 import AppLayout from '@/components/AppLayout';
 import { Plus, Trash2, Search, Filter, Pencil, X } from 'lucide-react';
 import { toast } from 'sonner';
+import { getErrorMessage } from '@/lib/errors';
 
 const Guilhotina = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -48,7 +49,7 @@ const Guilhotina = () => {
       setCode(''); setDescription(''); setWeightPerUnit(''); setShowForm(false);
       reload();
     } catch (err: any) {
-      toast.error(err.message);
+      toast.error(getErrorMessage(err));
     }
   };
 
@@ -59,7 +60,7 @@ const Guilhotina = () => {
       toast.success('Produto excluído');
       reload();
     } catch (err: any) {
-      toast.error(err.message);
+      toast.error(getErrorMessage(err));
     }
   };
 
@@ -87,7 +88,7 @@ const Guilhotina = () => {
       setEditProduct(null);
       reload();
     } catch (err: any) {
-      toast.error(err.message);
+      toast.error(getErrorMessage(err));
     }
   };
 

@@ -4,6 +4,7 @@ import AppLayout from '@/components/AppLayout';
 import { ArrowDownCircle, ArrowUpCircle, ShieldCheck, X, ChevronLeft, ChevronRight, ClipboardList, ClipboardCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { getErrorMessage } from '@/lib/errors';
 
 function generateCaptcha() {
   const a = Math.floor(Math.random() * 20) + 1;
@@ -126,7 +127,7 @@ const Movements = () => {
       setProductId('');
       reload();
     } catch (err: any) {
-      toast.error(err.message);
+      toast.error(getErrorMessage(err));
     }
   };
 
@@ -207,7 +208,7 @@ const Movements = () => {
       setInvConfirm(false);
       reload();
     } catch (err: any) {
-      toast.error(err.message || 'Erro ao concluir inventário');
+      toast.error(getErrorMessage(err, 'Erro ao concluir inventário'));
     } finally {
       setInvSubmitting(false);
     }

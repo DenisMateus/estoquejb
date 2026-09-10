@@ -1,7 +1,7 @@
 import { ReactNode, useState } from 'react';
 import logoHeader from '@/assets/logo_header.png';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { logout } from '@/lib/inventory';
+import { logout } from '@/lib/auth';
 import { useTheme } from 'next-themes';
 import {
   LayoutDashboard,
@@ -38,9 +38,9 @@ const AppLayout = ({ children }: Props) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const { theme, setTheme } = useTheme();
 
-  const handleLogout = () => {
-    logout();
-    navigate('/');
+  const handleLogout = async () => {
+    await logout();
+    navigate('/', { replace: true });
   };
 
   return (
