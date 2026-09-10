@@ -1,3 +1,4 @@
+import { getErrorMessage } from '@/lib/errors';
 import { useEffect, useRef, useState } from 'react';
 import { X, Upload, Sparkles, Trash2, ImagePlus, Loader2, Check } from 'lucide-react';
 import { toast } from 'sonner';
@@ -93,7 +94,7 @@ export default function AdvancedEntryDialog({ open, onClose, onSaved, defaultDat
       setMotors(prev => [...prev, ...extracted]);
       toast.success(`${extracted.length} motor(es) extraído(s). Confira antes de salvar.`);
     } catch (err: any) {
-      toast.error(err.message || 'Falha ao extrair dados.');
+      toast.error(getErrorMessage(err, 'Falha ao extrair dados.'));
     } finally { setExtracting(false); }
   };
 
@@ -147,7 +148,7 @@ export default function AdvancedEntryDialog({ open, onClose, onSaved, defaultDat
       onSaved();
       onClose();
     } catch (err: any) {
-      toast.error(`Erro após criar ${created}: ${err.message}`);
+      toast.error(`Erro após criar ${created}: ${getErrorMessage(err)}`);
     } finally { setSaving(false); }
   };
 

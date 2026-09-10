@@ -317,7 +317,33 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      add_movement: {
+        Args: {
+          p_date: string
+          p_origem?: string
+          p_product_id: string
+          p_quantity: number
+          p_type: string
+        }
+        Returns: {
+          created_at: string
+          date: string
+          id: string
+          origem: string
+          product_code: string
+          product_description: string
+          product_id: string
+          quantity: number
+          type: string
+          unit: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "movements"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
     }
     Enums: {
       [_ in never]: never

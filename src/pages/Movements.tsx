@@ -1,3 +1,4 @@
+import { getErrorMessage } from '@/lib/errors';
 import { useEffect, useState, useMemo } from 'react';
 import { getProducts, addMovement, getMovements, applyInventoryCount, Product, Movement, formatQuantity, SectorType } from '@/lib/inventory';
 import AppLayout from '@/components/AppLayout';
@@ -126,7 +127,7 @@ const Movements = () => {
       setProductId('');
       reload();
     } catch (err: any) {
-      toast.error(err.message);
+      toast.error(getErrorMessage(err));
     }
   };
 
@@ -207,7 +208,7 @@ const Movements = () => {
       setInvConfirm(false);
       reload();
     } catch (err: any) {
-      toast.error(err.message || 'Erro ao concluir inventário');
+      toast.error(getErrorMessage(err, 'Erro ao concluir inventário'));
     } finally {
       setInvSubmitting(false);
     }

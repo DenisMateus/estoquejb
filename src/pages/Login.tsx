@@ -1,28 +1,35 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { login, isAuthenticated } from '@/lib/inventory';
+import { login } from '@/lib/auth';
+import { supabase } from '@/integrations/supabase/client';
 import { Lock, User } from 'lucide-react';
-import { Navigate } from 'react-router-dom';
 
 const Login = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  if (isAuthenticated()) {
-    return <Navigate to="/dashboard" replace />;
-  }
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session) navigate('/dashboard', { replace: true });
+    });
+  }, [navigate]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    if (login(username, password)) {
-      navigate('/dashboard');
+    setLoading(true);
+    const ok = await login(username, password);
+    setLoading(false);
+    if (ok) {
+      navigate('/dashboard', { replace: true });
     } else {
       setError('Usuário ou senha incorretos');
     }
   };
+
 
   return (
     <div className="min-h-screen flex items-center justify-center steel-gradient">
@@ -56,8 +63,9 @@ const Login = () => {
               </div>
             </div>
             {error && <p className="text-destructive text-sm font-medium">{error}</p>}
-            <button type="submit" className="w-full bg-primary text-primary-foreground font-semibold py-2.5 rounded-md hover:bg-primary/90 transition-colors">
-              Entrar
+            <button type="submit" disabled={loading} className="w-full bg-primary text-primary-foreground font-semibold py-2.5 rounded-md hover:bg-primary/90 transition-colors disabled:opacity-60">
+              {loading ? 'Entrando...' : 'Entrar'}
+
             </button>
           </form>
         </div>

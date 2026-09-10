@@ -1,3 +1,4 @@
+import { getErrorMessage } from '@/lib/errors';
 import { useEffect, useState } from 'react';
 import { getProducts, addProduct, updateProduct, deleteProduct, Product, CategoryType, CATEGORY_LABELS, formatQuantity } from '@/lib/inventory';
 import AppLayout from '@/components/AppLayout';
@@ -49,7 +50,7 @@ const Products = () => {
       setCode(''); setDescription(''); setWeightPerUnit(''); setShowForm(false);
       reload();
     } catch (err: any) {
-      toast.error(err.message);
+      toast.error(getErrorMessage(err));
     }
   };
 
@@ -60,7 +61,7 @@ const Products = () => {
       toast.success('Produto excluído');
       reload();
     } catch (err: any) {
-      toast.error(err.message);
+      toast.error(getErrorMessage(err));
     }
   };
 
@@ -88,7 +89,7 @@ const Products = () => {
       setEditProduct(null);
       reload();
     } catch (err: any) {
-      toast.error(err.message);
+      toast.error(getErrorMessage(err));
     }
   };
 

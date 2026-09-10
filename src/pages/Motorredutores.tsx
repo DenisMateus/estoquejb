@@ -1,3 +1,4 @@
+import { getErrorMessage } from '@/lib/errors';
 import { useEffect, useState, useMemo, useRef, useLayoutEffect } from 'react';
 import {
   getMtdProducts, addMtdProduct, updateMtdProduct, deleteMtdProduct,
@@ -319,7 +320,7 @@ const Motorredutores = () => {
       setEntNotaFiscal(''); setEntOfNumber(''); setEntCliente('');
       setEntCondicao(''); setEntQuantidade(1); setShowMovForm(false);
       reload();
-    } catch (err: any) { toast.error(err.message); }
+    } catch (err: any) { toast.error(getErrorMessage(err)); }
   };
 
   const handleAddToSaidaCart = (e: React.FormEvent) => {
@@ -386,7 +387,7 @@ const Motorredutores = () => {
       setShowMovForm(false);
       reload();
     } catch (err: any) {
-      toast.error(err.message || 'Erro ao registrar saídas');
+      toast.error(getErrorMessage(err, 'Erro ao registrar saídas'));
       reload();
     } finally {
       setSubmittingSaida(false);
@@ -414,7 +415,7 @@ const Motorredutores = () => {
       toast.success('Excluído');
       reload();
     } catch (err: any) {
-      toast.error(err.message);
+      toast.error(getErrorMessage(err));
     }
     setDeleteTarget(null);
     setDeleteCode('');
@@ -446,7 +447,7 @@ const Motorredutores = () => {
       setSelectedIds(new Set());
       reload();
     } catch (err: any) {
-      toast.error(err.message);
+      toast.error(getErrorMessage(err));
     }
     setBulkDeleteOpen(false);
     setBulkDeleteCode('');
@@ -471,7 +472,7 @@ const Motorredutores = () => {
         ofNumber: editOfNumber.trim(), cliente: editCliente.trim(), condicao: editCondicao.trim(),
       });
       toast.success('Atualizado!'); setEditProduct(null); reload();
-    } catch (err: any) { toast.error(err.message); }
+    } catch (err: any) { toast.error(getErrorMessage(err)); }
   };
 
   const handlePrint = () => window.print();
@@ -482,7 +483,7 @@ const Motorredutores = () => {
       // muda direto, mantém cliente
       updateMtdProduct(product.id, { status: 'disponivel' })
         .then(() => { toast.success(`Motor ${product.code} marcado como Disponível`); reload(); })
-        .catch((err: any) => toast.error(err.message));
+        .catch((err: any) => toast.error(getErrorMessage(err)));
       return;
     }
     // reservado ou vendido => abre diálogo para confirmar/atualizar cliente
@@ -499,7 +500,7 @@ const Motorredutores = () => {
       toast.success(`Motor ${product.code} ${label}${trocou ? ` para ${newCliente.trim() || '—'}` : ''}`);
       setStatusDialog(null);
       reload();
-    } catch (err: any) { toast.error(err.message); }
+    } catch (err: any) { toast.error(getErrorMessage(err)); }
   };
 
   const handleRevertSaida = async () => {
@@ -512,7 +513,7 @@ const Motorredutores = () => {
       setRevertTarget(null);
       await reload();
     } catch (err: any) {
-      toast.error(err.message || 'Erro ao reverter saída');
+      toast.error(getErrorMessage(err, 'Erro ao reverter saída'));
     }
     setRevertingId(null);
   };
@@ -558,7 +559,7 @@ const Motorredutores = () => {
       toast.success(`Inventário finalizado! ${toBaixar.length} motor(es) baixado(s).`);
       await reload();
     } catch (err: any) {
-      toast.error(err.message || 'Erro ao finalizar inventário');
+      toast.error(getErrorMessage(err, 'Erro ao finalizar inventário'));
       await reload();
     }
     setFinalizandoInventario(false);
@@ -593,7 +594,7 @@ const Motorredutores = () => {
       toast.success(`Motor ${product.code} retornado ao estoque!`);
       await reload();
     } catch (err: any) {
-      toast.error(err.message);
+      toast.error(getErrorMessage(err));
     }
     setInventarioProcessing(null);
   };
