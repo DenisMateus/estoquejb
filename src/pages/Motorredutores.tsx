@@ -486,14 +486,14 @@ const Motorredutores = () => {
       return;
     }
     // reservado ou vendido => abre diálogo para confirmar/atualizar cliente
-    setStatusDialog({ product, newStatus, newCliente: product.cliente || '' });
+    setStatusDialog({ product, newStatus, newCliente: product.cliente || '', newOf: product.ofNumber || '' });
   };
 
   const handleConfirmStatusChange = async () => {
     if (!statusDialog) return;
-    const { product, newStatus, newCliente } = statusDialog;
+    const { product, newStatus, newCliente, newOf } = statusDialog;
     try {
-      await updateMtdProduct(product.id, { status: newStatus, cliente: newCliente.trim() });
+      await updateMtdProduct(product.id, { status: newStatus, cliente: newCliente.trim(), ofNumber: newOf.trim() });
       const label = MTD_STATUS_LABELS[newStatus];
       const trocou = newCliente.trim() !== (product.cliente || '').trim();
       toast.success(`Motor ${product.code} ${label}${trocou ? ` para ${newCliente.trim() || '—'}` : ''}`);
@@ -1914,6 +1914,7 @@ const Motorredutores = () => {
             <div className="text-sm text-muted-foreground mb-4 space-y-1">
               <p><strong className="text-foreground">{statusDialog.product.code}</strong> — {statusDialog.product.description}</p>
               <p>Cliente atual: <strong className="text-foreground">{statusDialog.product.cliente || '—'}</strong></p>
+              <p>OF atual: <strong className="text-foreground">{statusDialog.product.ofNumber || '—'}</strong></p>
               {statusDialog.newStatus === 'reservado' && (
                 <p className="text-xs">Informe para qual cliente este motor está sendo reservado. Ele deixará de aparecer como disponível.</p>
               )}
@@ -1928,6 +1929,17 @@ const Motorredutores = () => {
                 placeholder="Nome do cliente"
                 className="input-steel w-full"
                 autoFocus
+              />
+            </div>
+            <div className="mb-4">
+              <label className="text-sm font-medium text-foreground block mb-1">
+                {statusDialog.newStatus === 'reservado' ? 'OF do cliente (reserva)' : 'OF do cliente (venda)'}
+              </label>
+              <input
+                value={statusDialog.newOf}
+                onChange={e => setStatusDialog(prev => prev ? { ...prev, newOf: e.target.value } : prev)}
+                placeholder="OF do cliente que está reservando/comprando"
+                className="input-steel w-full"
               />
             </div>
             <div className="flex justify-end gap-2">
