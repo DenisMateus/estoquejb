@@ -850,10 +850,18 @@ export default function Ventiladores() {
                     <td className="p-2">{m.cliente || '-'}</td>
                     <td className="p-2">{m.ofNumber || '-'}</td>
                     <td className="p-2">{m.observacao || '-'}</td>
+                    <td className="p-2">
+                      {m.type === 'saida' ? (
+                        <Button size="sm" variant="outline" className="h-6 px-2 text-[10px]"
+                          onClick={() => setRevertDialog(m)}>
+                          <Undo2 className="w-3 h-3 mr-1" /> Reverter
+                        </Button>
+                      ) : '-'}
+                    </td>
                   </tr>
                 ))}
                 {filteredMovs.length === 0 && (
-                  <tr><td colSpan={8} className="p-6 text-center text-muted-foreground">Sem movimentações.</td></tr>
+                  <tr><td colSpan={9} className="p-6 text-center text-muted-foreground">Sem movimentações.</td></tr>
                 )}
               </tbody>
             </table>
