@@ -889,6 +889,33 @@ export default function Ventiladores() {
         )}
       </div>
 
+      {/* Dialog: Reverter baixa */}
+      <Dialog open={!!revertDialog} onOpenChange={(o) => { if (!o) setRevertDialog(null); }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Reverter baixa</DialogTitle></DialogHeader>
+          {revertDialog && (
+            <div className="space-y-2 text-sm">
+              <p>O ventilador abaixo voltará para o estoque com as mesmas informações:</p>
+              <div className="rounded border p-3 bg-muted/40 space-y-1">
+                <div><span className="text-muted-foreground">Código:</span> <span className="font-mono">{revertDialog.code}</span></div>
+                <div><span className="text-muted-foreground">Descrição:</span> {revertDialog.description}</div>
+                <div><span className="text-muted-foreground">Modelo:</span> {VENT_TIPO_LABELS[revertDialog.tipo]}</div>
+                <div><span className="text-muted-foreground">Cliente:</span> {revertDialog.cliente || '-'}</div>
+                <div><span className="text-muted-foreground">OF:</span> {revertDialog.ofNumber || '-'}</div>
+                <div><span className="text-muted-foreground">Data da baixa:</span> {formatDateBR(revertDialog.date)}</div>
+              </div>
+              <p className="text-muted-foreground">A movimentação de saída será removida do histórico.</p>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRevertDialog(null)}>Cancelar</Button>
+            <Button onClick={doRevert} disabled={reverting}>
+              <Undo2 className="w-4 h-4 mr-1" /> {reverting ? 'Revertendo...' : 'Reverter baixa'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Dialog: Entrada de estoque */}
       <Dialog open={stockDialog} onOpenChange={setStockDialog}>
         <DialogContent>
