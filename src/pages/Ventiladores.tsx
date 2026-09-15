@@ -14,7 +14,7 @@ import { toast } from '@/hooks/use-toast';
 import {
   Fan, Plus, Search, Trash2, Check, PackageCheck,
   Warehouse, ClipboardList, ArrowLeftRight, Pencil,
-  ChevronUp, ChevronDown, ChevronsUpDown, GripVertical,
+  ChevronUp, ChevronDown, ChevronsUpDown, GripVertical, Undo2,
 } from 'lucide-react';
 import {
   addVentMovement,
