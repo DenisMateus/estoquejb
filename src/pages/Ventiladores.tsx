@@ -20,6 +20,7 @@ import {
   addVentMovement,
   addVentPending,
   addVentStock,
+  revertVentSaida,
   deleteVentPending,
   deleteVentStock,
   formatDateBR,
