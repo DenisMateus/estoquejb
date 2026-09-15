@@ -830,6 +830,7 @@ export default function Ventiladores() {
                   <th className="text-left p-2">Cliente</th>
                   <th className="text-left p-2">OF</th>
                   <th className="text-left p-2">Observação</th>
+                  <th className="text-left p-2">Ações</th>
                 </tr>
               </thead>
               <tbody>
