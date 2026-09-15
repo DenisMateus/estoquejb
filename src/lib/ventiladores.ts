@@ -204,6 +204,27 @@ export async function addVentMovement(input: Omit<VentiladorMovement, 'id' | 'cr
   return mapMov(data);
 }
 
+export async function deleteVentMovement(id: string) {
+  const { error } = await supabase.from('ventiladores_movements').delete().eq('id', id);
+  if (error) throw error;
+}
+
+// Reverte uma baixa (saída): devolve o ventilador ao estoque com os mesmos dados
+export async function revertVentSaida(mov: VentiladorMovement): Promise<VentiladorStock> {
+  if (mov.type !== 'saida') throw new Error('Somente saídas podem ser revertidas.');
+  const restored = await addVentStock({
+    code: mov.code,
+    description: mov.description,
+    tipo: mov.tipo,
+    cliente: mov.cliente || '',
+    ofNumber: mov.ofNumber || '',
+    status: mov.cliente ? 'reservado' : 'disponivel',
+    voltaObra: false,
+  });
+  await deleteVentMovement(mov.id);
+  return restored;
+}
+
 // Data local YYYY-MM-DD sem shift de fuso
 export function todayLocalISO(): string {
   const d = new Date();
