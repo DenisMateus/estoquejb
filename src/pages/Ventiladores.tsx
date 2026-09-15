@@ -477,6 +477,21 @@ export default function Ventiladores() {
     }
   };
 
+  const doRevert = async () => {
+    if (!revertDialog) return;
+    setReverting(true);
+    try {
+      await revertVentSaida(revertDialog);
+      toast({ title: 'Baixa revertida', description: 'O ventilador voltou para o estoque.' });
+      setRevertDialog(null);
+      await reload();
+    } catch (e: any) {
+      toast({ title: 'Erro', description: getErrorMessage(e), variant: 'destructive' });
+    } finally {
+      setReverting(false);
+    }
+  };
+
   const confirmDeletePending = async () => {
     if (!deletePendingId) return;
     try {
