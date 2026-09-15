@@ -81,6 +81,10 @@ export default function Ventiladores() {
   const [exitDialog, setExitDialog] = useState<VentiladorStock | null>(null);
   const [exitObs, setExitObs] = useState('');
 
+  // Reverter baixa (saída)
+  const [revertDialog, setRevertDialog] = useState<VentiladorMovement | null>(null);
+  const [reverting, setReverting] = useState(false);
+
   const [confirmArrival, setConfirmArrival] = useState<VentiladorPending | null>(null);
   const [arrivalQty, setArrivalQty] = useState(1);
 
