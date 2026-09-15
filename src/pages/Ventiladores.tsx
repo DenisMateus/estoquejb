@@ -14,12 +14,13 @@ import { toast } from '@/hooks/use-toast';
 import {
   Fan, Plus, Search, Trash2, Check, PackageCheck,
   Warehouse, ClipboardList, ArrowLeftRight, Pencil,
-  ChevronUp, ChevronDown, ChevronsUpDown, GripVertical,
+  ChevronUp, ChevronDown, ChevronsUpDown, GripVertical, Undo2,
 } from 'lucide-react';
 import {
   addVentMovement,
   addVentPending,
   addVentStock,
+  revertVentSaida,
   deleteVentPending,
   deleteVentStock,
   formatDateBR,
@@ -79,6 +80,10 @@ export default function Ventiladores() {
 
   const [exitDialog, setExitDialog] = useState<VentiladorStock | null>(null);
   const [exitObs, setExitObs] = useState('');
+
+  // Reverter baixa (saída)
+  const [revertDialog, setRevertDialog] = useState<VentiladorMovement | null>(null);
+  const [reverting, setReverting] = useState(false);
 
   const [confirmArrival, setConfirmArrival] = useState<VentiladorPending | null>(null);
   const [arrivalQty, setArrivalQty] = useState(1);
@@ -472,6 +477,21 @@ export default function Ventiladores() {
     }
   };
 
+  const doRevert = async () => {
+    if (!revertDialog) return;
+    setReverting(true);
+    try {
+      await revertVentSaida(revertDialog);
+      toast({ title: 'Baixa revertida', description: 'O ventilador voltou para o estoque.' });
+      setRevertDialog(null);
+      await reload();
+    } catch (e: any) {
+      toast({ title: 'Erro', description: getErrorMessage(e), variant: 'destructive' });
+    } finally {
+      setReverting(false);
+    }
+  };
+
   const confirmDeletePending = async () => {
     if (!deletePendingId) return;
     try {
@@ -830,6 +850,7 @@ export default function Ventiladores() {
                   <th className="text-left p-2">Cliente</th>
                   <th className="text-left p-2">OF</th>
                   <th className="text-left p-2">Observação</th>
+                  <th className="text-left p-2">Ações</th>
                 </tr>
               </thead>
               <tbody>
@@ -849,16 +870,51 @@ export default function Ventiladores() {
                     <td className="p-2">{m.cliente || '-'}</td>
                     <td className="p-2">{m.ofNumber || '-'}</td>
                     <td className="p-2">{m.observacao || '-'}</td>
+                    <td className="p-2">
+                      {m.type === 'saida' ? (
+                        <Button size="sm" variant="outline" className="h-6 px-2 text-[10px]"
+                          onClick={() => setRevertDialog(m)}>
+                          <Undo2 className="w-3 h-3 mr-1" /> Reverter
+                        </Button>
+                      ) : '-'}
+                    </td>
                   </tr>
                 ))}
                 {filteredMovs.length === 0 && (
-                  <tr><td colSpan={8} className="p-6 text-center text-muted-foreground">Sem movimentações.</td></tr>
+                  <tr><td colSpan={9} className="p-6 text-center text-muted-foreground">Sem movimentações.</td></tr>
                 )}
               </tbody>
             </table>
           </div>
         )}
       </div>
+
+      {/* Dialog: Reverter baixa */}
+      <Dialog open={!!revertDialog} onOpenChange={(o) => { if (!o) setRevertDialog(null); }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Reverter baixa</DialogTitle></DialogHeader>
+          {revertDialog && (
+            <div className="space-y-2 text-sm">
+              <p>O ventilador abaixo voltará para o estoque com as mesmas informações:</p>
+              <div className="rounded border p-3 bg-muted/40 space-y-1">
+                <div><span className="text-muted-foreground">Código:</span> <span className="font-mono">{revertDialog.code}</span></div>
+                <div><span className="text-muted-foreground">Descrição:</span> {revertDialog.description}</div>
+                <div><span className="text-muted-foreground">Modelo:</span> {VENT_TIPO_LABELS[revertDialog.tipo]}</div>
+                <div><span className="text-muted-foreground">Cliente:</span> {revertDialog.cliente || '-'}</div>
+                <div><span className="text-muted-foreground">OF:</span> {revertDialog.ofNumber || '-'}</div>
+                <div><span className="text-muted-foreground">Data da baixa:</span> {formatDateBR(revertDialog.date)}</div>
+              </div>
+              <p className="text-muted-foreground">A movimentação de saída será removida do histórico.</p>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRevertDialog(null)}>Cancelar</Button>
+            <Button onClick={doRevert} disabled={reverting}>
+              <Undo2 className="w-4 h-4 mr-1" /> {reverting ? 'Revertendo...' : 'Reverter baixa'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Dialog: Entrada de estoque */}
       <Dialog open={stockDialog} onOpenChange={setStockDialog}>
